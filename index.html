@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yannick Henderickx — Sonic Portfolio</title>
+  <meta name="description" content="Yannick Henderickx (a.k.a. jeanre) — composer, sound designer and audio director. A dark cinematic sonic universe of film scores, game audio and spatial installations.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="top" class="page">
+
+  <!-- ============ FIXED HEADER ============ -->
+  <header class="site-header">
+    <a href="#top" data-cursor="hover" class="brand">YANNICK&nbsp;HENDERICKX</a>
+    <div class="header-actions">
+      <button type="button" class="sound-toggle" data-sound-toggle aria-label="Toggle site sound">
+        <span class="sound-dot" aria-hidden="true" data-sound-dot></span>
+        <span data-sound-label>SOUND&nbsp;—&nbsp;OFF</span>
+      </button>
+      <button type="button" class="index-btn" data-open-menu data-magnetic hidden>INDEX</button>
+    </div>
+  </header>
+
+  <!-- ============ FULLSCREEN NAV OVERLAY ============ -->
+  <div class="menu-overlay" data-menu hidden>
+    <button type="button" class="menu-close" data-close-menu>CLOSE</button>
+    <nav class="menu-nav">
+      <a href="#top" data-close-menu><span class="menu-num">01</span>Overture</a>
+      <a href="#work" data-close-menu><span class="menu-num">02</span>Selected Work</a>
+      <a href="#universe" data-close-menu><span class="menu-num">03</span>Sound Universe</a>
+      <a href="#clients" data-close-menu><span class="menu-num">04</span>Clients</a>
+      <a href="#process" data-close-menu><span class="menu-num">05</span>Process</a>
+      <a href="#about" data-close-menu><span class="menu-num">06</span>About</a>
+      <a href="#contact" data-close-menu><span class="menu-num">07</span>Contact</a>
+    </nav>
+    <div class="menu-foot">
+      <span>HELLO@JEANRE.STUDIO</span>
+      <span>A.K.A. JEANRE</span>
+    </div>
+  </div>
+
+  <!-- ============ 01 HERO ============ -->
+  <section class="hero" data-screen-label="Hero">
+    <canvas class="hero-canvas" data-hero-canvas aria-hidden="true"></canvas>
+    <div class="hero-inner">
+      <p class="hero-eyebrow">COMPOSER&nbsp;&nbsp;·&nbsp;&nbsp;SOUND&nbsp;DESIGNER&nbsp;&nbsp;·&nbsp;&nbsp;AUDIO&nbsp;DIRECTOR</p>
+      <h1 class="hero-title">YANNICK<br><em>HENDERICKX</em></h1>
+      <div class="hero-row">
+        <p class="hero-statement">I compose the part of the film you can&rsquo;t see &mdash; the air in the room, the weight of the dark.</p>
+        <button type="button" class="hero-enable" data-sound-toggle data-magnetic aria-label="Enable site sound">
+          <span class="ring-pulse" aria-hidden="true"></span>
+          <span data-hero-sound-label>ENABLE&nbsp;SOUND</span>
+        </button>
+      </div>
+    </div>
+    <div class="scroll-hint" aria-hidden="true">
+      <span class="scroll-hint-label">SCROLL</span>
+      <span class="scroll-hint-line"></span>
+    </div>
+  </section>
+
+  <!-- ============ 02 FEATURED WORK ============ -->
+  <section id="work" class="work" data-screen-label="Featured Work">
+    <div class="section-head dark-ink" data-reveal>
+      <h2 class="section-title">Selected <em>Work</em></h2>
+      <span class="section-index dark-ink-mute">01 &mdash; FEATURED</span>
+    </div>
+
+    <!-- PROJECT 1 — HALOS -->
+    <article class="project" data-reveal>
+      <div class="project-media">
+        <div class="media-frame" data-cursor="view">
+          <canvas data-thumb="0" width="1280" height="800"></canvas>
+          <span class="media-tag media-tag--tl">PRJ.01 &mdash; FILM</span>
+          <span class="media-tag media-tag--br">2025</span>
+        </div>
+      </div>
+      <div class="project-info">
+        <div>
+          <p class="project-kicker">FEATURE FILM &mdash; ORIGINAL SCORE</p>
+          <h3 class="project-name">Halos</h3>
+          <p class="project-desc">A score grown from a single boy-choir note, stretched across ninety minutes of light. Recorded in a decommissioned church with a forty-piece string section, a modular rig, and one very patient organist.</p>
+          <div class="tags">
+            <span class="tag">ORCHESTRAL</span>
+            <span class="tag">MODULAR</span>
+            <span class="tag">CHOIR</span>
+          </div>
+        </div>
+        <div class="player">
+          <button type="button" class="play-btn" data-play="0" data-magnetic aria-label="Play Halos main theme">PLAY</button>
+          <div class="player-meta">
+            <p class="player-line">MAIN THEME &mdash; LOOP</p>
+            <p class="player-sub">NORTHLIGHT PICTURES</p>
+          </div>
+          <div class="meter" data-meter="0" aria-hidden="true">
+            <span></span><span></span><span class="meter-accent"></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- PROJECT 2 — PULSE // FIELD -->
+    <article class="project project--reverse" data-reveal>
+      <div class="project-media">
+        <div class="media-frame" data-cursor="view">
+          <canvas data-thumb="1" width="1280" height="800"></canvas>
+          <span class="media-tag media-tag--tl">PRJ.02 &mdash; INSTALLATION</span>
+          <span class="media-tag media-tag--br">2024</span>
+        </div>
+      </div>
+      <div class="project-info">
+        <div>
+          <p class="project-kicker">KINETIC LIGHT INSTALLATION &mdash; SOUND DIRECTION</p>
+          <h3 class="project-name">Pulse&thinsp;/&thinsp;/&thinsp;Field</h3>
+          <p class="project-desc">Thirty-two speakers, four hundred pendulums, one generative score that never repeats. The room listens to its own motion and answers &mdash; visitors conduct it simply by walking through.</p>
+          <div class="tags">
+            <span class="tag">GENERATIVE</span>
+            <span class="tag">SPATIAL</span>
+            <span class="tag">32-CHANNEL</span>
+          </div>
+        </div>
+        <div class="player">
+          <button type="button" class="play-btn" data-play="1" data-magnetic aria-label="Play Pulse Field excerpt">PLAY</button>
+          <div class="player-meta">
+            <p class="player-line">ROOM RECORDING &mdash; LOOP</p>
+            <p class="player-sub">STUDIO MIRA</p>
+          </div>
+          <div class="meter" data-meter="1" aria-hidden="true">
+            <span></span><span></span><span class="meter-accent"></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- PROJECT 3 — MONOLITH -->
+    <article class="project" data-reveal>
+      <div class="project-media">
+        <div class="media-frame" data-cursor="view">
+          <canvas data-thumb="2" width="1280" height="800"></canvas>
+          <span class="media-tag media-tag--tl">PRJ.03 &mdash; GAME</span>
+          <span class="media-tag media-tag--br">2024</span>
+        </div>
+      </div>
+      <div class="project-info">
+        <div>
+          <p class="project-kicker">VIDEO GAME &mdash; AUDIO DIRECTION</p>
+          <h3 class="project-name">Monolith</h3>
+          <p class="project-desc">Three hours of adaptive score that darkens as the player descends. The mix sheds one instrument every level, until only the sub-bass and the player&rsquo;s footsteps remain.</p>
+          <div class="tags">
+            <span class="tag">ADAPTIVE</span>
+            <span class="tag">SUB-BASS</span>
+            <span class="tag">FOLEY</span>
+          </div>
+        </div>
+        <div class="player">
+          <button type="button" class="play-btn" data-play="2" data-magnetic aria-label="Play Monolith descent theme">PLAY</button>
+          <div class="player-meta">
+            <p class="player-line">DESCENT &mdash; LOOP</p>
+            <p class="player-sub">HELIOS INTERACTIVE</p>
+          </div>
+          <div class="meter" data-meter="2" aria-hidden="true">
+            <span></span><span></span><span class="meter-accent"></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- PROJECT 4 — AETHER -->
+    <article class="project project--reverse" data-reveal>
+      <div class="project-media">
+        <div class="media-frame" data-cursor="view">
+          <canvas data-thumb="3" width="1280" height="800"></canvas>
+          <span class="media-tag media-tag--tl">PRJ.04 &mdash; FASHION FILM</span>
+          <span class="media-tag media-tag--br">2023</span>
+        </div>
+      </div>
+      <div class="project-info">
+        <div>
+          <p class="project-kicker">FASHION FILM &mdash; SONIC IDENTITY</p>
+          <h3 class="project-name">Aether</h3>
+          <p class="project-desc">Scored entirely with glass &mdash; bowls, marbles, a greenhouse recorded at four in the morning &mdash; then printed to tape until it shimmered like silk under stage light.</p>
+          <div class="tags">
+            <span class="tag">GLASS</span>
+            <span class="tag">BELLS</span>
+            <span class="tag">TAPE</span>
+          </div>
+        </div>
+        <div class="player">
+          <button type="button" class="play-btn" data-play="3" data-magnetic aria-label="Play Aether theme">PLAY</button>
+          <div class="player-meta">
+            <p class="player-line">GLASS SUITE &mdash; LOOP</p>
+            <p class="player-sub">ATELIER ROUX</p>
+          </div>
+          <div class="meter" data-meter="3" aria-hidden="true">
+            <span></span><span></span><span class="meter-accent"></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ 03 SOUND UNIVERSE ============ -->
+  <section id="universe" class="universe" data-screen-label="Sound Universe">
+    <canvas class="play-canvas" data-play-canvas data-cursor="field"></canvas>
+    <div class="universe-inner">
+      <span class="universe-index">02 &mdash; SOUND UNIVERSE</span>
+      <p class="universe-title">Touch the field.</p>
+      <span class="universe-hint">MOVE TO STIR &nbsp;&middot;&nbsp; CLICK TO STRIKE A TONE</span>
+    </div>
+  </section>
+
+  <!-- ============ 04 CLIENTS ============ -->
+  <section id="clients" class="clients" data-screen-label="Clients">
+    <div class="section-head" data-reveal>
+      <h2 class="section-title">In good <em>company</em></h2>
+      <span class="section-index ivory-mute">03 &mdash; SELECTED CLIENTS</span>
+    </div>
+    <div class="logo-wall" data-reveal>
+      <div class="logo-cell logo-serif">Northlight Pictures</div>
+      <div class="logo-cell logo-mono" style="letter-spacing:0.42em;">STUDIO&nbsp;MIRA</div>
+      <div class="logo-cell logo-sans" style="letter-spacing:0.3em;">HELIOS</div>
+      <div class="logo-cell logo-serif-it">Atelier Roux</div>
+      <div class="logo-cell logo-mono" style="letter-spacing:0.5em;">VANTA</div>
+      <div class="logo-cell logo-sans-light">OKTAV</div>
+      <div class="logo-cell logo-serif">Lumen House</div>
+      <div class="logo-cell logo-mono" style="font-size:12px;letter-spacing:0.26em;">FORM&amp;FREQ</div>
+    </div>
+    <div class="testimonials">
+      <figure class="quote" data-reveal>
+        <blockquote>&ldquo;Yannick doesn&rsquo;t write music for pictures. He writes the room the picture lives in.&rdquo;</blockquote>
+        <figcaption>MARA ELLISON &mdash; DIRECTOR, NORTHLIGHT PICTURES</figcaption>
+      </figure>
+      <figure class="quote" data-reveal>
+        <blockquote>&ldquo;We handed him an empty building. He handed back a pulse.&rdquo;</blockquote>
+        <figcaption>JONAS BRANDT &mdash; CREATIVE DIRECTOR, STUDIO MIRA</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ 05 PROCESS ============ -->
+  <section id="process" class="process" data-screen-label="Process">
+    <div class="section-head" data-reveal>
+      <h2 class="section-title section-title--narrow">From first listen to <em>final mix</em></h2>
+      <span class="section-index ivory-mute">04 &mdash; PROCESS</span>
+    </div>
+    <div class="process-grid">
+      <div class="process-step" data-reveal>
+        <span class="process-num">01</span>
+        <h3 class="process-name">Concept</h3>
+        <p class="process-desc">Listening before writing. Script, space, or build &mdash; every project starts with what it already sounds like.</p>
+      </div>
+      <div class="process-step" data-reveal>
+        <span class="process-num">02</span>
+        <h3 class="process-name">Design</h3>
+        <p class="process-desc">Sketches in sound &mdash; palettes, themes, textures. A sonic identity you can hold before a note is final.</p>
+      </div>
+      <div class="process-step" data-reveal>
+        <span class="process-num">03</span>
+        <h3 class="process-name">Production</h3>
+        <p class="process-desc">Players in rooms, machines in racks. Recording, synthesis and orchestration until the sketch becomes a world.</p>
+      </div>
+      <div class="process-step" data-reveal>
+        <span class="process-num">04</span>
+        <h3 class="process-name">Delivery</h3>
+        <p class="process-desc">Stems, mixes, implementation. Mastered for the cinema, the headphone, and the room in between.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 06 ABOUT ============ -->
+  <section id="about" class="about" data-screen-label="About">
+    <div class="about-portrait" data-reveal>
+      <div class="portrait-frame">
+        <img src="assets/yannick.jpg" alt="Yannick Henderickx, the composer, between takes" class="portrait-img" loading="lazy">
+      </div>
+      <p class="portrait-caption">FIG. A &mdash; THE COMPOSER, BETWEEN TAKES</p>
+    </div>
+    <div class="about-body" data-reveal>
+      <span class="section-index ivory-mute">05 &mdash; ABOUT</span>
+      <p class="about-lead">Sound is the first sense we trust and the last we notice. I&rsquo;ve spent fifteen years scoring films, games and spaces &mdash; chasing the moment an audience stops hearing the music and starts <em>feeling the room</em>.</p>
+      <p class="about-text">Based in Belgium &mdash; a.k.a. <em>jeanre</em>. Trained as a cellist, ruined by synthesizers. My studio is half chamber ensemble, half machine shop &mdash; and every project leaves with a sound no other project will ever get.</p>
+      <ul class="capabilities">
+        <li>FILM SCORING</li>
+        <li>GAME AUDIO DIRECTION</li>
+        <li>SPATIAL INSTALLATIONS</li>
+        <li>SONIC IDENTITY</li>
+        <li>MIXING IN ATMOS</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 07 CONTACT ============ -->
+  <section id="contact" class="contact" data-screen-label="Contact">
+    <div data-reveal>
+      <span class="section-index ivory-mute">06 &mdash; CONTACT</span>
+      <h2 class="contact-title">Tell me what it should <em>feel</em> like.</h2>
+    </div>
+    <form class="contact-form" data-contact-form data-reveal>
+      <div class="field-row">
+        <label class="field">
+          <span class="field-label">NAME</span>
+          <input type="text" name="name" required placeholder="Ada Reyes">
+        </label>
+        <label class="field">
+          <span class="field-label">EMAIL</span>
+          <input type="email" name="email" required placeholder="ada@studio.com">
+        </label>
+      </div>
+      <label class="field field--full">
+        <span class="field-label">THE PROJECT</span>
+        <textarea name="project" rows="4" placeholder="A film, a game, a room, an idea that hums&hellip;"></textarea>
+      </label>
+      <div class="form-foot">
+        <div class="form-pending" data-form-pending>
+          <button type="submit" class="send-btn" data-magnetic>SEND</button>
+          <span class="form-note">CURRENTLY BOOKING &mdash; AUTUMN 2026 ONWARD</span>
+        </div>
+        <p class="form-done" data-form-done hidden><span class="form-done-dot" aria-hidden="true"></span>Received. I&rsquo;ll reply within two days &mdash; usually with questions.</p>
+      </div>
+    </form>
+    <div class="social-links">
+      <a href="#contact" data-cursor="hover">INSTAGRAM &nearr;</a>
+      <a href="#contact" data-cursor="hover">VIMEO &nearr;</a>
+      <a href="https://soundcloud.com/yannick-henderickx" target="_blank" rel="noopener" data-cursor="hover">SOUNDCLOUD &nearr;</a>
+      <a href="#contact" data-cursor="hover">HELLO@JEANRE.STUDIO</a>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="site-footer">
+    <span>&copy; 2026 YANNICK HENDERICKX &mdash; COMPOSED IN THE DARK</span>
+    <a href="#top" data-cursor="hover" class="back-to-top">BACK TO TOP &uarr;</a>
+  </footer>
+
+  <!-- ============ ATMOSPHERE LAYERS ============ -->
+  <canvas class="dots-canvas" data-dots-canvas aria-hidden="true"></canvas>
+  <div class="wash wash--sage" aria-hidden="true"></div>
+  <div class="wash wash--lilac" aria-hidden="true"></div>
+  <div class="wash wash--plum" aria-hidden="true"></div>
+  <div class="cursor-light" data-cursor-light aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <canvas class="grain-canvas" data-grain-canvas width="180" height="100" aria-hidden="true"></canvas>
+  <div class="cursor-ring" data-cursor-ring aria-hidden="true"></div>
+  <div class="cursor-dot" data-cursor-dot aria-hidden="true"></div>
+
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>
