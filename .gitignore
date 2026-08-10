@@ -4,3 +4,9 @@ Thumbs.db
 .vscode/
 .idea/
 .preview/
+.worktrees/
+worktrees/
+.claude/settings.local.json
+.claude/session-logs/
+.git/sdd/
+.template-*-backup-*/

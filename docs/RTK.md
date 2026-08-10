@@ -1,6 +1,6 @@
 # RTK — token-optimized command output (opt-in)
 
-Last updated: 2026-08-10 01:49
+Last updated: 2026-08-10
 
 RTK ("Rust Token Killer") is an optional CLI proxy that compresses the output of common dev commands
 (git, cargo/npm/pnpm, test runners, linters, psql, aws, …) **before it reaches the LLM context** —
@@ -30,6 +30,37 @@ read-only path are all still blocked with RTK enabled. This is proven and pinned
 The global `rtk init -g` mode (a real `PreToolUse` hook in `~/.claude/settings.json`, affecting every
 project) is **out of scope for this template** — that's a personal, machine-wide choice, not a
 per-project one.
+
+### Global `rtk init -g` coexistence — still guard-safe
+
+A user may run `rtk init -g` independently, installing a real global `PreToolUse` hook that rewrites
+commands machine-wide. The concern (ADR 0012 grill finding #2, issue #118): does that global hook run
+before/after this project's `pre_tool_use.py`, and can it let a dangerous command slip past H1–H10?
+
+Empirically characterized against Claude Code's documented multi-hook semantics
+([code.claude.com/docs/en/hooks](https://code.claude.com/docs/en/hooks)) — coexistence is **guard-safe
+under all orderings**, for two independent reasons:
+
+- **Each hook sees the ORIGINAL command, not the other's rewrite.** All matching `PreToolUse` hooks
+  run **in parallel**, each receiving the **same original `tool_input`** — there is no chaining that
+  feeds one hook's output into another. RTK's global hook can `updatedInput`-rewrite the command that
+  ultimately *executes*, but it cannot change what the template guard *inspects*: `pre_tool_use.py`
+  always sees the raw `git push --force origin main`, matches, and blocks.
+- **Blocking is a logical OR.** If **any** matching hook denies (exit 2), Claude Code blocks the tool
+  regardless of what the other hooks decided or the (non-deterministic) order they ran in. So the
+  template guard's deny is authoritative even if RTK's hook would have allowed the command.
+
+The one residual risk is unchanged from the project-scope case and already tracked as grill finding #1:
+RTK's rewrite is *additive* today (`git … → rtk git …`), so even in the hypothetical where the guard
+*did* see the rewritten form it still matches. A future RTK that rewrote in an *obfuscating* way
+(subshell/encoding hiding the dangerous substring) could defeat a regex guard — but only for what
+*executes*, and the live `rtk rewrite` assertion in `tests/test_rtk_guard_safety.sh` fails loudly if
+the rewrite shape ever stops being additive. Version-pin with `brew pin rtk` if that matters to you.
+
+This coexistence invariant is regression-pinned by the `coexist(#118)` cases in
+`tests/test_rtk_guard_safety.sh`: the template guard yields the **identical block decision** on the
+original command and on RTK's `rtk `-prefixed form, so neither hook order nor RTK's rewrite can change
+the outcome.
 
 ## Enable / disable
 

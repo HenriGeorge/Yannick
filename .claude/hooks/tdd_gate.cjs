@@ -205,8 +205,13 @@ function classify(p, testGlobs, sourceGlobs) {
   ) {
     return 'TEST'
   }
-  if (NEUTRAL_GLOBS_DEFAULT.some((g) => fnmatch(norm, g))) return 'NEUTRAL'
+  // An EXPLICIT operator SOURCE override wins over the NEUTRAL defaults, symmetric with the TEST
+  // override above (#152): both TDD_GATE_TEST_GLOBS and TDD_GATE_SOURCE_GLOBS are deliberate
+  // operator config, not uncertainty, so neither should be silently shadowed by a broad NEUTRAL
+  // default (*.md, *.yaml, docs/*, ...). Only the DEFAULT extension-based SOURCE guess below stays
+  // after NEUTRAL, preserving "uncertainty biases toward not blocking".
   if (sourceGlobs.some((g) => fnmatch(norm, g))) return 'SOURCE'
+  if (NEUTRAL_GLOBS_DEFAULT.some((g) => fnmatch(norm, g))) return 'NEUTRAL'
   const ext = path.extname(norm)
   if (SOURCE_EXTS_DEFAULT.has(ext)) return 'SOURCE'
   return 'NEUTRAL'

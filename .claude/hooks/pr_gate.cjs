@@ -10,6 +10,12 @@
 // BLOCK. Bypass: WORKFLOW:force-merge. Fails OPEN whenever `gh` is offline/unauthenticated/
 // unparseable.
 //
+// `gh pr create` also emits a non-blocking WARN nudge on every successful create (auto-review-on-
+// pr Layer 2). `gh pr merge` additionally BLOCKS unless the PR's LATEST code-review verdict
+// (from <!-- code-review:VERDICT --> comment markers + APPROVED gh reviews, latest by timestamp)
+// is APPROVE. Bypass: WORKFLOW:no-review, independent of WORKFLOW:force-merge — see
+// hooks/pr_gate.py's module docstring for the full rationale (mirrors it exactly).
+//
 // Detection is TOKEN-based, not a rigid `gh pr (create|merge)` regex — a global `gh` flag between
 // the program and the subcommand (`gh --repo org/repo pr merge 123`, `gh -R org/repo pr create`)
 // must not slip past detection (fix-round 1, CRITICAL-1). Any `--repo`/`-R`/`--hostname` flag found
@@ -22,7 +28,13 @@ const { spawnSync } = require('node:child_process')
 const SHELL_SEGMENT_SPLIT_RE = /&&|\|\||;|\n|\|/
 const NO_DESIGN_BYPASS = 'WORKFLOW:no-design'
 const FORCE_MERGE_BYPASS = 'WORKFLOW:force-merge'
+const NO_REVIEW_BYPASS = 'WORKFLOW:no-review'
 const SPEC_PATHS = ['docs/superpowers/specs', 'docs/superpowers/plans']
+const CODE_REVIEW_MARKER_RE = /<!--\s*code-review:(\w+)\s*-->/
+const CREATE_NUDGE =
+  'PR opened — dispatch a code-reviewer (+ silent-failure-hunter) before merge ' +
+  '(rolling-quality-pipeline). Reminder only, never blocks — the merge itself is gated on an ' +
+  'APPROVE review marker.'
 const FEAT_BRANCH_RE = /^feat\//
 const CI_FAILING_CONCLUSIONS = new Set([
   'FAILURE', 'CANCELLED', 'TIMED_OUT', 'ERROR', 'STARTUP_FAILURE', 'ACTION_REQUIRED',
@@ -141,11 +153,24 @@ function block(reason) {
   process.exit(2)
 }
 
+function nudgeCreate() {
+  process.stdout.write(JSON.stringify({ systemMessage: CREATE_NUDGE }) + '\n')
+}
+
 function checkCreate(command, cwd) {
-  if (command.includes(NO_DESIGN_BYPASS)) return
+  if (command.includes(NO_DESIGN_BYPASS)) {
+    nudgeCreate()
+    return
+  }
   const branch = currentBranch(cwd)
-  if (!branch || !FEAT_BRANCH_RE.test(branch)) return
-  if (hasSpecOrPlan(cwd, branch)) return
+  if (!branch || !FEAT_BRANCH_RE.test(branch)) {
+    nudgeCreate()
+    return
+  }
+  if (hasSpecOrPlan(cwd, branch)) {
+    nudgeCreate()
+    return
+  }
   block(
     `Blocked: \`gh pr create\` on '${branch}' with no design artifact ADDED ON THIS BRANCH — ` +
       'GATE 1 requires a spec (docs/superpowers/specs/**) or plan (docs/superpowers/plans/**) ' +
@@ -179,7 +204,7 @@ function prJson(cwd, prefixFlags, tokens, end) {
   const args = ['gh', ...collectRepoFlags(tokens, GH_VALUE_FLAGS), 'pr', 'view']
   const j = skipFlags(tokens, end, GH_VALUE_FLAGS)
   if (j < tokens.length && !tokens[j].startsWith('-')) args.push(tokens[j])
-  args.push('--json', 'statusCheckRollup,mergeable,baseRefName')
+  args.push('--json', 'statusCheckRollup,mergeable,baseRefName,comments,reviews')
   const out = run(cwd, args)
   if (out === null) return null
   try {
@@ -207,19 +232,57 @@ function mergeableOk(pr) {
   return mergeable !== 'CONFLICTING'
 }
 
+// Every (timestamp, VERDICT) event from comment markers + APPROVED human reviews. Mirrors
+// hooks/pr_gate.py's `_review_events` exactly. Timestamps are ISO-8601 strings from the GitHub
+// API and sort correctly as plain strings.
+function reviewEvents(pr) {
+  const events = []
+  for (const c of pr.comments || []) {
+    const body = c.body || ''
+    const m = CODE_REVIEW_MARKER_RE.exec(body)
+    if (!m) continue
+    const ts = c.createdAt || ''
+    if (ts) events.push([ts, m[1].toUpperCase()])
+  }
+  for (const r of pr.reviews || []) {
+    if ((r.state || '').toUpperCase() !== 'APPROVED') continue
+    const ts = r.submittedAt || ''
+    if (ts) events.push([ts, 'APPROVE'])
+  }
+  return events
+}
+
+// True iff the LATEST review event (by timestamp) is APPROVE. No events at all -> not ok.
+function reviewOk(pr) {
+  const events = reviewEvents(pr)
+  if (!events.length) return false
+  events.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+  return events[events.length - 1][1] === 'APPROVE'
+}
+
 function checkMerge(command, prefixFlags, tokens, end, cwd) {
-  if (command.includes(FORCE_MERGE_BYPASS)) return
+  const forceBypass = command.includes(FORCE_MERGE_BYPASS)
+  const reviewBypass = command.includes(NO_REVIEW_BYPASS)
+  if (forceBypass && reviewBypass) return // both axes bypassed — no need to even fetch
   const pr = prJson(cwd, prefixFlags, tokens, end)
   if (pr === null) return // gh offline/unauthenticated/unparseable -> fail open
-  const ok1 = ciOk(pr)
-  const ok2 = mergeableOk(pr)
-  if (ok1 && ok2) return
+  const ok1 = ciOk(pr) || forceBypass
+  const ok2 = mergeableOk(pr) || forceBypass
+  const ok3 = reviewOk(pr) || reviewBypass
+  if (ok1 && ok2 && ok3) return
   const reasons = []
   if (!ok1) reasons.push('CI checks are not all green')
   if (!ok2) reasons.push('the PR is not cleanly mergeable (conflicting with its base)')
+  if (!ok3) {
+    reasons.push(
+      'no APPROVE code review found (latest marker/review is not APPROVE — ' +
+        'auto-review-on-pr Layer 2)'
+    )
+  }
   block(
     'Blocked: `gh pr merge` — ' + reasons.join(' and ') + '. Fix the underlying issue, or ' +
-      `if this merge is genuinely safe, add '${FORCE_MERGE_BYPASS}' to the command.`
+      `if this merge is genuinely safe, add '${FORCE_MERGE_BYPASS}' (CI/mergeable) and/or ` +
+      `'${NO_REVIEW_BYPASS}' (review) to the command as appropriate.`
   )
 }
 

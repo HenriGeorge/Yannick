@@ -1,6 +1,6 @@
 # Crew workflow guardrails
 
-Last updated: 2026-08-09 21:28
+Last updated: 2026-08-10 07:14
 
 Decision diagrams that turn a `cc-worktrees` crew session's recurring frictions into **branch logic**.
 A retrospective lesson in [`lessons.md`](lessons.md) records *what* went wrong; the diagram below makes
@@ -20,6 +20,7 @@ Inline Mermaid is canonical here (the repo's docs convention — no committed im
 | Test-ownership partition at P3 | #99 |
 | N-instance crews — count writers, not agents | #162 / #163 |
 | Shutdown handshake by agent-type | #156 |
+| Post the code-review verdict before merge (auto-review-on-pr) | pr_gate Layer 2 |
 
 ---
 
@@ -66,6 +67,49 @@ non-live-driving work), **one-live-driver** (only one teammate drives the live a
 (a) **GATE-1 design sign-off**, (b) **cannot-converge** — GATE-2 still red after a bounded retry
 budget, and (c) a genuine **scope fork** / destructive op / missing credential. Everything else
 proceeds and reports — no "is this ok?" round-trips.
+
+---
+
+## Post the code-review verdict before merge (auto-review-on-pr)
+
+**★ HARD GATE (mechanically enforced).** `pr_gate` Layer 2 (`hooks/pr_gate.{py,cjs}`) BLOCKS `gh pr
+merge` unless the PR's LATEST comment carries a `<!-- code-review:APPROVE -->` marker (or a genuine
+human GitHub review with `state: APPROVED`) — see
+`docs/superpowers/specs/2026-08-10-auto-review-on-pr-design.md`. In a crew, the **dominant merge
+path is the coordinator's own `gh pr merge`**, not `/merge-prs` — so this step is the coordinator's
+own responsibility, not something a teammate does for it.
+
+The crew's existing **rolling-quality-pipeline** already dispatches an auditor per implementer diff
+and collects the result in `crew/auditor*.md` — that artifact is NOT itself visible to the gate (the
+gate reads PR comments, not repo files). The missing step: **post the auditor's verdict as the PR
+comment BEFORE `gh pr merge`**, in the canonical marker shape:
+
+```
+gh pr comment <n> --body "## Code review — APPROVE
+<summary of the auditor's findings, or a pointer to crew/auditor-<slug>.md>
+<!-- code-review:APPROVE -->"
+```
+
+Use the auditor's own verdict word (`APPROVE`/`CHANGES`/`BLOCKERS`) — don't default to `APPROVE`
+just to unblock the merge; a `CHANGES`/`BLOCKERS` marker correctly keeps the gate BLOCKED until a
+fix-round lands and a follow-up marker with `APPROVE` supersedes it (the gate reads the LATEST
+marker by timestamp, so a re-review naturally overrides an earlier one — no manual cleanup needed).
+
+```mermaid
+flowchart LR
+  AUD[auditor reports CLEARS-FOR-MERGE<br/>or CHANGES-REQUESTED] --> POST["gh pr comment — post the verdict as<br/>&lt;!-- code-review:VERDICT --&gt;"]
+  POST --> GATE{pr_gate: latest marker<br/>on this PR == APPROVE?}
+  GATE -->|yes| MERGE[gh pr merge proceeds]
+  GATE -->|no| FIX[fix-round -> re-audit -> post a NEW marker]
+  FIX --> POST
+```
+
+**Bypass** (genuinely trivial/docs-only PRs only, same discipline as every other `WORKFLOW:no-*`
+token): `WORKFLOW:no-review` in the `gh pr merge` command. **Reach limitation:** the gate is
+Bash-only — a merge via the GitHub web UI or the admin button bypasses it entirely (same limit as
+every other `pr_gate` check). **Self-authored is fine:** `gh pr comment` (an issue comment, not a
+formal `gh pr review`) is never restricted on your own PR — GitHub only restricts formal
+APPROVE/REQUEST_CHANGES reviews on self-authored PRs, not plain comments.
 
 ---
 

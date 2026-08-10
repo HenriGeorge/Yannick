@@ -175,7 +175,9 @@ Contract highlights (full text: `write_coordinator_prompt` in `bin/cc-worktrees`
 - **THE TEST LOCK IS MANDATORY** — SendMessage coordinates messages, not state; every suite run
   (coordinator included) goes through `cc-worktrees test -- <cmd>` or concurrent teammates produce
   false reds on the shared worktree.
-- **Model policy is stated, not accidental** — `CREW_TEAMMATE_MODEL` (below), recorded in DESIGN.md.
+- **Teammate model is chosen by agent TYPE, never by a param** — the coordinator must NEVER pass
+  `model:` to the Agent tool (its enum is alias-only → Model 5, and it rejects exact 4.x IDs). Omit
+  it so each agent def's pinned 4.x ID wins; pick the model by picking the agent.
 - Durable records unchanged: the coordinator-named result file (`crew/<role>.md` for a lone
   instance, `crew/<role>-<slug>.md` when several instances share a role) + append-only BOARD;
   "idle" is a point-in-time signal — consult the BOARD before re-assigning.
@@ -204,7 +206,7 @@ The template's `setup.sh` is also a writer — it seeds this file at scaffold ti
 `STACK_PROFILE` / `TEST_CMD` / `RUN_CMD` below as the machine-readable source for `setup.sh --update`).
 Because the file is sourced, command values are written escaped so an embedded quote or `$(…)` is stored
 literally and never executed on create. A "data" value (`CREW_MODEL`, `CREW_PERMISSION_MODE`,
-`CREW_EFFORT`, `CREW_TEAMMATE_MODEL`, `FIGMA_RELAY_CLONE`) containing an embedded newline is rejected
+`CREW_EFFORT`, `FIGMA_RELAY_CLONE`) containing an embedded newline is rejected
 outright at load time (exit 1) rather than silently corrupting a launch command — fix the malformed
 line in the conf file.
 
@@ -226,7 +228,6 @@ line in the conf file.
 | `CREW_MODEL`           | `claude-opus-4-8[1m]`                                                                | Model each crew agent launches with (`''` = inherit).                                                                                        |
 | `CREW_PERMISSION_MODE` | `auto`                                                                               | `acceptEdits\|auto\|bypassPermissions\|default\|dontAsk\|plan`. Set `bypassPermissions` for MCP-heavy crews to avoid numbered-prompt stalls. |
 | `CREW_EFFORT`          | —                                                                                    | `low\|medium\|high\|xhigh\|max` for each crew agent (`''` = inherit).                                                                        |
-| `CREW_TEAMMATE_MODEL` | —                                                                                    | **crew (`-T`) only**: model for Agent-tool teammates. `''` = each agent def's own model (sonnet for the standard roles — proven); set e.g. `claude-opus-4-8` to upgrade a hard story. The v2 coordinator must STATE the policy in `crew/DESIGN.md`.        |
 | `CREW_REMOTE_CONTROL`  | `1`                                                                                  | `1` = add `--remote-control` to every crew launch (crew coordinator, solo, revive) when a fast pre-flight confirms `claude.ai` login (never hard-fails an ineligible launch — see [Remote Control](#remote-control)). `0` = never add it.  |
 | `FIGMA_SCAFFOLD`       | `0`                                                                                  | `1` = scaffold the SVG→Figma bridge into **every** new worktree (per-repo default); override per worktree with `--no-figma`.                 |
 | `FIGMA_SOCKET`         | `0`                                                                                  | `1` = on create, bring up the talk-to-figma relay (`:3055`) — headless only. Set it in the **global** conf for always-on.                    |

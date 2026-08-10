@@ -118,11 +118,16 @@ const RESET_HARD_REMOTE_RE = /\bgit\s+reset\s+--hard\s+(\S+)/
 // issue #111 — more working-tree/branch destroyers that discard uncommitted or unpushed work with no
 // reflog recovery: `git clean -f[d]`, `git branch -D`, `git checkout .` / `git restore .`. Each is a
 // block-with-safe-alternative, same nudge-grade heuristic as the rest of H7. We do NOT block ordinary
-// `git push`. `-C <path>` is tolerated between `git` and the subcommand so it's not a bypass.
-const GIT_CLEAN_RE = /\bgit\s+(?:-C\s+\S+\s+)?clean\b/
-const GIT_BRANCH_RE = /\bgit\s+(?:-C\s+\S+\s+)?branch\b/
-const GIT_CHECKOUT_REST_RE = /\bgit\s+(?:-C\s+\S+\s+)?checkout\b(.*)$/
-const GIT_RESTORE_REST_RE = /\bgit\s+(?:-C\s+\S+\s+)?restore\b(.*)$/
+// `git push`. Global options between `git` and the subcommand (`-C <path>`, `-c <cfg>`,
+// `--git-dir[=| ]<path>`) are tolerated so they can't smuggle a destroyer past the guard (issue #123 —
+// closes the `git -c core.pager=cat clean -fd` config-bypass class). Still a raw-string heuristic, not
+// a shell tokenizer: a QUOTED flag/pathspec (`git clean '-f'`, `git checkout "."`) slips past — that
+// gap is pinned in the H7-123-LIMIT tests as an intentional, known limitation.
+const GIT_GLOBAL_OPT = '(?:-C\\s+\\S+\\s+|-c\\s+\\S+\\s+|--git-dir(?:=\\S+|\\s+\\S+)\\s+)*'
+const GIT_CLEAN_RE = new RegExp('\\bgit\\s+' + GIT_GLOBAL_OPT + 'clean\\b')
+const GIT_BRANCH_RE = new RegExp('\\bgit\\s+' + GIT_GLOBAL_OPT + 'branch\\b')
+const GIT_CHECKOUT_REST_RE = new RegExp('\\bgit\\s+' + GIT_GLOBAL_OPT + 'checkout\\b(.*)$')
+const GIT_RESTORE_REST_RE = new RegExp('\\bgit\\s+' + GIT_GLOBAL_OPT + 'restore\\b(.*)$')
 
 function hasShortFlag(segment, ch) {
   // True if a clustered short flag containing `ch` is present (e.g. `-f`, `-fd`, `-xf`).
@@ -734,6 +739,22 @@ process.stdin.on('end', () => {
   const block = (reason) => {
     console.log(JSON.stringify({ decision: 'block', reason }))
     process.exit(2)
+  }
+
+  // Model-5 guard (#178): a subagent dispatch must NOT pin a model via the Agent tool's `model`
+  // param — its enum is alias-only (sonnet/opus/haiku/fable → the current -5 generation) and
+  // rejects exact 4.x IDs, so ANY value leaks Model 5. OMIT it: the agent def's pinned 4.x model
+  // wins. Absent/empty model → allow. The dispatch tool is named "Agent" here; "Task" guarded too.
+  if (name === 'Agent' || name === 'Task') {
+    const m = String(input.model || '').trim().toLowerCase()
+    if (['sonnet', 'opus', 'haiku', 'fable'].includes(m) || /claude-(opus|sonnet|fable)-5|claude-haiku-5/.test(m)) {
+      block(
+        `Blocked: subagent dispatch passes model='${input.model}' — a bare alias resolves to ` +
+        'Model 5 (forbidden) and the Agent `model` param rejects exact 4.x IDs. OMIT `model` so ' +
+        "the agent def's pinned 4.x ID wins; choose the model by choosing the agent type " +
+        '(rules/agent-delegation.md).'
+      )
+    }
   }
 
   if (name === 'Bash') {
