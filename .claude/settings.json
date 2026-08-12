@@ -8,6 +8,7 @@
     }
   },
   "enabledPlugins": {
-    "claude-template-hooks-node@claude-template": true
+    "claude-template-hooks-node@claude-template": true,
+    "claude-template@claude-template": true
   }
 }
