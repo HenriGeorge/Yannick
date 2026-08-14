@@ -1,6 +1,6 @@
 # RTK — token-optimized command output (opt-in)
 
-Last updated: 2026-08-10
+Last updated: 2026-08-14 12:55
 
 RTK ("Rust Token Killer") is an optional CLI proxy that compresses the output of common dev commands
 (git, cargo/npm/pnpm, test runners, linters, psql, aws, …) **before it reaches the LLM context** —
@@ -9,7 +9,7 @@ dependencies. This template ships RTK **opt-in and OFF by default**; nothing abo
 project until you enable it.
 
 > Decision record: [`docs/decisions/feat-rtk-template.md`](decisions/feat-rtk-template.md).
-> Rule (auto-loaded): `.claude/rules/rtk.md`.
+> Skill (relevance-fired): the `claude-template:rtk` plugin skill.
 
 ## How it integrates (important: no hook at project scope)
 
@@ -20,8 +20,8 @@ with `--global`. So RTK never sits in this project's tool-call chain; Claude sim
 `rtk git status` instead of `git status`, and RTK's rewrite is purely **additive** (it prepends
 `rtk `; unknown commands pass through unchanged).
 
-Consequence for safety: the template's `PreToolUse` guard chain (H1–H10 in
-`.claude/hooks/pre_tool_use.py`) still inspects the real command Claude runs. Because the `rtk `
+Consequence for safety: the template's `PreToolUse` guard chain (H1–H11, delivered via the
+hooks plugin) still inspects the real command Claude runs. Because the `rtk `
 prefix never hides the dangerous substring, every guard still fires on the prefixed form — a
 force-push to `main`, a destructive `psql` DROP, a non-conventional commit, and `rm -rf` on a
 read-only path are all still blocked with RTK enabled. This is proven and pinned by
@@ -65,7 +65,7 @@ the outcome.
 ## Enable / disable
 
 ```bash
-# Prerequisite (assumed on PATH, like cc-worktrees — the template does NOT vendor it):
+# Prerequisite (assumed on PATH — the template does NOT vendor it):
 brew install rtk            # or: cargo install rtk
 
 # At scaffold time: answer [y] to "Enable RTK output compression?", or preset RTK_ENABLE=1.
