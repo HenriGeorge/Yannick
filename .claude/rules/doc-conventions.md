@@ -1,6 +1,6 @@
 # Documentation conventions
 
-Last updated: 2026-08-10 18:20
+Last updated: 2026-08-14 15:55
 
 > **Source of truth & sync.** Repo snapshot of the machine-global `~/.claude/rules/doc-conventions.md`
 > (via `sync-rules.sh`). Listed in `sync-rules.sh`'s `HAND_RECONCILED` — captured once to its global counterpart (2026-08-09); now
@@ -29,6 +29,11 @@ Last updated: YYYY-MM-DD HH:MM
   already-stamped-but-emphasized line (issue #124).
 - **Why the time, not just the date:** two edits landing the same day used to be indistinguishable —
   "is this still current?" needed a same-day tiebreaker. Time-of-day is the cheapest signal for that.
+- **Stamp conflicts auto-resolve.** Because two PRs each bump this line to their own commit datetime,
+  the stamp used to be the #1 source of mechanical rebase conflicts. A surgical merge driver
+  (`bin/git-merge-docstamp.sh`, registered per-clone at session start via `.gitattributes`
+  `*.md merge=docstamp`) now keeps the newer stamp automatically on a stamp-only conflict — only real
+  content conflicts surface for manual resolution.
 - Update the stamp whenever you make a substantive edit to the doc — the CLOSE/DOCUMENT phase of
   `workflow.md` is the natural place to refresh it (alongside the `docs-impact-agent` pass). A
   backfilled stamp's `HH:MM` is only meaningful once it's actually refreshed on a real edit — accept
@@ -38,24 +43,9 @@ Last updated: YYYY-MM-DD HH:MM
 
 ## D2 — Backfill from git history, not "today"
 
-Use the committed helper to stamp docs that lack one — it dates each doc from its **last commit**
-(`git log -1 --date=format:'%Y-%m-%d %H:%M' --format=%cd`), so a backfill reflects real history
-instead of stamping everything with the moment you happened to run it (untracked files fall back to
-filesystem mtime):
-
-```bash
-bin/stamp-docs.sh --check            # list docs missing a stamp (exit 1 if any) — LENIENT, presence-only
-bin/stamp-docs.sh --check-time       # STRICT opt-in: flags a stamp missing the HH:MM payload too
-bin/stamp-docs.sh --upgrade          # rewrite a date-only bare/blockquote stamp to date+time in place
-bin/stamp-docs.sh                     # backfill: insert a stamp into each doc that lacks one at all
-bin/stamp-docs.sh docs/decisions      # limit the scan to specific files/dirs
-```
-
-The default write pass and `--check` are idempotent and presence-only (already-stamped docs — date-only
-or date+time — are left untouched; no re-stamp churn). `--upgrade` is the explicit, separate action
-for adding time-of-day to an existing date-only stamp. Dependency-free (bash + coreutils + git).
-Prefer running it over hand-typing a date — it's the "prefer scripts over manual steps" habit
-applied to doc hygiene.
+Backfill/verify stamps with `bin/stamp-docs.sh` (`--check` = the CI/pre-commit gate; dates each doc
+from its **last commit**, not "today"; idempotent; bash+coreutils+git only) — prefer running it over
+hand-typing a date.
 
 ## See also
 
