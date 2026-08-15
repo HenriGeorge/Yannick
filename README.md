@@ -1,5 +1,7 @@
 # Yannick Henderickx — Sonic Portfolio
 
+Last updated: 2026-06-15 03:10
+
 A dark, cinematic single-page portfolio for **Yannick Henderickx** (a.k.a. *jeanre*) — composer, sound designer & audio director.
 
 The site lives inside the light of Yannick's portrait: a film gradient that fades from a bright sage/mauve haze at the top into deep plum as you scroll, with floating dots, film grain, a cursor-following glow and a custom cursor.

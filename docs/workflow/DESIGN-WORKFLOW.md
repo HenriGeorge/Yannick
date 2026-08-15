@@ -121,6 +121,22 @@ Direction: `get_design_context` reads **Figma → code**; `use_figma` / `figma-g
 > **Code Connect** (the highest-value lever to try first) — `FIGMA-UI.md` is the playbook; the
 > `figma-ui` skill the per-change checklist.
 
+## Skill interview convention (before/after-skill feedback lifecycle)
+
+A skill that takes arguments (a choice-y `argument-hint`) shouldn't fire blind — it runs an **interview
+before** and a **questionnaire after**:
+
+- **`## Interview` (BEFORE_SKILL)** — an optional `## Interview` block in the `SKILL.md`, **≥4
+  `AskUserQuestion` prompts, one at a time**, run at skill start to resolve choice-y inputs. The
+  `skill_nudge` PostToolUse hook WARNs when a choice-taking `SKILL.md` lacks it (nudge only). Author via
+  `superpowers:writing-skills`.
+- **`/to-questionnaire` (AFTER_SKILL)** — after the skill finishes, run mattpocock `to-questionnaire`
+  (or `/questionnaire-me`) to capture any decision it surfaced-but-couldn't-resolve as an async Markdown
+  questionnaire. Lifecycle: **BEFORE_SKILL (interview) → SKILL_EXECUTION → AFTER_SKILL (`/to-questionnaire`)**.
+
+Also at COVER: the acceptance test is **binary (1/0) and authored BEFORE the plan** — `writing-plans`
+targets a concrete pass/fail, and the plan doc names the test.
+
 ## See also
 
-`FIGMA-UI.md` (Figma-MCP mechanics of VISUAL/TOKENS → BUILD) · the `figma-ui` skill (per-change checklist) · `agent-delegation.md` (delegate the parallel design exploration to subagents) · the `claude-template:local-browser-testing` plugin skill (`127.0.0.1`, never the blocked Claude-in-Chrome extension).
+`FIGMA-UI.md` (Figma-MCP mechanics of VISUAL/TOKENS → BUILD) · the `figma-ui` skill (per-change checklist) · `agent-delegation.md` (delegate the parallel design exploration to subagents) · the `claude-template:local-browser-testing` plugin skill (`127.0.0.1`, never the blocked Claude-in-Chrome extension) · `/questionnaire-me` + mattpocock `to-questionnaire`/`grilling`.

@@ -14,7 +14,7 @@ name. Don't fight the gates.
 
 > **Source of truth & sync.** This file is the repo's versioned snapshot of the machine-global
 > `~/.claude/rules/workflow.md` (synced via `sync-rules.sh capture`/`install`). The project-facing
-> `docs/WORKFLOW.md` is the stamped copy. Keep the three reconciled in substance — esp. GATE 0 below.
+> `docs/workflow/WORKFLOW.md` is the stamped copy. Keep the three reconciled in substance — esp. GATE 0 below.
 
 Two laws override everything: a `CLAUDE.md` instruction beats any skill, and the **HARD GATES** are
 never skipped.
@@ -42,7 +42,7 @@ never skipped.
 
 ```mermaid
 flowchart TD
-    P0["0 · PRIME — GATE 0 ⛔<br/>read docs/WORKFLOW.md · invoke superpowers:using-superpowers<br/>git fetch · behind-count vs main · rebase if behind · gh issue list (dup check) · /rc (concurrent-session check) · /prime-core · /project-status"] --> G0
+    P0["0 · PRIME — GATE 0 ⛔<br/>read docs/workflow/WORKFLOW.md · invoke superpowers:using-superpowers<br/>git fetch · behind-count vs main · rebase if behind · gh issue list (dup check) · /rc (concurrent-session check) · /prime-core · /project-status"] --> G0
     G0{"GATE 0+ ⛔ — is the plan/brief premise still TRUE vs live code?<br/>research confirms what already exists (gap list)"}
     G0 -->|"stale — already built / wrong scope"| RS["RE-SCOPE<br/>narrow to the REAL gap · re-enter GATE 1"]
     RS --> P1
@@ -65,7 +65,7 @@ flowchart TD
 
 | # | Phase | Drives it (auto) | Commands / tools |
 |---|-------|------------------|------------------|
-| 0 | PRIME ⛔ | — | **read `docs/WORKFLOW.md` first · invoke `superpowers:using-superpowers`** · **sync baseline first** (`git fetch` · behind-count vs `main` · rebase if behind) · **verify the plan premise vs live code** (gap list) · `gh issue list` (already tracked? avoid dup work) · **`/rc` (concurrent-session check — is another session already on this project/item? avoid a shared-checkout collision)** · `/prime-core` · `/project-status` · context-map |
+| 0 | PRIME ⛔ | — | **read `docs/workflow/WORKFLOW.md` first · invoke `superpowers:using-superpowers`** · **sync baseline first** (`git fetch` · behind-count vs `main` · rebase if behind) · **verify the plan premise vs live code** (gap list) · `gh issue list` (already tracked? avoid dup work) · **`/rc` (concurrent-session check — is another session already on this project/item? avoid a shared-checkout collision)** · `/prime-core` · `/project-status` · context-map |
 | 1 | SPEC ⛔ | `brainstorming` | **grill-me (required)** · a **Mermaid diagram** of the design (required) · `/bmad-prd` (heavy) · **see `design-workflow.md`** |
 | 2 | PLAN + COVER (test-first) | `writing-plans` | **test-designer** (behaviour / user-flow coverage) · **write the failing behaviour test** (web: **playwright-tester** → `e2e/*.spec.ts`) · **run JUST that test** (`bin/test-lock -- <it>`) → confirm **RED** (rest of suite stays green; ⚠ NOT `/validate` — that's the full-suite green gate at P4) · `/bmad-create-story` — **see `design-workflow.md` COVER** |
 | 3 | BUILD (red→green) | `test-driven-development` · `executing-plans` | **native worktree** (EnterWorktree / Agent `isolation: worktree` — the `worktree_create` hook provisions fetch·env·PORT·setup) · make the COVER red test green; add tests as code grows · domain skills |
@@ -125,17 +125,14 @@ flowchart LR
   dir, shared across every worktree); a contended run prints the holder and exits 75. The
   `test_lock_enforce` PreToolUse hook denies raw suite runs so the lock can't be forgotten.
 - **Teammates are in-process Agent-tool spawns** (SendMessage coordination); the `teammate_idle`
-  hook (TeammateIdle event) keeps one working while it still owns tasks. The tmux pane cockpit,
-  crew revive, and the Figma bridge retired with `cc-worktrees` — Figma work uses the official
-  Figma MCP / claude-in-chrome paths.
+  hook (TeammateIdle event) keeps one working while it still owns tasks. Figma work uses the
+  official Figma MCP / claude-in-chrome paths.
 - **`gh pr merge` with `main` or the PR branch checked out in ANY worktree** fails its LOCAL
   cleanup as a unit but **the REMOTE merge already succeeded**. Don't re-merge: confirm
   `git log origin/main` shows the squash commit, remove the holding worktree, then finish by hand
   (`git push origin --delete <branch>`). (#179/#196)
 - **BMAD** is the optional heavy-planning layer — a planning front-end, not a competing spine. Its
   artifacts (`project-context.md`, PRD, architecture, self-contained stories) feed BUILD.
-- **PRP / `dispatch.sh` / cc-worktrees are retired** — superseded by the superpowers spine +
-  native worktrees + the hook layer above.
 - **Rules vs. hooks — where does a new guardrail go?** A thing that's judgment/style is a **rule**
   (this file and its siblings) — Claude *should* follow it, enforced by goodwill + review. A thing
   that can be checked deterministically at a tool call is a **hook** — the runtime *won't let* it

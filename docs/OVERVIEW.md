@@ -1,6 +1,6 @@
 # Overview — how we work, at a glance
 
-Last updated: 2026-08-14 12:55
+Last updated: 2026-08-14 21:30
 
 A single visual atlas of how this project works: the **Design → Code → Prove** workflow it follows,
 and where every other doc fits. Each section links to its deep-dive. **The two laws:** _design before
@@ -59,9 +59,9 @@ flowchart TB
   class G0,G1,G2 gate;
 ```
 
-→ Deep dive: [`WORKFLOW.md`](WORKFLOW.md) · run `/workflow-diagrams` to generate this project's browsable diagram page
+→ Deep dive: [`WORKFLOW.md`](workflow/WORKFLOW.md) · run `/workflow-diagrams` to generate this project's browsable diagram page
 
-**Hooks now ship as a plugin, not copies.** The 17 canonical hooks in the diagram above moved from
+**Hooks now ship as a plugin, not copies.** The 18 canonical hooks in the diagram above moved from
 the copy model (`setup.sh` copying files into each project's `.claude/hooks/`) to **plugin
 distribution**: two stack plugins (`claude-template-hooks-py` / `-node`) served from this repo's own
 marketplace, enabled by one committed `enabledPlugins` line. The template dogfoods it — this repo's
@@ -99,7 +99,7 @@ flowchart LR
     Q2 -->|yes| Heavy["BMAD planning first,<br/>then 9 phases per story"]
 ```
 
-→ [`WORKFLOW.md`](WORKFLOW.md)
+→ [`WORKFLOW.md`](workflow/WORKFLOW.md)
 
 ---
 
@@ -119,7 +119,7 @@ flowchart LR
     OK --> Build["start designing / building"]
 ```
 
-→ [`WORKFLOW.md` § Phase 0](WORKFLOW.md#phase-0--prime-the-baseline-first)
+→ [`WORKFLOW.md` § Phase 0](workflow/WORKFLOW.md#phase-0--prime-the-baseline-first)
 
 ---
 
@@ -152,7 +152,7 @@ flowchart TD
 > **Approve the RENDERED design, not the MECHANISM** (lesson #69): pixels for UI, the contract for
 > an API, the `--help` for a CLI — before wiring real routes/data.
 
-→ [`DESIGN-WORKFLOW.md`](DESIGN-WORKFLOW.md)
+→ [`DESIGN-WORKFLOW.md`](workflow/DESIGN-WORKFLOW.md)
 
 ---
 
@@ -184,7 +184,7 @@ flowchart TD
     EX --> D["Data → run on fixtures<br/>assert schema · row counts · metrics"]
 ```
 
-→ [`VERIFY-WORKFLOW.md`](VERIFY-WORKFLOW.md)
+→ [`VERIFY-WORKFLOW.md`](workflow/VERIFY-WORKFLOW.md)
 
 ---
 
@@ -200,7 +200,7 @@ The spine (gates, 9 phases, TDD, worktree isolation) is identical for all. Only 
 | **Data / Pipeline** | data contract / schema | run on fixtures, assert output | ❌ |
 
 Set per project in `.claude/worktrees.conf` → `STACK_PROFILE`.
-→ [`WORKFLOW.md` § profile table](WORKFLOW.md#exercise-the-real-artifact-by-profile)
+→ [`WORKFLOW.md` § profile table](workflow/WORKFLOW.md#exercise-the-real-artifact-by-profile)
 
 ---
 
@@ -232,7 +232,7 @@ flowchart TD
 ```
 
 Always run suites via `bin/test-lock -- <cmd>` (holds the lock; the `test_lock_enforce` hook
-denies raw suite runs). → [`workflow2.md`](workflow2.md)
+denies raw suite runs).
 
 **Optional — RTK output compression.** An opt-in (OFF by default) CLI proxy that compresses noisy
 command output before it reaches the LLM. Instruction-based (no PreToolUse hook at project scope),
@@ -312,7 +312,6 @@ flowchart TD
     O --> WF["WORKFLOW.md<br/>the 9 phases + profile table"]
     WF --> DW["DESIGN-WORKFLOW.md<br/>GATE 1 (the how)"]
     WF --> VW["VERIFY-WORKFLOW.md<br/>GATE 2 (the how)"]
-    O --> CW["workflow2.md<br/>hooks-native worktrees · test-lock · teammates"]
     O --> FU["FIGMA-UI.md<br/>figma mechanics (web) — retired pipelines in archived/"]
     O --> LL["lessons.md<br/>the lessons log"]
     O --> DG["DIAGRAMS.md<br/>full diagram index by topic"]
@@ -320,14 +319,13 @@ flowchart TD
 
 | Doc | Read it when |
 |---|---|
-| [`WORKFLOW.md`](WORKFLOW.md) | new here, or the canonical 9-phase workflow + stack profiles |
-| [`DESIGN-WORKFLOW.md`](DESIGN-WORKFLOW.md) | satisfying GATE 1 (idea → approved design) |
-| [`VERIFY-WORKFLOW.md`](VERIFY-WORKFLOW.md) | satisfying GATE 2 (proving it works) |
-| [`workflow2.md`](workflow2.md) | the hooks-native mechanics — worktree hooks, `bin/test-lock`, teammates, what-replaced-what |
-| [`HOOKS.md`](HOOKS.md) | per-hook reference — decision flows, I/O contracts, bypasses, tests |
-| [`SESSION-LIFECYCLE.md`](SESSION-LIFECYCLE.md) | A-to-Z of what happens when a session starts in a project folder |
+| [`WORKFLOW.md`](workflow/WORKFLOW.md) | new here, or the canonical 9-phase workflow + stack profiles |
+| [`DESIGN-WORKFLOW.md`](workflow/DESIGN-WORKFLOW.md) | satisfying GATE 1 (idea → approved design) |
+| [`VERIFY-WORKFLOW.md`](workflow/VERIFY-WORKFLOW.md) | satisfying GATE 2 (proving it works) |
+| [`HOOKS.md`](workflow/HOOKS.md) | per-hook reference — decision flows, I/O contracts, bypasses, tests |
+| [`SESSION-LIFECYCLE.md`](workflow/SESSION-LIFECYCLE.md) | A-to-Z of what happens when a session starts in a project folder |
 | [`archived/FIGMA-EXPORT.md`](archived/FIGMA-EXPORT.md) / [`archived/figma-copy.md`](archived/figma-copy.md) _(web)_ | code → Figma export pipeline — **retired** (bridge toolkit) |
 | [`FIGMA-UI.md`](FIGMA-UI.md) _(web)_ | Figma-MCP mechanics, quota strategy |
 | [`lessons.md`](lessons.md) | the hard-won lessons log |
-| [`DIAGRAMS.md`](DIAGRAMS.md) | want the full index of every committed Mermaid diagram, by topic |
+| [`DIAGRAMS.md`](workflow/DIAGRAMS.md) | want the full index of every committed Mermaid diagram, by topic |
 | `/workflow-diagrams` | run this command to generate this project's browsable page of every committed Mermaid diagram, by topic |

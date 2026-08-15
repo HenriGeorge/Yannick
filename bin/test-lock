@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # bin/test-lock — per-repo test-suite serialization: `test-lock -- <cmd>` holds an exclusive lock
 # (keyed by `git rev-parse --git-common-dir`, so every worktree of a repo shares ONE lock) for the
-# whole run. Replaces `cc-worktrees test --`. macOS ships no flock(1), so the mutex is an atomic
-# mkdir + stale-PID reclaim (the crash-safe pattern proven in cc-worktrees' port allocator).
+# whole run. macOS ships no flock(1), so the mutex is an atomic
+# mkdir + stale-PID reclaim (a crash-safe atomic-mkdir pattern).
 # Exit: wrapped command's code; 75 (EX_TEMPFAIL) on contention; 64 on usage error.
 set -u
 
