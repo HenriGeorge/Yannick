@@ -43,7 +43,7 @@ Delegate to a subagent for **substantial** work; do trivial things inline. The r
 
 Spawning a subagent isn't a discount: the subagent processes whatever context it's given from
 scratch, and its RETURN re-enters the primary session's own context (see `context_nudge`,
-`docs/ENFORCEMENT.md` — a WARN when a subagent's return exceeds ~4k estimated tokens). No hook can
+`docs/workflow/ENFORCEMENT.md` — a WARN when a subagent's return exceeds ~4k estimated tokens). No hook can
 see or shrink the SPAWN prompt itself, so this is a discipline the delegator owns, not something
 machine-enforced:
 
@@ -95,5 +95,4 @@ the model".)
   teammate working while it still owns tasks. **Scaling past one implementer:** count writers, not
   agents — read-only auditors/researchers need no worktree; every extra implementer gets its OWN
   native worktree (Agent `isolation: worktree` — the `worktree_create` hook provisions
-  fetch·env·PORT·setup), one writer per worktree (#162). The tmux pane cockpit and its
-  coordinator-pane apparatus retired with cc-worktrees.
+  fetch·env·PORT·setup), one writer per worktree (#162).

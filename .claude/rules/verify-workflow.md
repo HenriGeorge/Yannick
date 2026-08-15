@@ -3,7 +3,7 @@
 Last updated: 2026-08-14 13:40
 
 > **Source of truth & sync.** Repo snapshot of the machine-global `~/.claude/rules/verify-workflow.md`
-> (via `sync-rules.sh`). `docs/VERIFY-WORKFLOW.md` is the expanded shipped companion (same spine + a
+> (via `sync-rules.sh`). `docs/workflow/VERIFY-WORKFLOW.md` is the expanded shipped companion (same spine + a
 > by-profile EXERCISE table). Keep the two reconciled in substance — this file stays compact, the doc
 > carries the tables. There is no auto-sync between them; edit both.
 

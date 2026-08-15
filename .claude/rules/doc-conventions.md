@@ -1,6 +1,6 @@
 # Documentation conventions
 
-Last updated: 2026-08-14 15:55
+Last updated: 2026-08-15 18:28
 
 > **Source of truth & sync.** Repo snapshot of the machine-global `~/.claude/rules/doc-conventions.md`
 > (via `sync-rules.sh`). Listed in `sync-rules.sh`'s `HAND_RECONCILED` — captured once to its global counterpart (2026-08-09); now
@@ -47,8 +47,31 @@ Backfill/verify stamps with `bin/stamp-docs.sh` (`--check` = the CI/pre-commit g
 from its **last commit**, not "today"; idempotent; bash+coreutils+git only) — prefer running it over
 hand-typing a date.
 
+## D3 — `@`-import only always-core docs; everything else lazy-links
+
+A doc `@`-imported into `CLAUDE.md` (the `## Conventions (always-core)` block) loads into **every
+session's context** and pays its token cost every turn, forever. So the bar for `@`-import is
+"relevant on essentially every task," not "useful."
+
+- **Always-relevant convention → `@`-import** (ambient repo-committed prose). This is the ~10 stable
+  always-core rules only.
+- **Scoped / sometimes-relevant → a trigger-fired plugin skill** (web-accessibility, figma-ui,
+  local-browser-testing, rtk). Costs **zero** tokens until its trigger context appears — never
+  `@`-import a doc that would be noise on an unrelated task.
+- **Deterministic / enforceable → a hook**, with at most a one-line pointer in prose (see
+  `../../hooks/README.md`'s rules-vs-hooks boundary).
+- **Reference docs** (e.g. `HOOKS.md`, `ENFORCEMENT.md`, `FIGMA-UI.md`) are **never**
+  `@`-imported — they are reached via a `## See also` lazy-link, so they stay out of ambient context
+  until a task actually opens them.
+- **Verify every `@`-import target exists** — a missing target is silent context loss (#194).
+
+The full decision tree + rationale lives in
+`../../docs/superpowers/specs/2026-08-11-rules-triage-design.md`; this rule is its one-paragraph
+summary so it's discoverable from the doc conventions, not only the design spec.
+
 ## See also
 
 `bin/stamp-docs.sh` (the helper) · `workflow.md` (P6 DOCUMENT / P8 CLOSE — where stamps get
 refreshed) · `engineering-conventions.md` (R4 "prefer editing over creating" — the sibling habit for
-source files).
+source files) · `../../docs/workflow/ENFORCEMENT.md` (the hooks↔agents cross-walk — an example of a
+See-also reference doc, deliberately not `@`-imported).
