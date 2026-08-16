@@ -1,6 +1,6 @@
 # Scheduled Claude / daemons — `bin/cron-run.sh`
 
-Last updated: 2026-08-16 21:26
+Last updated: 2026-08-16 23:44
 
 Run recurring, unattended work — a docs-freshness sweep, a GitHub-issue triage, an event-triggered
 pipeline — by having launchd/cron fire a command inside a **dedicated, self-syncing git worktree**
