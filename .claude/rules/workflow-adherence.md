@@ -9,9 +9,9 @@ Last updated: 2026-08-10 02:05
 This rule exists because the gates in `workflow.md` are easy to *know about* and still skip under
 time pressure. They are not advisory.
 
-**A growing subset of these commitments are machine-enforced, not just rule-mandated** — see
-`docs/workflow/ENFORCEMENT.md` for the current gate roster (what BLOCKs, what WARNs, and every
-`WORKFLOW:no-*` bypass token).
+**A growing subset of these commitments are machine-enforced, not just rule-mandated** — see the
+enforcement/gate-roster reference (upstream in the `claude_template` repo) for the current gate roster
+(what BLOCKs, what WARNs, and every `WORKFLOW:no-*` bypass token).
 
 ## The seven commitments
 
@@ -54,7 +54,7 @@ time pressure. They are not advisory.
 
    Disposition vocabulary: fixed / parked-with-ruling / deferred / accepted / resolved / mitigated /
    addressed (a prose bullet list is fine — issue #108). This is GATE-1's PRESSURE-TEST leg
-   (`gates.md`) made explicit and machine-checkable: the `grill_gate` PreToolUse hook blocks
+   made explicit and machine-checkable: the `grill_gate` PreToolUse hook blocks
    committing a spec, **plan** (`docs/superpowers/plans/**` — issue #116), or ADR whose
    `## Grill findings` section is missing or empty (bypass a genuinely trivial doc with
    `WORKFLOW:no-grill` in the commit command). **The grill auto-fires at plan creation, not just at

@@ -42,8 +42,8 @@ Delegate to a subagent for **substantial** work; do trivial things inline. The r
 ## Fork ≠ free — construct a focused prompt, don't re-send session state
 
 Spawning a subagent isn't a discount: the subagent processes whatever context it's given from
-scratch, and its RETURN re-enters the primary session's own context (see `context_nudge`,
-`docs/workflow/ENFORCEMENT.md` — a WARN when a subagent's return exceeds ~4k estimated tokens). No hook can
+scratch, and its RETURN re-enters the primary session's own context (the `context_nudge`
+hook WARNs when a subagent's return exceeds ~4k estimated tokens). No hook can
 see or shrink the SPAWN prompt itself, so this is a discipline the delegator owns, not something
 machine-enforced:
 

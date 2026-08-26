@@ -15,4 +15,4 @@ Context hygiene: the status bar already shows context % (`[███  ] 60%`). A
 
 ## See also
 `engineering-conventions.md` (R7 — Ponytail, the effort-side sibling) · the `claude-template:rtk`
-plugin skill · `docs/RTK.md` (input compression) · `gates.md` (GATE-2 SHOW-the-evidence, which overrides this rule).
+plugin skill · `docs/RTK.md` (input compression) · the GATE-2 rule (SHOW-the-evidence, which overrides this rule).

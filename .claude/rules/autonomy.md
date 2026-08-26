@@ -66,6 +66,6 @@ agent that ships an unreviewed design. A `CLAUDE.md` instruction still wins over
 ## See also
 
 `docs/lessons.md` (lesson #259, the seed) · `workflow-adherence.md` (GATE-0 baseline-sync order) ·
-`engineering-conventions.md` (R7 — Ponytail, the effort-side sibling) · `gates.md` (the HARD GATES this
-rule defers to) · `docs/workflow/ENFORCEMENT.md` (the CLOSE Stop-gates whose reasons now carry a
-continuation hint).
+`engineering-conventions.md` (R7 — Ponytail, the effort-side sibling) · the two hard gates
+(GATE-1/GATE-2) this rule defers to · the CLOSE Stop-gates, whose reasons now carry a
+continuation hint.

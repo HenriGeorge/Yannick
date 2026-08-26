@@ -59,19 +59,19 @@ session's context** and pays its token cost every turn, forever. So the bar for 
   local-browser-testing, rtk). Costs **zero** tokens until its trigger context appears — never
   `@`-import a doc that would be noise on an unrelated task.
 - **Deterministic / enforceable → a hook**, with at most a one-line pointer in prose (see
-  `../../hooks/README.md`'s rules-vs-hooks boundary).
-- **Reference docs** (e.g. `HOOKS.md`, `ENFORCEMENT.md`, `FIGMA-UI.md`) are **never**
+  the hook layer's rules-vs-hooks boundary).
+- **Reference docs** (e.g. `FIGMA-UI.md`, `OVERVIEW.md`, and the like) are **never**
   `@`-imported — they are reached via a `## See also` lazy-link, so they stay out of ambient context
   until a task actually opens them.
 - **Verify every `@`-import target exists** — a missing target is silent context loss (#194).
 
-The full decision tree + rationale lives in
-`../../docs/superpowers/specs/2026-08-11-rules-triage-design.md`; this rule is its one-paragraph
+The full decision tree + rationale lives in the rules-triage design spec (upstream in the
+`claude_template` repo, under `docs/superpowers/specs/`); this rule is its one-paragraph
 summary so it's discoverable from the doc conventions, not only the design spec.
 
 ## See also
 
 `bin/stamp-docs.sh` (the helper) · `workflow.md` (P6 DOCUMENT / P8 CLOSE — where stamps get
 refreshed) · `engineering-conventions.md` (R4 "prefer editing over creating" — the sibling habit for
-source files) · `../../docs/workflow/ENFORCEMENT.md` (the hooks↔agents cross-walk — an example of a
+source files) · the enforcement/gate-roster reference doc (the hooks↔agents cross-walk — an example of a
 See-also reference doc, deliberately not `@`-imported).

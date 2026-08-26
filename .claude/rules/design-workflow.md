@@ -83,7 +83,7 @@ folder; key in `FIGMA_FILE_KEY` in `.claude/worktrees.conf`) = one stable talk-t
 `FIGMA_LAUNCH=1` is **consumed by the async `figma_launch` SessionStart hook** (macOS): on each
 `startup` it opens Figma (the `FIGMA_FILE_KEY` file when set) and brings up the ClaudeTalkToFigma
 bridge (fixed `:3055`) if it isn't already listening — so a design session starts
-with the environment already up. See `docs/workflow/HOOKS.md` → `figma_launch`.
+with the environment already up. See the `figma_launch` SessionStart hook.
 
 > **The _how_ of this leg → `FIGMA-UI.md`.** When VISUAL/TOKENS means driving Figma — the two-bridge
 > split (free arinspunk bridge vs. the metered official MCP), **Code Connect** (the highest-value lever

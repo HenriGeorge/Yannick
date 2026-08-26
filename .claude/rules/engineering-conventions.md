@@ -8,7 +8,7 @@ Last updated: 2026-08-14 18:30
 
 Three baseline engineering habits that don't fit `workflow.md`'s phase spine but apply at every
 phase where they're relevant. None of these are deterministically checkable at a tool call (see
-`hooks/README.md`'s boundary test) — they're judgment calls a careful agent makes, not something a
+the hook layer's rules-vs-hooks boundary test) — they're judgment calls a careful agent makes, not something a
 hook can hard-block.
 
 ## R4 — Prefer editing over creating
@@ -52,8 +52,8 @@ scaffolded project inherits.
 
 Baseline hygiene that applies regardless of stack or profile:
 
-- **No secrets in code — enforced by H3 (staged-diff secret scan) + H10 (secret-file staging); see
-  `hooks/README.md`.** Use env vars / a secrets manager / a gitignored `.env`; the hooks are a
+- **No secrets in code — enforced by H3 (staged-diff secret scan) + H10 (secret-file staging).** Use
+  env vars / a secrets manager / a gitignored `.env`; the hooks are a
   backstop, not a substitute for not writing the secret.
 - **Validate/sanitize external input.** Anything crossing a trust boundary — a request body, a
   query param, a file upload, an env var sourced from outside your own deploy config — gets
@@ -88,8 +88,8 @@ Two self-checks that keep this honest:
 
 ## See also
 
-`hooks/README.md` (the enforcement-vs-instruction boundary — R6's secrets point is partially
+the hook layer's enforcement-vs-instruction boundary (R6's secrets point is partially
 backstopped by H3/H10, but the rule itself is the judgment call, the hook is the safety net) ·
-`gates.md` (GATE 2's silent-failure check overlaps R6's "validate external input" — a swallowed
+the GATE-2 rule (its silent-failure check overlaps R6's "validate external input" — a swallowed
 error on unvalidated input is a related failure mode) · `/security-review` (the deeper security
 pass this rule is a baseline for, not a replacement for).
