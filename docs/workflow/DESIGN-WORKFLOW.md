@@ -1,6 +1,6 @@
 # Design Workflow (the _how_ of GATE 1)
 
-Last updated: 2026-08-14 12:55
+Last updated: 2026-08-16 00:43
 
 > Companion to `rules/design-workflow.md` — no auto-sync; edit both by hand.
 

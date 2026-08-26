@@ -1,6 +1,6 @@
 # Canonical Workflow
 
-Last updated: 2026-08-16 13:00
+Last updated: 2026-08-17 00:13
 
 > **THE LAW — Design → Code → Prove.** Shape it before you build it (GATE 1 ⛔), prove it
 > with fresh evidence before you call it done (GATE 2 ⛔). Two hard gates, never skipped.
