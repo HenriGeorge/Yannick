@@ -1,4 +1,8 @@
 {
+  "enabledPlugins": {
+    "claude-template-core@claude-template": true,
+    "claude-template-hooks-py@claude-template": true
+  },
   "extraKnownMarketplaces": {
     "claude-template": {
       "source": {
@@ -6,9 +10,5 @@
         "path": "../claude_template"
       }
     }
-  },
-  "enabledPlugins": {
-    "claude-template-hooks-node@claude-template": true,
-    "claude-template@claude-template": true
   }
 }
