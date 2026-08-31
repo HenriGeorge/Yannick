@@ -12,6 +12,13 @@
 #                downstream scaffolds that may not have re-stamped with time-of-day yet.
 #   --check-time STRICT opt-in: report every *.md doc whose stamp lacks the `HH:MM` payload —
 #                missing entirely, OR present but date-only; exit 1 if any. Writes nothing.
+#   --check-fresh STALENESS opt-in (issue #449): report every *.md doc whose date+time stamp is
+#                OLDER than the file's last CONTENT commit — i.e. the doc was edited without
+#                refreshing its stamp. Commits that changed ONLY the `Last updated:` line are
+#                skipped, so a stamp-only re-commit never marks a doc "stale vs itself". Date-only
+#                stamps are out of scope here (use --check-time); untracked docs are skipped. Exit 1
+#                if any stale. Writes nothing. Template-repo opt-in — NOT wired into scaffold CI,
+#                which legitimately carries backfilled/propagated stamps newer than content.
 #   --upgrade    Rewrite a DATE-ONLY `Last updated: YYYY-MM-DD` stamp to `YYYY-MM-DD HH:MM` IN
 #                PLACE, preserving the bare/blockquote style. The bold-list ADR form
 #                (`- **Last updated:** YYYY-MM-DD`) is intentionally left alone — hand-update those.
@@ -45,16 +52,18 @@ STAMP_TIME_RE='[Ll]ast [Uu]pdated:[[:space:]]*\**[[:space:]]*[0-9]{4}-[0-9]{2}-[
 # form never starts with `>` or nothing; it starts with `- **`, which this pattern does not match).
 STAMP_DATEONLY_BQ_RE='^[[:space:]]*>?[[:space:]]*[Ll]ast [Uu]pdated:[[:space:]]*[0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]*$'
 
-usage() { sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; }
 
 check_only=0
 check_time_only=0
+check_fresh_only=0
 upgrade_only=0
 paths=()
 for arg in "$@"; do
   case "$arg" in
     --check) check_only=1 ;;
     --check-time) check_time_only=1 ;;
+    --check-fresh) check_fresh_only=1 ;;
     --upgrade) upgrade_only=1 ;;
     -h|--help) usage; exit 0 ;;
     --) ;;
@@ -80,6 +89,40 @@ has_time_stamp() { grep -qE "$STAMP_TIME_RE" "$1"; }
 # Last-commit DATE+TIME for a tracked file (`YYYY-MM-DD HH:MM`, 24h, commit-local time, no
 # seconds/TZ); empty if untracked / not a repo.
 git_date() { git log -1 --date=format:'%Y-%m-%d %H:%M' --format=%cd -- "$1" 2>/dev/null || true; }
+
+# The `YYYY-MM-DD HH:MM` datetime carried by a doc's FIRST time-bearing stamp, in any style; empty
+# if the doc has no stamp or only a date-only one (freshness needs a time to compare).
+stamp_datetime() {
+  grep -oE "$STAMP_TIME_RE" "$1" 2>/dev/null | head -1 \
+    | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]+[0-9]{2}:[0-9]{2}' | head -1 \
+    | awk '{$1=$1; print}'   # collapse any multi-space date/time gap to a single space, no trailing
+}
+
+# Datetime (`YYYY-MM-DD HH:MM`) of the last commit that changed CONTENT of a file — i.e. skipping
+# commits whose patch for the file touched ONLY the `Last updated:` stamp line. Walk the file's
+# commits newest-first; for each, strip the diff's +/- markers and check whether any changed line is
+# NOT a stamp line — the first such commit is the last content commit. If every commit is stamp-only
+# (shouldn't happen — the creation commit adds body), fall back to the plain last-commit date.
+# ponytail: O(commits x git-show) per file — fine for an opt-in advisory gate at repo scale.
+last_content_commit_date() {
+  local f="$1" h
+  while IFS= read -r h; do
+    # Emit only HUNK +/- content (marker stripped) and test whether any line is NOT a stamp. The
+    # awk keys off the first `@@` so the diff's file headers (`diff --git`, `index`, `--- a/f`,
+    # `+++ b/f`) — all of which precede any hunk — are dropped structurally, not by a fragile
+    # `^---` grep that also eats a REMOVED content line reading `---`/`-- flag` (shown in the diff
+    # as `----`/`--- flag`) and would misclassify a delete-only commit as stamp-only (#453 review).
+    # -c color.ui=false: color.ui=always (global) colorizes `git show` even to a pipe, breaking the
+    # awk +/- hunk scan below. Force it off.
+    if git -c color.ui=false show --format= "$h" -- "$f" 2>/dev/null \
+         | awk '/^@@/ { inhunk=1; next } inhunk && /^[+-]/ { sub(/^./, ""); print }' \
+         | grep -qvE "$STAMP_RE"; then
+      git log -1 --date=format:'%Y-%m-%d %H:%M' --format=%cd "$h" 2>/dev/null
+      return 0
+    fi
+  done < <(git log --format=%H -- "$f" 2>/dev/null)
+  git_date "$f"
+}
 
 # Filesystem mtime as `YYYY-MM-DD HH:MM` — GNU (`-d @`) and BSD/macOS (`-r`) date both handled.
 mtime_date() {
@@ -187,6 +230,49 @@ if [ "$check_time_only" -eq 1 ]; then
     exit 1
   fi
   printf 'All %d docs carry a date+time "Last updated:" stamp.\n' "${#docs[@]}"
+  exit 0
+fi
+
+if [ "$check_fresh_only" -eq 1 ]; then
+  # Freshness is measured against commit history — no repo, nothing to measure. Fail LOUD rather
+  # than silently skip every doc and print a false "all fresh" (silent-failure-hunter, #453).
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    printf 'stamp-docs.sh: --check-fresh needs a git repo (freshness is measured against commit history)\n' >&2
+    exit 2
+  fi
+  stale=()
+  unverified=0
+  for f in ${docs[@]+"${docs[@]}"}; do
+    has_time_stamp "$f" || continue          # only a date+time stamp is freshness-checkable
+    s="$(stamp_datetime "$f")"; [ -n "$s" ] || continue
+    # An UNTRACKED doc has no history to compare against — a legitimate skip, not an error.
+    git ls-files --error-unmatch "$f" >/dev/null 2>&1 || continue
+    c="$(last_content_commit_date "$f")"
+    # A tracked doc with an empty date means git itself failed (git_date's fallback also returned
+    # nothing) — count it and warn, so a swallowed git error never masquerades as FRESH.
+    # ponytail: this is the only git-error surface left for a tracked file; a per-command status
+    # check would be more code for the same signal.
+    if [ -z "$c" ]; then
+      printf 'stamp-docs.sh: --check-fresh: git returned no commit date for %s — cannot verify freshness\n' "$f" >&2
+      unverified=$((unverified + 1)); continue
+    fi
+    # Minute-granularity lexicographic compare — the fixed-width `YYYY-MM-DD HH:MM` form sorts
+    # chronologically as a string; a same-minute stamp is FRESH (>= content commit), only strictly
+    # older is stale.
+    if [[ "$s" < "$c" ]]; then
+      stale+=("$f (stamp $s < last content commit $c)")
+    fi
+  done
+  if [ "${#stale[@]}" -gt 0 ]; then
+    printf 'STALE "Last updated:" stamp (older than the file'"'"'s last content commit):\n' >&2
+    for f in "${stale[@]}"; do printf '  %s\n' "$f"; done
+    exit 1
+  fi
+  if [ "$unverified" -gt 0 ]; then
+    printf 'stamp-docs.sh: --check-fresh: %d doc(s) could not be verified (git error, see above) — NOT an all-clear.\n' "$unverified" >&2
+    exit 1
+  fi
+  printf 'All %d docs carry a FRESH "Last updated:" stamp.\n' "${#docs[@]}"
   exit 0
 fi
 

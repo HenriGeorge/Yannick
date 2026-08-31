@@ -10,3 +10,6 @@ worktrees/
 .claude/session-logs/
 .git/sdd/
 .template-*-backup-*/
+.claude/telemetry/
+.claude/state/*
+!.claude/state/session_resume/

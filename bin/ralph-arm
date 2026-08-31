@@ -1,0 +1,59 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
+"""ralph-arm — arm the low-ceremony "point at a todo.md and walk away" loop.
+
+Usage: bin/ralph-arm <todo-path> <max-iterations>
+
+Writes .claude/ralph-state.json so the build_loop Stop hook drives the ralph lane: it works the
+todo's unchecked `- [ ]` boxes (running any inline `| verify: <shell>` before accepting a tick)
+until every box is done, then self-disarms. `session_id` is left null and bound by build_loop at
+the first stop (the arming session), so an abandoned run never haunts a later session.
+
+Refuses (loud, non-zero) if max-iterations is missing/non-numeric, the todo file is absent, or it
+has no unchecked boxes — a mechanical arm-time check only; item quality is the human's judgment.
+For command-verified rigor instead, use the `gates` skill.
+"""
+import datetime
+import json
+import os
+import re
+import sys
+
+BOX = re.compile(r"^\s*[-*]\s+\[ \]\s+\S")  # an unchecked box with content
+
+
+def die(msg):
+    sys.stderr.write(f"ralph-arm: {msg}\n")
+    raise SystemExit(2)
+
+
+def main(argv):
+    if len(argv) != 2:
+        die("usage: ralph-arm <todo-path> <max-iterations>")
+    todo, max_raw = argv
+    if not re.fullmatch(r"[1-9][0-9]*", max_raw):
+        die(f"max-iterations must be a positive integer, got {max_raw!r}")
+    if not os.path.isfile(todo):
+        die(f"todo file not found: {todo}")
+    try:
+        text = open(todo, encoding="utf-8").read()
+    except OSError as e:
+        die(f"cannot read {todo}: {e}")
+    if not any(BOX.match(line) for line in text.splitlines()):
+        die(f"{todo} has no unchecked `- [ ]` boxes — nothing to loop on")
+
+    os.makedirs(".claude", exist_ok=True)
+    state = {"todo": todo, "max_turns": int(max_raw), "session_id": None,
+             "started_at": datetime.datetime.now().isoformat(timespec="seconds")}
+    with open(os.path.join(".claude", "ralph-state.json"), "w") as f:
+        json.dump(state, f)
+    print(f"ralph-arm: armed {todo} (max {max_raw} stops). Work the list — the Stop hook re-feeds "
+          "until every box is ticked. Hand back early with .claude/NEEDS-HUMAN.md.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
