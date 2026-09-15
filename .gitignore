@@ -13,3 +13,4 @@ worktrees/
 .claude/telemetry/
 .claude/state/*
 !.claude/state/session_resume/
+.claude/state/session_resume/crumb.md

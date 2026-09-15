@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# bin/run-py-hook — resolve a Python >=3.11 interpreter and exec a hook through it (#764).
+#
+# WHY: the python-stack scaffold wired every hook as `uv run <hook>.py`, paying uv's
+# dependency-resolution startup tax on EVERY hook invocation. Bare `python3` is NOT a safe swap —
+# it is 3.9 on some machines, and the hooks declare `requires-python >=3.11` and use PEP-604
+# (`str | None`) unions that throw at def-time under 3.9. This shim resolves a real 3.11+ interpreter
+# (mirroring the proven resolver in tests/lib/assert.sh's run_py_hook), and falls back to
+# `uv run --script` (which honours the shebang's requires-python) only when no python3.x is on PATH.
+#
+# exec (never a subshell) so stdin, args, exit code, stdout, and stderr pass through UNCHANGED.
+# Override: PY_HOOK_BIN=<interpreter> forces a specific one (same env var the test lib honours).
+# Dependency-free; bash 3.2 (macOS).
+set -u
+for _c in "${PY_HOOK_BIN:-}" python3.13 python3.12 python3.11; do
+  [ -n "$_c" ] || continue
+  if command -v "$_c" >/dev/null 2>&1; then exec "$_c" "$@"; fi
+done
+command -v uv >/dev/null 2>&1 && exec uv run --script "$@"
+exec python3 "$@"   # last resort: a 3.11-default box with none of the above still runs
