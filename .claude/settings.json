@@ -1,7 +1,10 @@
 {
   "enabledPlugins": {
-    "claude-template-core@claude-template": true,
-    "claude-template-hooks-py@claude-template": true
+    "claude-template-core@claude-template": false,
+    "claude-template-hooks-py@claude-template": false,
+    "ponytail@ponytail": false,
+    "superpowers@claude-plugins-official": false,
+    "superpowers@superpowers-dev": false
   },
   "extraKnownMarketplaces": {
     "claude-template": {
@@ -10,5 +13,223 @@
         "path": "../claude_template"
       }
     }
-  }
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/session_start.py"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/figma_launch.py",
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/cloud_session.py"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/session_autoff.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/lesson_injector.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Agent|Task|Write|Edit|NotebookEdit|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/pre_tool.py",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/pr_gate.py"
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/unattended_answer.py"
+          }
+        ]
+      }
+    ],
+    "WorktreeCreate": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/worktree_create.py",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "WorktreeRemove": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/worktree_remove.py"
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/teammate_idle.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/post_tool_use_lint.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/post_nudges.py"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/telemetry.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/precompact_evidence.py"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/session_crumb.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/stop_gate.py",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/build_loop.py"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/stop_record.py"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/context_nudge.py"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "clear|other",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/run-py-hook $CLAUDE_PROJECT_DIR/.claude/hooks/session_crumb.py"
+          }
+        ]
+      }
+    ]
+  },
+  "_vendored": "claude-template"
 }
