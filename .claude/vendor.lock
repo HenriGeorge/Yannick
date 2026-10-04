@@ -1,0 +1,1747 @@
+{
+  "files": {
+    ".claude/agents/code-reviewer.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "f7b75e9fe3530edef361ed15e52c5cb4812a637aa09ce44e75eb7d8bf44a3a84"
+    },
+    ".claude/agents/code-simplifier.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "608bbd8871ef760aeeff69b5f50246a20060fb65f169229cca396dea7020d35f"
+    },
+    ".claude/agents/codebase-explorer.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "499fa336c7ba481089cccb614cbfc8bc66b0b0102b0e41e8ff2ccdc908b4425c"
+    },
+    ".claude/agents/comment-analyzer.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c3a74b3ba2c54e651f67029dd577e62b433a217b4e5f5165d639973e6fe7ed00"
+    },
+    ".claude/agents/crew-coordinator.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "9b66a88b3179d4f37705dde0a90a3418a0d76dfd04356a4db54beb2e0bc30620"
+    },
+    ".claude/agents/crew-implementer.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "19b72895d081875604af3daed17f0617efd427156d95dd19fe5a69df20aaa239"
+    },
+    ".claude/agents/critical-thinking.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "4a60ea8b65613f4f8525f3eae5012f47a5c18c3343ea5953d4800ed68834d703"
+    },
+    ".claude/agents/docs-impact-agent.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "5886bb655d896e34cbbd5379ad5f0485241fba001fd35a02af7c06b2cde0a31a"
+    },
+    ".claude/agents/playwright-tester.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "e16da12a2aa5b6b3f89cb99b79709b927218817f5e9695442b22a6af0814f23d"
+    },
+    ".claude/agents/pr-test-analyzer.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "cef7706019361998a4f71c60d6927899b7caaf2082b5daf8ea6d4839b0376070"
+    },
+    ".claude/agents/security-reviewer.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "fe9efe7e4e5444e827d955f273c83034a6416f2e685ab4e03541467981734273"
+    },
+    ".claude/agents/silent-failure-hunter.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "bd2f25c8131c5e08f0af83f5bffcf04b3f04ceee3551d12ba32ef376436e4f06"
+    },
+    ".claude/agents/test-designer.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "963a95b9e67e7d00a30b1f1af0f868888b72799ff8ae8973666cd7b078521cbf"
+    },
+    ".claude/agents/test-quality-reviewer.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "17f46735e185ef9a1451160334fd43eb4a66f9751fca4061b4a7df4d718ae4ac"
+    },
+    ".claude/agents/type-design-analyzer.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "bb926991ba88ca1de2b770e9dbeaeeb33b072955dd7465e71365929c14eda3cf"
+    },
+    ".claude/agents/web-researcher.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "d81344391cdfd9c0e1e1e86211151ac4186f891306ce12b599b2bdb4dcbb6e05"
+    },
+    ".claude/commands/autopilot.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "6ae7c51d214b38a01dc0c26da58a2915902bf8e8059d691a5f178f09e71233a3"
+    },
+    ".claude/commands/cleanup.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "5d3f218c9539dc914baa292819d0a92b0f3ccc80059fc05d3d788ca2759ca8b7"
+    },
+    ".claude/commands/dev-reflect.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "81f401cbf6afc0e0b57530a98c03d73aa159e3a26055a40b7eaa4ce55e8db265"
+    },
+    ".claude/commands/handoff.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "e7e33de24f3bd81f49f50849d5ea68d182ac96cf7e4c3091f93031b9aaddd143"
+    },
+    ".claude/commands/merge-prs.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2711986b99f014aa4c5dd5440d33e217e99812d341852d9b94193c96741cd617"
+    },
+    ".claude/commands/pr-open.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2df3b9f50f37aec585a21b4cd1d86b0d9f703cf0efec8584780c5d9221d51ffc"
+    },
+    ".claude/commands/prime-core.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "474ecb4d3d7e390ac7d41b7be32dd19d690833615b0b136786201861472e7338"
+    },
+    ".claude/commands/project-status.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "00d8e5a9cea549be61500db9261869e648a3cefce87042f63582b9e65d3d36d8"
+    },
+    ".claude/commands/questionnaire-me.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "eb2ac6251502fff77b8ab6e8fb8a1dfce0d8e6bd2412d2ce26c85224251390ae"
+    },
+    ".claude/commands/ralph-loop.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "d48d88e20902d69e1530ce3670638795b4bc16fb85e20286232598d6abed1f56"
+    },
+    ".claude/commands/ralph-plan.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "9b4f57bcb541b8d3d06e1a2ec862a20549a0d7331bd970f5ac4699ee0567f1f3"
+    },
+    ".claude/commands/triage-lessons.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "0110eaebbd3ac7b19233759c94a97f4b3d3513d29c41832753c85e25dcfd3ef6"
+    },
+    ".claude/commands/ui-aliveness-audit.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "dc66c814dbb9af7ba1a30f4b2ddd2842c7e92570ee5eab38c8b3520e6a4ac52e"
+    },
+    ".claude/commands/validate.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c5a2d5f180e5d26a8e4341e9a4e1320c52c78f09a4e1b0bc017d1ecac30364ce"
+    },
+    ".claude/commands/verify-adversarial.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "4e9cce0a082ff85a6951ee3125f75a29d5562ba9aeb2d1b379ef8278b5b662f2"
+    },
+    ".claude/commands/workflow-diagrams.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "cc2ba647218825055dd6e6474c4ed4b9bbb68cfcaef10a93758ebae9e2bf075f"
+    },
+    ".claude/commands/write.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "577ea37a8a7df3aa2b390615eabc6b2f6c6b67a87463418e1e28198f33ad8e48"
+    },
+    ".claude/hooks/_denial_telemetry.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "5ac6d624de6ccbab77bf63f7553f61f847c0de16d0fed70474be714a74015062"
+    },
+    ".claude/hooks/_dispatch.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "b901ab5070c59467e78c33f3756bc45b32c2c2035cc8c1eb31982b1882af7a36"
+    },
+    ".claude/hooks/_ff_checkout.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "261ae6e38f97c4f67ce15d344c1b5d5dd0da804f548693e0894e92969db8bcd2"
+    },
+    ".claude/hooks/_git.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "55ffdae19edfb46a2857e984207d366e06dac76a1049139317cefaefb3be01b4"
+    },
+    ".claude/hooks/_lib/__init__.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    ".claude/hooks/_lib/decide.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "1d1ed0c9f21a64b289de21bcc544d1908b1cc16e69be3adf247dbecaf15d012c"
+    },
+    ".claude/hooks/_lib/docs_map.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "a1dcc000afacc4aa4f51da6f40612382ab0167cc36fd941a1cd7ac14df09dd28"
+    },
+    ".claude/hooks/_lib/git.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "1800c36921d9d753509ec2ebd7c44b30474f7b037137b1055cca16da5e1ce521"
+    },
+    ".claude/hooks/_lib/parallel_parse.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "0901562935323f2156d6c447ecfa2b20b9179f61ea44f9e097b4e5d7a8bcff5a"
+    },
+    ".claude/hooks/_lib/shell.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "c544c1f1935392c7d5d95c8c315a5b69f3dcf3f5a3829fe5c6964fbcbd6239cd"
+    },
+    ".claude/hooks/_lib/test_cmd.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "19a8ebaea716ab65ea6e0d8e00e4f4e359b450e042d2020ef66251c9e1c2c98f"
+    },
+    ".claude/hooks/_lib/transcript.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "88f2b6ce1b93bcb18531e68a9105757658b1e77229db28625d3dae9fd0e0db0c"
+    },
+    ".claude/hooks/_lib/vendor_lock.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "1fe9cc49deca00db531c481b38455fd2d21b2cdcd541cee2ccb9d9bfaafbdcca"
+    },
+    ".claude/hooks/_state_prune.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "ae373c10cdc6ff723c2638da7acad33fe25052a085f8cf85c946744309ff62ba"
+    },
+    ".claude/hooks/_telemetry_gate.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "c232850ec5fbabb57293a56d3806a1adb96dfb6fca80c8bd6679f617a9895577"
+    },
+    ".claude/hooks/build_loop.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "b2ae8241ebd580cb72aaec21f06587a832a02ae0bcfdbc9d7fcdca3b1bb28880"
+    },
+    ".claude/hooks/capture_failures.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "49792cde745c0414a6f4690d5379de6f73dff78fc625f04770a7751b80f568ac"
+    },
+    ".claude/hooks/capture_iterations.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "4a1ddb9e4223c3f43a5b68c5992b76508bb00513c6f0a6b977fda046a659b813"
+    },
+    ".claude/hooks/close_gate.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "5242fb0ef3dfaca8af3d725a5dd3e16b3abd667e4e04d780ff9e103bd5e6cab2"
+    },
+    ".claude/hooks/close_issue_gate.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "3cb334d9bd7885a5ded0f3eef632c12448aa8303381f9184ebb159e8aac78b44"
+    },
+    ".claude/hooks/cloud_session.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "8e269835100f67c86b5c4a841fef0c01b3c9e3964ead2618b8bff33d98e2b475"
+    },
+    ".claude/hooks/compact_suggester.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "51d028567a7c63bd2267dff095fc097c68afd0d7629ebca8f4437ebdd12488a1"
+    },
+    ".claude/hooks/context_nudge.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "61f4f9bc4f0b4494da02340521c32479d5f540a670bf6e5821f75d20858d6b68"
+    },
+    ".claude/hooks/cost_telemetry.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "8b0d5386c430bebcbb7e37d1f1a850a5b727da65a73cda1442bee69f9e678c35"
+    },
+    ".claude/hooks/docs_gate.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "d8e188c24b6bf4c6e315c08209383e9952446ba12ea75d29c7b59e630b030bbe"
+    },
+    ".claude/hooks/figma_launch.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "3892ad33364aea4631ae047ba0910f84cd00e1281f5de23a14c9bedbd272e6ac"
+    },
+    ".claude/hooks/grill_nudge.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "9e95da5739a671293eac2259321eeb7c012e5b22d01ab448bd4e29c2e99a9405"
+    },
+    ".claude/hooks/guards/__init__.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    ".claude/hooks/guards/conventional_commit.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "e06ae025d069b74e5ade4b40290997d3e8d9d5d542a31839c19f99fae92fb7ee"
+    },
+    ".claude/hooks/guards/danger.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "cc54a581fec88d1452cfeab487e813a7d3011df11cdac2a6c60c4c17e3e26bea"
+    },
+    ".claude/hooks/guards/db_ops.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "350a9478c4ef04612eb475f433a1cd6d1f3ab59fab29ebbe81dd648431b1eed1"
+    },
+    ".claude/hooks/guards/env_write.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "eec5e503e071a563396a575b889b1e6c914ad34f3a1628fd228f60cfbe33197e"
+    },
+    ".claude/hooks/guards/giant_file.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "f246a4999ce58611a25a2514ab4279dc6bd9b1cd29a89c3ad250def33cd5a2bd"
+    },
+    ".claude/hooks/guards/grill.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "c7b300b45ff0fe63908c3405b665d8e61cb665ef34a5106c96cd907f2e116ade"
+    },
+    ".claude/hooks/guards/model.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "d31e8b430d6c8e1980803fa268000cc61f2f852e099b85913f2c25796dc5062a"
+    },
+    ".claude/hooks/guards/nocommit.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "eabb997152ea1987f4de242b360acaef70282bf3f9ea827b69ed451d871b2864"
+    },
+    ".claude/hooks/guards/parallel.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "451decfcab49162534f89c21828d48ed0d092b51c68803439c7ee78bd38b6a40"
+    },
+    ".claude/hooks/guards/plan_interview.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "9203108b1096bf544325c32217c1659a6c4907b1edc86e0bec7b9ed6053c6fd2"
+    },
+    ".claude/hooks/guards/protected_branch.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "ddc72103ecf45711ecdc395c1f6eaa1b8bcc761135ef04b25ff250cb7201c1a1"
+    },
+    ".claude/hooks/guards/readonly.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "64d241c2fc5f57f227117662a6666f0c292c1920a47ff14adc6f1247d50007bd"
+    },
+    ".claude/hooks/guards/reminders.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "e569aac286cf0e6fd611c7e07ba90ace8646190dff41ac642cd7fa787ae30857"
+    },
+    ".claude/hooks/guards/secret_file.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "ad13f3f1c06abe26dede1e4af697775d32e569e211c5fc1bdcc432885e5e5790"
+    },
+    ".claude/hooks/guards/secret_read.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "2fc609abe9c818d20afe96b32c231acf3a6e5a883951c737b87f9531c9bb0188"
+    },
+    ".claude/hooks/guards/secret_scan.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "d8caee0f148b1d0cacb2a66888eee31606b8c1f2cf6c3580012bc89b9f0b8445"
+    },
+    ".claude/hooks/guards/session_prime.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "443ac245218e7b0dc6d4529509465e00d239a44eb62d1a0ef1ee8f552a4f2e11"
+    },
+    ".claude/hooks/guards/shared_checkout.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "5a3bbd499a04326e9843af9084ca5037ef76524bbc6a7da5283aabc447734de5"
+    },
+    ".claude/hooks/guards/stale_base.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "36876529fb2ba20d8fb1d0929b2a3a08507a136f5ccf9439e343c0e3927256f8"
+    },
+    ".claude/hooks/guards/tdd.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "6984ba4b916b6d34540df1c40dd4c4d2ee20325953f4e7d1673a20103335b265"
+    },
+    ".claude/hooks/guards/template_owned.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "7f3436bca16b1509b70761ec2d7c9b396151677cfc38fa8c9db26925c044c1d9"
+    },
+    ".claude/hooks/guards/test_lock.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "5b5ba8249488da08cecb6a3a861b9554ba0eed4deff4c5c751391fd9c212bb05"
+    },
+    ".claude/hooks/guards/worktree_cwd.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "78b8ff5c75a90cd254ffa7b01341420f3d59f665618e394531e14b3183098de0"
+    },
+    ".claude/hooks/hook_trace.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "13281725bba5f6fffab10ff42d9118494b3dc8706734af7dbc925cbe38e67c13"
+    },
+    ".claude/hooks/improvement_proposer.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "2d1e46ccfe40027d4ab911cd607b6d094bc94a9f2e4dc8854da6a2e9df49a92d"
+    },
+    ".claude/hooks/lesson_injector.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "4c2c59ad214aa78932dd322c906ed2a07d1277c95dcf22eaeb8c43f421bba2ac"
+    },
+    ".claude/hooks/loop_detector.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "1c3c25b0c906456ae231d5c703cdf917b45e544bf0ca51312e421d60ac9a609b"
+    },
+    ".claude/hooks/merge_autoff.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "49087804e15ff05fdb313bef6a86d737b50ab82738312d9f65a888b74d4893bd"
+    },
+    ".claude/hooks/parallel_nudge.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "f11fe7e5eeb72c1ee1061be95f305c469960f2d5cbaa96f71a7eec45a5484a3c"
+    },
+    ".claude/hooks/plan_gate.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "43692f2182a110f92d80166a8c1da99fc5cddc1c0854f2dc813642e39da4094e"
+    },
+    ".claude/hooks/post_nudges.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "c13792c5a9b80a7c35f62f458bd7148c461588a372d87e7cea397e2c30d2e65a"
+    },
+    ".claude/hooks/post_tool_use_lint.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "98d82ad43fb77b9767c5517ba2685883ee5d3a834438a4c5d5464105a0993686"
+    },
+    ".claude/hooks/pr_gate.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "4e8a33930ef27c039b8f5bcd103e722e57954d0a7045017017ead2a2e8232df3"
+    },
+    ".claude/hooks/pre_tool.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "968874164884e8db32265dabfb0e209a64896714ff8bf867c04d55a9749b652a"
+    },
+    ".claude/hooks/precompact_evidence.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "d39b011e97fd47ae6253c2ef0c85594058546474fb783fa1a1955818d33b9192"
+    },
+    ".claude/hooks/scope_creep.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "ab4e2483494134501cbfee40a67d2a979c013eaf7e205f4b8477e59c1319635e"
+    },
+    ".claude/hooks/session_autoff.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "2f6814110aef89f5ed40bb032298a0efd4898a13e68641c7dba72bb84df921df"
+    },
+    ".claude/hooks/session_crumb.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "a1276941efcd7c9eabc840080650ac537a1f89b6088782c9f725f00de7460638"
+    },
+    ".claude/hooks/session_start.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "d5086477a15c21b746efb661cb7ab54760d0363452398ee3aa19749d3d86ff5a"
+    },
+    ".claude/hooks/skill_nudge.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "1fd2f80fc4c6d6ca2fdb95a96321392e83871d5bfb69e3d8d28c6cf3f7ef06c1"
+    },
+    ".claude/hooks/stop_gate.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "501c70c207d23428d9785d46379648669b71b0fc7f2ecb7780d2b943ef030dc0"
+    },
+    ".claude/hooks/stop_log.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "3e98e067151c8fc2fe2321f74f34c9d9aaccb95046a0a1c67b5095709eeaa1e4"
+    },
+    ".claude/hooks/stop_record.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "bf9fedb200f887a374ff0147417f78a49bfd50614eb74db32bf62b990b0ba509"
+    },
+    ".claude/hooks/suite_overrun_nudge.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "415cd4e18db6dbef4226bc5ad1de8fc497a5cb9d82f957cdbe8743dc4625b45d"
+    },
+    ".claude/hooks/teammate_idle.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "5b54932eead814042db73cf939a5c168ea926fa78c9aaf902433c9cbf53a0da0"
+    },
+    ".claude/hooks/telemetry.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "ed6b6634960d3b570ac0cc3b58edb3cf1b9ddbc86962ef6b440318c7c24943ec"
+    },
+    ".claude/hooks/tool_events.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "6272c1473ddd7ea110269a716da452186b8d5840c645263b340ac14ce4823d4d"
+    },
+    ".claude/hooks/unattended_answer.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "39e5c295372dd9caf6a2198786fcbc3f86abad6b5436036d27c95424695eec62"
+    },
+    ".claude/hooks/worktree_create.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "208692d1cc51d4b5c4035c85709ba14fca0bda25285d839bb13f3c3893c8c5a1"
+    },
+    ".claude/hooks/worktree_remove.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "2e2a5363dca36774a8274242ebaa1ea3a303104a0bbb3d6e1ca66c455f164284"
+    },
+    ".claude/skills/audit-claude-code/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "f96f1296665717426a1ce29495f42ec7cc079bb3d4a687fcd305a47777ad2257"
+    },
+    ".claude/skills/audit-claude-code/scripts/rank.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "917063c467c6e56887297bb1a18497f7945da4e5bec2fe2a3497efbf9f66f0a0"
+    },
+    ".claude/skills/audit-claude-code/scripts/runtime_miner.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "34da9c622cbd0758a8dd2aefa4f26198768eb0459370d3f641db9a56089b8c3e"
+    },
+    ".claude/skills/audit-claude-code/scripts/triggerability.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "7e9a06b87516425de0a317b5dbb967f8eefceb76649b81df7319e0126ce4b772"
+    },
+    ".claude/skills/brainstorming/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "4a54a4858b99807f3155ed1614b2f116e35ea5c1b788e793f565dd837fd3891f"
+    },
+    ".claude/skills/brainstorming/scripts/frame-template.html": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "6a8a4e58bd6a44b904e2e3c57de774481d909204597e1498de53f1b2fecc4c4e"
+    },
+    ".claude/skills/brainstorming/scripts/helper.js": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "43c6d69954a46ec34a2a262bcc62a9a7e83e839c739f199cb72646d397c686e3"
+    },
+    ".claude/skills/brainstorming/scripts/server.cjs": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "2d2961ea8d11f56c5f4c3a1a68d22709efa5d7601a2246d8c880774e7e9e8412"
+    },
+    ".claude/skills/brainstorming/scripts/start-server.sh": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "a4e5ae84275bcaacd2f84345afeabe59cf7b00ba080e123da7cc1fb226f12847"
+    },
+    ".claude/skills/brainstorming/scripts/stop-server.sh": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "0b5ccbbd57f62d3ed88993f7940b5ee0e5c0fc9b21c550c623da4f6292e47daf"
+    },
+    ".claude/skills/brainstorming/spec-document-reviewer-prompt.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "95a0a195de9d984be2fffa95bab16fc8c563bc296a9cfc5e9c29cb3ece0d7457"
+    },
+    ".claude/skills/brainstorming/visual-companion.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "60cbad29b9dd7eaf08da020e301c498a72230b2e13c1813fa967a135ffcc1d71"
+    },
+    ".claude/skills/claude-handoff/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ef298da8abf31c80e4770e6881cee4973a20d66a3ad74364889c2b388f30184e"
+    },
+    ".claude/skills/claude-handoff/agents/openai.yaml": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2308a672978864633286fb9f0792b08657e501426b3f7883fc418d5d2eac5eb0"
+    },
+    ".claude/skills/code-review/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "9cf46653dd9c710ea1e6c22423caf31a794c88773bc94bdaa23140277f470442"
+    },
+    ".claude/skills/code-review/agents/openai.yaml": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "8229ca854e11dc8e6aef2131ee03f31fb1561cf905fab9ccc325180cf3331352"
+    },
+    ".claude/skills/codebase-design/DEEPENING.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "125e6b77413ad2bc7cf7a772bc74336d580a50f9e797db2178ed133d62333d06"
+    },
+    ".claude/skills/codebase-design/DESIGN-IT-TWICE.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "09f9948ea7636a4d3704c5ab909762e876c0b39849eefb14d2e03a398cc9c7e7"
+    },
+    ".claude/skills/codebase-design/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "a8d50abac5a4018f60e1d911d4b6f4e36454ca14d6c390c0695a578c7de65dad"
+    },
+    ".claude/skills/codebase-design/agents/openai.yaml": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "edebc9e4fcfe102114012575eaa9600b9b5fd08c311664f389c36e7bc717740f"
+    },
+    ".claude/skills/component-refactoring/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "36b7cd759a304e492c8de4f08ca412633479947382eb0872f3e452b18025cb6f"
+    },
+    ".claude/skills/component-refactoring/references/complexity-patterns.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "86b687bfd5d2f317aa9ed8de16faf7d2010df9a2cda4ef86474be39ef5637247"
+    },
+    ".claude/skills/component-refactoring/references/component-splitting.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "d30ccc27e823c93664ce1bfd25050df25582765bf4cf901b13711868d33dbbb4"
+    },
+    ".claude/skills/component-refactoring/references/hook-extraction.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "43faca37b8db1907af65f3a4d259b82a9b7c46315bffec0a3a97bf33a8adce82"
+    },
+    ".claude/skills/context-floor-audit/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c245332bdfd2b87e54b9043c0985e7b9ae49ed092eb2775e0fdc5a1cd584f2b4"
+    },
+    ".claude/skills/context-floor-audit/scripts/scan.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "076a5a5ed331dbc49f7941098b229b0e2a1d5228eae3272c28875956ddd78088"
+    },
+    ".claude/skills/context-map/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "30f43945192bda0badda8be6bfdca4f73b908ec9c3399c80e60c8e5179f0162c"
+    },
+    ".claude/skills/conventional-commit/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c9e324889ab9c75e9c90dcf7516bdf69cb21b37cc3d8740639e00629e56a971e"
+    },
+    ".claude/skills/conventional-commit/scripts/staged-summary.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "136f48d02a9cb0fa147a223034d488bc05644393f298057fd5c2292927ca608a"
+    },
+    ".claude/skills/create-readme/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "b5a8fa3a4bc318dc033b78950d2b0bab29e6e6734e3480059d924b92ee10c3a2"
+    },
+    ".claude/skills/depth-fanout/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2c7beb89370e470a6f41a8ae9c691a74d3c74372e76c448bf2c0300294a40dcd"
+    },
+    ".claude/skills/depth-fanout/templates/GATES-node.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "26acca4208c6425b021cb4e9795a35fc73618f16ae900e01dc7d53a2520e08b9"
+    },
+    ".claude/skills/design-an-interface/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "027b976489c9558328b8edbf71e719e8b88c572880014547531f4bc88cdfe5a5"
+    },
+    ".claude/skills/design-import/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "aace85e13ab9667c051c60a23df0d8bb6f960c95a0e252fcb1e2d1df013aa50f"
+    },
+    ".claude/skills/design-import/references/example-IMPORT.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "1dd87b9616bdd6fb324f682bef55b37839edf7f484c6b6f6585769ee4ccb26e9"
+    },
+    ".claude/skills/design-import/scripts/capture.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "7de0417b94f82352398fe31c7f81109dd4d6a2e90f3f2ebd3e654272b24241a6"
+    },
+    ".claude/skills/design-import/scripts/detect.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ec9a1e55501cf318cd05b1d5d61b1a551ae45c581a4bbb57db2a4ca0580588b1"
+    },
+    ".claude/skills/design-import/scripts/extract-tokens.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "a6e2aa8b7ddc2a5867ccd223c3594389a3fb1ca8ed4e671c274c2d40bdc221c9"
+    },
+    ".claude/skills/design-import/scripts/tw-palette.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "505fec24a451c70315b4466f8b6e221cb22bb347c5a154d40e019dacd0010425"
+    },
+    ".claude/skills/dispatching-parallel-agents/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "1968923066f3b707eb01d1992cdf4c42284c3855f70253b9cd5000ff45fca13c"
+    },
+    ".claude/skills/e2e-tester/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2303afc9222fe4ffdfc63c75b057c69474e3f123f9b2c28de14ac26eb937d8a1"
+    },
+    ".claude/skills/executing-plans/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "05aa24a4d64c983ee2dc53db11290265650229deaa67994f73b167f7c239ff1d"
+    },
+    ".claude/skills/figma-bridge/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "307db0a9e8b571c1e79c83c472838f90f1b9ff14a04595c0aaa16377acb35826"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/README.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ba0c9c11b240667bca32bff62e99eac10665fd697512ff98fa8b19ed366db582"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/figma-export.config.example.json": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "67db54b6648a69b69a3fdf6c94a155bd8c9b4e1b9fcb0e112436930e92fd7a91"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/figma.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ee36d9801b13f0278d72cee4fb3d0470070971c2a1af9bd54e50de429d970171"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/capture.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "97536c60d4afc2138b9dba39cac7115250afbef4ed66540f4117993b59b64cb4"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/channel-resolve.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "85cb22be26610b5b68683174d54e027026a2c39afbf5ef4a0e32df2076145f30"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/export.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "caa7ea189e0302fae4cb0ac0d89d08c441ad31a54d936190f2eb12a0be6dc17b"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/page.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2c3fa03bd9a1e0356e3cfcf523d5ad852988bbb8252b539cda725b9d3981668c"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/place.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "53cae051327380a6a4cd23a8ee91da9f0e0c7df0e5b91166c1c4a6bfb3cebbaf"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/png.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "6b9d58e95d16766653a35786cfec7718b36ebd5e018f613d622adef339ef7e49"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/preflight.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "9a73c7dfa881c3baa4030b7aaea5e3eaa114443f6eb393de4b551075e402c8f4"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/probe.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "eba64e1aa29342a93bad6cae61732da5281fa801ab92f010d3823468f883b80f"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/rebind.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "af8e74df2df8f35403991e9125f92e12aa3d187b1404379cc34026ed36b03e33"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/relay-client.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "e9515a65dbc434d708b5614cb837e93c9bc0555dbf62b38d2876bb2bc872b91b"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/tokens.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "b43f3e53deffffc320d2a19929d23adf16ce152167cf9a2b18522ea1d5c5718f"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/package.json": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "8e4894cd6ed9357066ab66a2f0a32cdad52f073ed532eca8156800e4227b5d26"
+    },
+    ".claude/skills/figma-ui/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "0f6208affb96cec35fbff6766fcb70b38e8011ea91d9deba9c0221d43dbe7c8e"
+    },
+    ".claude/skills/finishing-a-development-branch/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "d0ac8360ed9d59121776ef95c84bcb38e9747de0d7ae7e227dca81e437593b9b"
+    },
+    ".claude/skills/frontend-code-review/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "d4336ed7a6fe56be480dc78a210e9bc190be57d2219e24eb8f81072b130ca397"
+    },
+    ".claude/skills/frontend-code-review/references/code-quality.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "639ed5f99b2faa0e863e39334a72b536103d79bb7c6165ac01952e15483924bc"
+    },
+    ".claude/skills/frontend-code-review/references/performance.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "e4b46049d2c745f4f6049682ea059fe3dba79876488195cba40321e63af92aa1"
+    },
+    ".claude/skills/frontend-testing/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "fc56500f072f7e6f038b9a4a9943017635d3386bc821d86c5c58c49189c8c5a4"
+    },
+    ".claude/skills/frontend-testing/assets/component-test.template.tsx": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "78d0ea448b894c05e5fdd661955803b8b4f012fcd6a3ea25a4c61539e717f4d8"
+    },
+    ".claude/skills/frontend-testing/assets/hook-test.template.ts": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "d32d1abdac527249bc67d30f57ee0dcbeed7196e467fbcf8a04f9f6d045efc47"
+    },
+    ".claude/skills/frontend-testing/assets/utility-test.template.ts": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "f0717ab38238042e25533a21fef4ffa81ae649c1efe4cbe293a6fa587fe93dd0"
+    },
+    ".claude/skills/frontend-testing/references/async-testing.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "dca5416d1fa31f136873c7e22f912ba9f61ed6e3c25d730fdaee25b96b56635e"
+    },
+    ".claude/skills/frontend-testing/references/checklist.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "57e50d9bb0c21c261541819fbc606eee87dbca9182aa6e21259a5c9c92087d8d"
+    },
+    ".claude/skills/frontend-testing/references/common-patterns.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c2bf305c9d280c7fec14d68bd8515f55cd70962ff3168de2ed3aec7a1e8a0363"
+    },
+    ".claude/skills/frontend-testing/references/mocking.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "9cfbeb627bfed1fb9ef65583d33573eb9df2799e16643cd41034ce5a4b46a47b"
+    },
+    ".claude/skills/frontend-testing/references/workflow.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "4f29b3532f1a9e1e8aed98e0fb52e5e37a10ebe33b91389c4dfe64a1f5b7b316"
+    },
+    ".claude/skills/gates/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "b5e8f7d6d2953e07491fa7b718e7182d726b2e0a70077fafa94148e283364242"
+    },
+    ".claude/skills/gates/templates/GATES.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "0be0e74e60aebd36ec17b8e1f0d55a8289d379424b9b600e5ddcda21d60e5750"
+    },
+    ".claude/skills/github-solve-issues/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "f2936e9e1bf2d2725dc6dbeb58278901f6486bcfa4c71d84147cd5873c361b1e"
+    },
+    ".claude/skills/github-solve-issues/classify-prompt.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "138a26e2fd19e0228fc3a7434e6e0fa0da1f6141ee85aa9d042bafe205f397e7"
+    },
+    ".claude/skills/github-solve-issues/scripts/stage1-triage.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "f5e29903a23a8186684f2253c6e3dc715fc74fbea5ba41d2c1eaa48eb7815856"
+    },
+    ".claude/skills/github/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "27f7dcbe1415df70b8f8ca142fb9170fb3b3336c9ff51fdefd97ab1504850e0b"
+    },
+    ".claude/skills/graphify/.graphify_version": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "34ec581dc24994e6d8fdf1c62037ce67e10b48bdfcecedd25537048e45e982e0"
+    },
+    ".claude/skills/graphify/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "1b11c98dbb8780d6370b10da64c5349e9ee17190f1b58ab7ad53df43eb437c3d"
+    },
+    ".claude/skills/graphify/references/add-watch.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "b3f67570240582689c2834b4831917550c2d1aaf042148868c39dcbf387ce3fd"
+    },
+    ".claude/skills/graphify/references/exports.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ee47fae477f106d8aed38798c58493b5a7f060a0d9d2581ce6132302827bc14b"
+    },
+    ".claude/skills/graphify/references/extraction-spec.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "f72a6d2dfa67446f06f27a8f0053af1adc8d53b02e393c8472045f6740c6183e"
+    },
+    ".claude/skills/graphify/references/github-and-merge.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "e5ebd90c7686f50363ff7a535556bc2f596d4c47ec1e6c8b95e11e36a0dfea2b"
+    },
+    ".claude/skills/graphify/references/hooks.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "b9a4e9f66813c6fc720589f1071d1a03c95756ab7101447e14e57291fe7844e5"
+    },
+    ".claude/skills/graphify/references/query.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "e563ddcb1e155aa230f107e5ef9380bc1249c5cd8241128de7ed8a7bd9c20cf5"
+    },
+    ".claude/skills/graphify/references/transcribe.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "676a1e39aa6d43cdfcc416ec56616e36f7bad74066a82bd33a9485515b9a865c"
+    },
+    ".claude/skills/graphify/references/update.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c18fa98e608797d1c9dbe71f3ae01b4132e7517d07544cccf0c04e7c8172bd76"
+    },
+    ".claude/skills/grill-me-socratic/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "34613e073c222b3712a51b164256a6fb27132341035894f5f5724c9c22eaf244"
+    },
+    ".claude/skills/grill-me/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "6189dfceb7304a6e5558f75d87e68fa3bc7fcf7ba120e44f21f8a61fe01eba54"
+    },
+    ".claude/skills/grill-me/agents/openai.yaml": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b"
+    },
+    ".claude/skills/grill-with-docs/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "610d091047bcfb9db0f75c057d15538481a721111579fc5ec7f83ad9131a2165"
+    },
+    ".claude/skills/grill-with-docs/agents/openai.yaml": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "94cd0ab161fb468a836349f5ed482ba58ce8e709a05c57ce533d739dbd35cca9"
+    },
+    ".claude/skills/grilling/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "fa5c1e5ee76b1c8f1ae56101f52c9e239de75d5c578adc61227b92d10b7e52ef"
+    },
+    ".claude/skills/grilling/agents/openai.yaml": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b"
+    },
+    ".claude/skills/hook-creator/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "7eeba5f068f77ebda7da8b9f325f447865718fe7ace85ff828814adac0cf92fe"
+    },
+    ".claude/skills/improve-skills/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "84697e490f691655ca0b09b8ac6f7da52957dbc9cf68fcda953419a13062b65f"
+    },
+    ".claude/skills/improve/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "869b91d637aa115cb9cc9d40d02291183e040032730c8d903c3d592db429bc64"
+    },
+    ".claude/skills/interview-me/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "1d94741d10d2c826cd0c191aea3981ee94c8abb27ef2a166f6a372117d06448f"
+    },
+    ".claude/skills/local-browser-testing/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2bb8b843d0e890e09b29c87407a0732156c102b2f7c78bd41397754adaa807e7"
+    },
+    ".claude/skills/loop-me/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ad7110ecbd419fc312c3e7c62f496bd346a05462cdf1589b12ff7550fce3202a"
+    },
+    ".claude/skills/loop-me/agents/openai.yaml": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "b66fa10079957051be6a812f45e55b67ac394b71d5ba88349962b4c9205802c3"
+    },
+    ".claude/skills/meeting-minutes/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "91b736fd24f6ff19a3f4294610e49ef4a5751ac98ef4732697e21581363696c2"
+    },
+    ".claude/skills/model-routing-audit/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ca414f36fc1d96e789b2fa032bc17b8a3d104652894edaf1a5718be11301eed3"
+    },
+    ".claude/skills/model-routing-audit/scripts/scan.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "742a4011632e98ee4e775b0c334cb2e6f65996984a6fec349bfb187202ac844a"
+    },
+    ".claude/skills/notebooklm/.gitignore": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "a36cd64c569dcc96ce1c63745f2b371bde906a2c03cdf89ccbf23e31a3239d8d"
+    },
+    ".claude/skills/notebooklm/AUTHENTICATION.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2b1dbabbe732d011203debf38ed4af41bfb518d30c43bece928dfd45daa6e350"
+    },
+    ".claude/skills/notebooklm/CHANGELOG.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "04c7d84879cd07d7ac2012fb190ea3587bf91515e1af7b8a57ea00a11ddf03c2"
+    },
+    ".claude/skills/notebooklm/LICENSE": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "0ad77d6e05eea79c29fbadce21fb7ed7aad883acde73f4a2c5fef77c9536cd07"
+    },
+    ".claude/skills/notebooklm/README.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "dce3c60ce22ac630f11bb4e042b7ba36a7115236fb19c110dc7652e09918e4cb"
+    },
+    ".claude/skills/notebooklm/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "8fcfe1aa04523483c1d1a5aa10835bc796228d2de9a66460a767bf2d6ed7432e"
+    },
+    ".claude/skills/notebooklm/images/example_notebookchat.png": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c31d39e839c4326fd7a492d1d9ca076512ec81765addb5266ad1e4a35b15ad8b"
+    },
+    ".claude/skills/notebooklm/references/api_reference.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "bb4b57b7f39f213961be77fedf83fd5a8ebe30746a6d212e5c36ac1d64bb8eac"
+    },
+    ".claude/skills/notebooklm/references/troubleshooting.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "b32709f82c66564ed5c1948f37f80a7d7b3f49a250e10ffb37e579733a4a0b45"
+    },
+    ".claude/skills/notebooklm/references/usage_patterns.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "be990a67326e1f1612e7a00cca6a6a2263593dd7a623a137194b87f55446a650"
+    },
+    ".claude/skills/notebooklm/requirements.txt": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "001076a8c9bc206a8dc6556f5bcb5fcb1864494cca2bdf698160b001923a8aa1"
+    },
+    ".claude/skills/notebooklm/scripts/__init__.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "b8ccc9d7d23f336fb570f946bd015367a73cc27d5eef7f5fc2eb74f1503a9e46"
+    },
+    ".claude/skills/notebooklm/scripts/ask_question.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "05294a400a86f778883ce73e22200f52e7329f5675ee5d51a19df28af257f1e8"
+    },
+    ".claude/skills/notebooklm/scripts/auth_manager.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "fa19d1bb8cdd9b46551663d9e72981058b8d3d3989359a1dae4ff1544948ffdf"
+    },
+    ".claude/skills/notebooklm/scripts/browser_session.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "6c2de8e83be0e2843b27d502744978f45c563cb8334f109938ac557e27f78496"
+    },
+    ".claude/skills/notebooklm/scripts/browser_utils.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "4d5e59b0dd7745784c71479dda2b83de20522988fba51b86d0aab31c0be181a6"
+    },
+    ".claude/skills/notebooklm/scripts/cleanup_manager.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "0a85a8d0164eb3ae7aa15356af814a28717cfc1000a43f0291a2a1946401d7e0"
+    },
+    ".claude/skills/notebooklm/scripts/config.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "a448b59db5cbd4a266bcc85bea9fd18c9b3575e645fa3454e4671d1c336cb27a"
+    },
+    ".claude/skills/notebooklm/scripts/notebook_manager.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "759384d94eabab346e9c4da73ee968d68277498d8ec19d261554a63ec3ac0238"
+    },
+    ".claude/skills/notebooklm/scripts/run.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "7f81301b8dde236a5a15a01f4db9530e5cd90bd2bcc1d7b0eb13bc58da81d79f"
+    },
+    ".claude/skills/notebooklm/scripts/setup_environment.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "895c9055577e8e0bad8801681ad9becd9ff6b6bb72107b6b359c1cf8512f0ac0"
+    },
+    ".claude/skills/notebooklm/scripts/upload_sources.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "26ee65dbce91cb52011702b7559beeb79ab61d87275b3cd7918beb4cfdc82546"
+    },
+    ".claude/skills/notebooklm/scripts/verify_sources.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "d1391332169fd44c9f92ea79e4e2489e7481d0324ddafdde2207243e755261ad"
+    },
+    ".claude/skills/ponytail-audit/SKILL.md": {
+      "plugin": "ponytail",
+      "ref": "v4.9.0",
+      "sha256": "5560b8e383dbe2ddfddc873a1e2bf2e586e23e0cd7d995537482b2315331f6d1"
+    },
+    ".claude/skills/ponytail-debt/SKILL.md": {
+      "plugin": "ponytail",
+      "ref": "v4.9.0",
+      "sha256": "c84fba75f0ca12bfe83f9a78ea02fd125c5dd3f1fbb18124105a489937f284e6"
+    },
+    ".claude/skills/ponytail-gain/SKILL.md": {
+      "plugin": "ponytail",
+      "ref": "v4.9.0",
+      "sha256": "24e01d1c9715cb136ba1c4f1e52a95940c0193558b876828e537736480d6408b"
+    },
+    ".claude/skills/ponytail-help/SKILL.md": {
+      "plugin": "ponytail",
+      "ref": "v4.9.0",
+      "sha256": "2264d1615117b02b0fd5a69ec84cd2757006471a78e4d6c22eed6d581c1d37a4"
+    },
+    ".claude/skills/ponytail-review/SKILL.md": {
+      "plugin": "ponytail",
+      "ref": "v4.9.0",
+      "sha256": "40df33b58fc6ef889b93585733feb9566b76e9586efa7f376785c1e995197ac0"
+    },
+    ".claude/skills/ponytail/SKILL.md": {
+      "plugin": "ponytail",
+      "ref": "v4.9.0",
+      "sha256": "1316a2f3f95741d2300b116fe0c2d81ce4a9568656ed0a62643f54aaf09957f2"
+    },
+    ".claude/skills/prd-to-issues/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c5aff02ae0ebb4a2ca4b4491dda70febae253c49b511859afb361628694d9e62"
+    },
+    ".claude/skills/receiving-code-review/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "091df1629510af1b92fc4abd6f96732ebedb4cb2c0f3457e8f2740b0504a2438"
+    },
+    ".claude/skills/refactor-plan/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "464c251d1337791b7670c06fb15d5ed8a6f1975d0702698625b4206a737fbd8e"
+    },
+    ".claude/skills/remember/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "4f65ee2ba8095d5b46c16058af9520e8e5165e0524f055fb11d029711af087cc"
+    },
+    ".claude/skills/requesting-code-review/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "d71cc01ba56d2325cf8af5f7c11837819b63ecd57de0bfdb812f7f3ff7751df8"
+    },
+    ".claude/skills/requesting-code-review/code-reviewer.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "b2f2ec7596925fe52dac158fdfbca19b3a7d779d619c481e6706a6c0001662d3"
+    },
+    ".claude/skills/rtk/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "967bdaec74b5bc730b1e6322dd4578e6399831540f2c5b732e36255b476988d5"
+    },
+    ".claude/skills/ruff-fix/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "dfba86caa696de224bce466f237b4d350587b427109c45c4e012559422834dc1"
+    },
+    ".claude/skills/security-review/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "0fe83fcac24e66b91312af00ddeb71154231c534862f7655d5d201a001e422b7"
+    },
+    ".claude/skills/shell-scripting/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "e13f425dfc554cd7f2cbecff2ef0b1c2cd02c486ca8478c2284238903fc9f52a"
+    },
+    ".claude/skills/skill-audit/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "1571eee4e2dc7516e532cf538c1881922b60d1b188bb5b78996d7c5c5c3848a2"
+    },
+    ".claude/skills/skill-audit/scripts/audit.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "11e5ea5e22cfb8b28124cd732d8d3e05b2f4cec39d38803384127eddafffda5e"
+    },
+    ".claude/skills/skill-creator/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "89a78903324d9051cf8863a717e7460c245fa4170dfbf153dadc50f5c2ebb6c6"
+    },
+    ".claude/skills/skill-creator/references/output-patterns.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "311d4415710305179ae1c578b5bfdb752a646fef26782e9d1dbb3102f52a0699"
+    },
+    ".claude/skills/skill-creator/references/workflows.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "8f6f2cfe34c093d834eab1470347e0febc3d19f0fa4b3e229c14d11f123c3dc0"
+    },
+    ".claude/skills/skill-creator/scripts/init_skill.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "5a2e74d831bb51022db7d79a63672841837451ac7fd6a4d78b9f033d369ce6c2"
+    },
+    ".claude/skills/skill-creator/scripts/package_skill.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "053b98403efbb3d2dac9b48900d9a2831fda4931d2900696d3660e88c8344333"
+    },
+    ".claude/skills/skill-reinvent/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ec7a41a80cf100ec18c04b2af8975ef92937a3e5099aaa3eec9fc3bca0bc2acc"
+    },
+    ".claude/skills/skill-reinvent/scripts/list-skills.sh": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "b300bd8db4861a1f1d5d6747e1176834ed0ab40522502125a230d3008d9889c8"
+    },
+    ".claude/skills/stop-slop/LICENSE": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2e2b2beaf41cc0ce28485455a62aed81777cdcdf68702e142427aef1cd720f2c"
+    },
+    ".claude/skills/stop-slop/README.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c5e03e9b7430e81ff5bbca1eae39c2f78049aca2dc38faa61c1fc51fc5367491"
+    },
+    ".claude/skills/stop-slop/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "852efc60ef8fa9a968584b605604c47220e2246da411d39ce1cff1650cb2e09a"
+    },
+    ".claude/skills/stop-slop/references/examples.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "49c592899eb4457f95d0767e15e3143569e2cef50f2927c3174e62432984cd3d"
+    },
+    ".claude/skills/stop-slop/references/phrases.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "4ca1b7e97123b5c67eff3dc97e5e977332e0b24021265c1553888a93ec33fa93"
+    },
+    ".claude/skills/stop-slop/references/structures.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ffbf1316c7fb5aaf552de005609a64a9639b546ecd76bfb0e482864d5bbe6f58"
+    },
+    ".claude/skills/subagent-driven-development/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "b1a73aff020ebf46b061745bd9e499e123072838271f0a63471f9ffb95e20e7b"
+    },
+    ".claude/skills/subagent-driven-development/implementer-prompt.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "946601616a6f76ab3f165ef98377390968f1ec124ecef87422bc3553404e0332"
+    },
+    ".claude/skills/subagent-driven-development/re-review-prompt.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "e1d8e0e65e58ccde6dc920843da9148d23e65aeb0f8932bcc30be1341a703c4c"
+    },
+    ".claude/skills/subagent-driven-development/scripts/review-package": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "fac3d4bd7f94369e8037b9ead2a8a502dca6ab333902b560b9455dbb3c450ebe"
+    },
+    ".claude/skills/subagent-driven-development/scripts/sdd-workspace": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "95a09d9d3983ad1aafd093ca72b4587946dea885c6e302caa02a779a2f911c31"
+    },
+    ".claude/skills/subagent-driven-development/scripts/task-brief": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "d6954ef7841c7da3d77373e6ff5118b3f2f2e998606fd95d33e6527851bce044"
+    },
+    ".claude/skills/subagent-driven-development/task-reviewer-prompt.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "e3b4a1bfe7cd55ed0459e5ca9cdddb6ff086c345b99e9097036db6a18545729e"
+    },
+    ".claude/skills/systematic-debugging/CREATION-LOG.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "c24733a5b1821bd6bed1fc950261f0b9f4e90097e0bbb96459d8179713730789"
+    },
+    ".claude/skills/systematic-debugging/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "df3f6451b43f4b5115b4599e17ece202fe8d8283f1ff5a40a6584ad2e44710fe"
+    },
+    ".claude/skills/systematic-debugging/condition-based-waiting-example.ts": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "40ae5ebe497fdf310200e43fe986552546d0a22837c0d39e855db1cfd33eb88e"
+    },
+    ".claude/skills/systematic-debugging/condition-based-waiting.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "e89fec8400d6cd50f43407cec9fab50976ba4d55d0ec2eb51c0bd68036b54c26"
+    },
+    ".claude/skills/systematic-debugging/defense-in-depth.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "1e175fb86fc357e58c6aebf5441e481e1b7868b4380c0456b63a17eefbd18ba7"
+    },
+    ".claude/skills/systematic-debugging/find-polluter.sh": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "dd7b8f13c4cc2a24b33ff87b18da9248f3e1c80a085c3316224f69ff0fa5c43c"
+    },
+    ".claude/skills/systematic-debugging/root-cause-tracing.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "6b0622269e098ca1399e123e553fd385f0b6412d88ef0e9c4f5a8ea9cf1cec7b"
+    },
+    ".claude/skills/systematic-debugging/test-academic.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "fe2ba480d78ac0d686dc025f41c2a32a43d642bf533f91b0c6053a04d35d6486"
+    },
+    ".claude/skills/systematic-debugging/test-pressure-1.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "0b6a915db0054577819834c79be9eb614e97bddba10d73768e1fbe91cfed048a"
+    },
+    ".claude/skills/systematic-debugging/test-pressure-2.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "b2030aeffba07050e8ad573ddf87486457c4a016a786bb326235bebd856f2016"
+    },
+    ".claude/skills/systematic-debugging/test-pressure-3.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "96b50a52e2c7989c9cf20fb752c47c1e9a3a70dc362f8f7989f8f5b64dac7708"
+    },
+    ".claude/skills/tdd/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "5e6b9c16b547113e90afbb946489d1c1384be5c2128f0159bd0bee57251ecf08"
+    },
+    ".claude/skills/tdd/agents/openai.yaml": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ea6f01cf1b8c06a4b0f5b649d74b1b8ce8685e72af1b38d70d877693e092af0b"
+    },
+    ".claude/skills/tdd/mocking.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "3ceb807fdf4a47d6a93d4d9a891e5ba6d362a6247bd08adc451feebfc17361ef"
+    },
+    ".claude/skills/tdd/tests.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "859f9e592c188fda4fc7277dd180e4ce9c7a2e13f6efe1f6f29eccc9d28c106a"
+    },
+    ".claude/skills/test-driven-development/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "bf1b8216e523851a411e91d429a7c1c2a173e79d88957bc78e348218d50edd54"
+    },
+    ".claude/skills/test-driven-development/writing-good-tests.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "d041f4a65ac5e8ccfb26834bddef32c0443c12482a36af8214123be46e39341a"
+    },
+    ".claude/skills/to-questionnaire/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "8e7f9ed8d7b2e66babf1a54aee9b94319bf38c32619cffe78819df6518ead5fc"
+    },
+    ".claude/skills/to-questionnaire/agents/openai.yaml": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "9e8a06c38c8842eea8d4922cb9d1ead8e3ace647bab259b943c994a1b4742bc2"
+    },
+    ".claude/skills/triage/AGENT-BRIEF.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "5b78d347cc53f6bcf7b875106005ccf5315055fa4cf75eb28d41e96ee426d27b"
+    },
+    ".claude/skills/triage/OUT-OF-SCOPE.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2526f998fd7ca5e956d3f6f234bcc2431a5971ee769f1148ddc60b92f04d5914"
+    },
+    ".claude/skills/triage/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "91e2817ecb688c4df4e2444eab472d1d79d2a0a57abf9f6726967664c460ff2e"
+    },
+    ".claude/skills/triage/agents/openai.yaml": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2e683717720cf456d165d0bb1a68bb600d0b6a8ccb61841c172e50d26f95351c"
+    },
+    ".claude/skills/unlazy/LICENSE": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "4575a543ab88dad12ccea7d97e563d0bce5b448b06072e65d3264497dad326df"
+    },
+    ".claude/skills/unlazy/SECURITY.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "116adfa3620b0fbfa38a56734f841240ed1fdea2799e050b295d9554bc4d4fdc"
+    },
+    ".claude/skills/unlazy/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c2fc928925738d294414fc36662989452aa34d7f923a0aeb149adfd5865082db"
+    },
+    ".claude/skills/unlazy/VENDOR.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "3a05609f6a042825502b3a722a74e06b9191d918426208905b921cc8f4f91b18"
+    },
+    ".claude/skills/unlazy/references/dispatch.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "05923def8e9a3d4dc953be9be488be5b7459a7a4229f57df1a86dec236f3bb84"
+    },
+    ".claude/skills/unlazy/references/gates.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "a381ec32c0ea094e7e75d4db06e920c630fb7bf1662ff153ad1de784d6a7ef24"
+    },
+    ".claude/skills/unlazy/references/method.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "4644bbaabea7f99fb7a21e84cd771715e619742ce7c8fe2e7a29c094d2e9709e"
+    },
+    ".claude/skills/unlazy/references/orchestration.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "8f4eaeabff635c786f40213c754efbf8edae652659f3b0b07d11a198eaee9735"
+    },
+    ".claude/skills/unlazy/references/parallel.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "cdfa0df7df59eeb39ab9c8bf490cdaf8079c3cb59cc53c22da5d535ffd82a0f3"
+    },
+    ".claude/skills/unlazy/references/token-economy.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "7a403e2d69df752b18db0cf8d9a1b89c04e20124c6ed058136a1629e88e8faf6"
+    },
+    ".claude/skills/unlazy/scripts/dispatch-check.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "af5ca39b4d8b7200a0aa50a1f985b986343112b2e159c454615e5b885260a99b"
+    },
+    ".claude/skills/unlazy/scripts/gate-check.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "75f058abba0adf52230c2c25c5a558c8d59bd579da40b47a29b0e04f0cbd541e"
+    },
+    ".claude/skills/unlazy/scripts/gate-lint.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "cfab91b8efe6308ae00faf583b5d4a632c8dc8cedb511ad0f5f403734c950690"
+    },
+    ".claude/skills/unlazy/scripts/install-hooks.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "a0eaa5070b85189b9441f3822530cb51c2f74fe3759a3247d753e2ab391668e8"
+    },
+    ".claude/skills/unlazy/scripts/lib/check-supervisor.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2bf15a383c0e64f77024820fedf9da8045c02cca9051ec0e6444e85814eb8c3b"
+    },
+    ".claude/skills/unlazy/scripts/lib/dispatch.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "8851008898930759cb590310a03a55579a21b9064061ff8a9f9883c21a71c4ba"
+    },
+    ".claude/skills/unlazy/scripts/lib/gates.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "0d64e205bca8369b11b513407342286e135184f267ec627f712dac42966c18de"
+    },
+    ".claude/skills/unlazy/scripts/lib/process-tree.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2b6c28613b2686e3afaa32a0196eaa3c67fafa283fbbba11df872f4deb993682"
+    },
+    ".claude/skills/unlazy/scripts/lib/regex-worker.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "76a9448f3c1b15b4904239608bd50381ee609e1edf0c6ac281d3f30473b36e0b"
+    },
+    ".claude/skills/unlazy/scripts/stop-hook.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2886698ff1bb2d69b80bcb815389c1c085049e0a6c592f132627c3b2df1bea77"
+    },
+    ".claude/skills/unlazy/templates/PLAN.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "e1134465cc9ba622631a40e2301e53fc2671daca1a0ded8657864566caf9ad1f"
+    },
+    ".claude/skills/unlazy/templates/gates-leaf.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2bf0dad7c8325d28033ab4b95b6af7af2921763c5939a508bf5bfcd29c696f4e"
+    },
+    ".claude/skills/unlazy/templates/gates-node.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "4fe48faefe627abe78f317c56ad475f872bf48a35632c4593c9afaa4f1e01da8"
+    },
+    ".claude/skills/using-git-worktrees/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "8cfb86f121269e8f7f12361e6795c4f6738828340e28964c9229d365666c9edd"
+    },
+    ".claude/skills/using-superpowers/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "b6b1ee653493a631218e7a5f48a52890991dcc84acefdf7861ce810fe03d2b50"
+    },
+    ".claude/skills/using-superpowers/references/antigravity-tools.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "4880f6de3da4e32f9659ebe7a72b9e0ebfff04e028c2ed96173f86d0387a04c0"
+    },
+    ".claude/skills/using-superpowers/references/codex-tools.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "d3f113a8ebbd748e8ba847b09b57b7685442775ca4ee194d693ce3663f8fac68"
+    },
+    ".claude/skills/using-superpowers/references/gemini-tools.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "39f481983801763801f5e150e4e64d0ad42a9f96c15dd43c6064c37d1db89a75"
+    },
+    ".claude/skills/using-superpowers/references/pi-tools.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "703dbc83d23ecab9c6f388460c38abc482e9dee2fe6772a8c7a255152ad3a4d5"
+    },
+    ".claude/skills/verification-before-completion/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "2befe7fc55bcadaa3d97dd9e8efeb633d2561c0ebe74c5a8b17c4d9e7e4520b3"
+    },
+    ".claude/skills/wait-test/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2a453fdfb0012d7e8067a5c7a671b93b5623bfed7013feadf3d9c23c84add953"
+    },
+    ".claude/skills/web-accessibility/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "557206f35894b33ff3fbc3ec9e2b11fd8be408df1c64ef7a9ecb8c4b28633d9c"
+    },
+    ".claude/skills/what-context-needed/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "c955b161e17e0a57b0329867d8cf82f3edae53939bb88cc42c27d957ba583182"
+    },
+    ".claude/skills/writing-plans/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "4f602fa2af606622871b2e3aeda2b61f532a4c5872e7a520e3376e84ce007dfc"
+    },
+    ".claude/skills/writing-plans/plan-document-reviewer-prompt.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "aa728b96aad603c8be28875a4305637f6c984aa81ffcadcb13e743202fa2a0c7"
+    },
+    ".claude/skills/writing-skills/SKILL.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "88e623468cea65fe15c31fcfaa59aef9469211d11ea77f0a0a278d7ffd6bb49f"
+    },
+    ".claude/skills/writing-skills/anthropic-best-practices.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "217629b356c09c9bd11017c9788e8fc654ca1b32c92d4a51cd490e16dd65e59a"
+    },
+    ".claude/skills/writing-skills/examples/CLAUDE_MD_TESTING.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "0b379a3415e185d3c434b3ad283d8aa132f3022c2a4f210f168865b5986bcef0"
+    },
+    ".claude/skills/writing-skills/graphviz-conventions.dot": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "e2890a593c91370e384b42f2f67b1a6232c9e69dddea7891a0c1c46d7b20b694"
+    },
+    ".claude/skills/writing-skills/persuasion-principles.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "a51bc9bf75189ea73a27b3fb504a2fdfdb966fb1f7f1cdf03203230a216ccc03"
+    },
+    ".claude/skills/writing-skills/render-graphs.js": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "ccda971a87bb185f8febf81c56b556a20d026fa980c17b35fa3e8824fbb37852"
+    },
+    ".claude/skills/writing-skills/testing-skills-with-subagents.md": {
+      "plugin": "superpowers",
+      "ref": "v6.2.0",
+      "sha256": "0dba46de2d2640af8df1530692587a2b6896b249d74016ac9d8e06c74cd195c2"
+    }
+  },
+  "mcp_servers": [],
+  "prev_hooks": null,
+  "sources": {
+    "claude-template-core": {
+      "market": "claude-template",
+      "markets": [
+        "claude-template"
+      ]
+    },
+    "claude-template-hooks-py": {
+      "market": "claude-template",
+      "markets": [
+        "claude-template"
+      ]
+    },
+    "ponytail": {
+      "commit": "0a4dd63ad4541f4f655c4108a295916f3c1d8fda",
+      "market": "ponytail",
+      "markets": [
+        "ponytail"
+      ],
+      "ref": "v4.9.0"
+    },
+    "superpowers": {
+      "commit": "3dcbd5c4b48e02263fbf4a3c01e3fe4f81d584d9",
+      "market": "claude-plugins-official",
+      "markets": [
+        "claude-plugins-official",
+        "superpowers-dev"
+      ],
+      "ref": "v6.2.0"
+    }
+  }
+}
