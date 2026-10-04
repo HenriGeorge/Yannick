@@ -32,7 +32,7 @@ to promote recurring *lessons* into hooks/rules (that is `/improve`, a different
 
 Choice-taking skill → run this BEFORE gathering. Ask **one `AskUserQuestion` at a time**, in order;
 each has a recommended default. Skip a question only if the invocation argument already answers it
-(`/improve-skills grill-me` pins scope to one skill).
+(`/improve-skills grill-me-interview` pins scope to one skill).
 
 1. **Scope** — one named skill, or `all`? **Default: the argument; else `all`.**
 2. **Sources** — which of the three to pull? (a) all three · (b) `/dev-reflect` rows only · (c) the
@@ -105,7 +105,7 @@ hash is captured correctly.
 
 ## Common mistakes
 
-- **Hand-editing a `SKILL.md` directly.** Every edit routes through `writing-skills` (workflow-adherence
+- **Hand-editing a `SKILL.md` directly.** Every edit routes through `writing-skills` (workflow.md Adherence
   #7). This skill orchestrates and gates; it never writes skill content itself.
 - **Reading only the latest `/dev-reflect` block.** Scan every un-actioned block; the log makes it
   idempotent.

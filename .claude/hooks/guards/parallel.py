@@ -258,7 +258,7 @@ def check(ctx):
             reason = _check_plan(text, notes)
             if reason:
                 return (  # block drops notes (never reached ctx.notes) — matches the standalone
-                    f"Blocked: plan '{path}' {reason} (see rules/workflow-adherence.md). Bypass a "
+                    f"Blocked: plan '{path}' {reason} (see rules/workflow.md Adherence). Bypass a "
                     f"genuinely serial plan with '{BYPASS_SENTINEL}' in the commit command."
                 )
         if notes:

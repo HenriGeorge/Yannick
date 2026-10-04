@@ -21,10 +21,15 @@ const SUBCOMMANDS = {
   // capture — optional deps, lazy-imported (needs `npm install --prefix <this dir>`)
   capture: "live page → sharp vector SVG (needs npm install: playwright/esbuild/dom-to-svg)",
   export: "config-driven: capture N targets → validate → distribute set_svg (needs npm install)",
+  lanes: "launch N parallel Figma agents (one file/channel/session each) — starts its own relay",
 };
 
-const CORE = ["tokens", "place", "rebind", "probe", "page", "png"];
+const CORE = ["tokens", "place", "rebind", "probe", "page", "png", "lanes"];
 const CAPTURE = ["capture", "export"];
+// `lanes` starts the relay itself (ensureRelay), so it must bypass the normal assertRelay
+// preflight — asserting a relay that isn't up yet would always fail before lanes gets a chance
+// to spawn it.
+const PREFLIGHT_EXEMPT = new Set(["lanes"]);
 
 function printHelp(out) {
   out("figma.mjs — ClaudeTalkToFigma bridge toolkit (relay ws://localhost:3055)\n");
@@ -62,9 +67,11 @@ if (!SUBCOMMANDS[cmd]) {
 // stack) so a wedged relay / dep-missing reads legibly.
 const socketUrl = process.env.FIGMA_WS_URL ?? "ws://localhost:3055";
 try {
-  const { assertRelay } = await import("./lib/preflight.mjs");
-  await assertRelay(socketUrl);
   const mod = await import(`./lib/${cmd}.mjs`);
+  if (!PREFLIGHT_EXEMPT.has(cmd)) {
+    const { assertRelay } = await import("./lib/preflight.mjs");
+    await assertRelay(socketUrl);
+  }
   await mod.run(args.slice(1));
 } catch (err) {
   console.error(err?.message ?? String(err));

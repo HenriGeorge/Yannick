@@ -365,7 +365,7 @@ def check(ctx):
             return (
                 f"Blocked: '{path}' is a spec/plan/ADR with no non-empty '## Grill findings' "
                 "section. Run grill-me and record findings + dispositions (see "
-                "rules/workflow-adherence.md). For a genuinely trivial doc, add "
+                "rules/workflow.md Adherence). For a genuinely trivial doc, add "
                 f"'{BYPASS_SENTINEL}' to the commit command — but prefer recording the grill."
             )
         if is_final_spec:  # #709 — a finalized spec must also record its `## Interview` (>=4 Q&A)
