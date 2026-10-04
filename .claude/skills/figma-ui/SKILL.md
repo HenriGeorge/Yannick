@@ -46,7 +46,8 @@ Server-side queue makes parallel agents safe, with two hard rules:
 
 - `set_current_page` is **blocked** in parallel mode.
 - Every `create_*`/`set_*` **must pass an explicit `parentId`**. One writer per channel; researchers
-  read-only. Connect: `Connect to Figma, channel <repo-folder-name>` (`join_channel`) — the project's
+  read-only — a **safe default, not a hard limit** (see "Multiple writers on ONE file" below for safe
+  concurrent writers). Connect: `Connect to Figma, channel <repo-folder-name>` (`join_channel`) — the project's
   stable channel = the repo folder name, derived automatically by the toolkit (no manual
   `export FIGMA_CHANNEL` needed). Once the plugin is opened, the patched panel **auto-joins the open
   file's name** as the channel — no typing — so it lands on the folder channel provided you **name the
@@ -55,6 +56,32 @@ Server-side queue makes parallel agents safe, with two hard rules:
   `.claude/worktrees.conf` (one project = one file = one channel). Vendored + patched at
   `vendor/ctf-plugin/`, imported once from the hook's stable-path mirror — see the `figma-bridge` skill
   for install + the `figma.root.name` auto-join details.
+
+### Multiple writers on ONE file (same channel)
+
+"One writer per channel" is the **safe default, not a hard limit** — N agents CAN edit one file at once,
+**but only if no two ever touch the same node subtree.** The relay queue serializes individual calls so
+they don't corrupt each other, but it gives you **no transaction**: one writer's read-modify-write on a
+node can interleave with another's. Disjointness is what makes concurrent writing safe.
+
+- **Partition by disjoint parent nodes.** A coordinator assigns each writer its own page/frame/parent up
+  front; no two writers share a parent subtree. (Same rule as a plan's `## Parallelization` — disjoint
+  files there, disjoint Figma parents here.)
+- **Every write passes an explicit `parentId`** (already a hard rule, and this is why): without it a
+  `create_*` appends to the **current page**, which all agents share → a race. With `parentId` each write
+  targets a specific node in the writer's own partition.
+- **`set_current_page` stays blocked** — the current-page cursor is shared, so one agent moving it
+  reorders every other agent's implicit target. Writers coordinate by `parentId`, never by page.
+- **Keep each agent's reads AND writes inside its own partition** — a writer reading a node another is
+  mutating is the same race; the disjoint-parent rule only holds if nobody reaches across.
+- **Can't make the partitions disjoint?** (e.g. all three restyle the same component set) — do NOT run
+  concurrent writers: serialize through **one** writer, or split into separate files and use `lanes`
+  (one writer each — see `figma-bridge`), then reconcile.
+
+Setup: one Figma window on the file (plugin on the file's channel) → N `claude` sessions all
+`join_channel <file-name>` → a coordinator hands out disjoint parents → each writer passes `parentId` on
+every `create_*`/`set_*`. Extra agents that only read (scan/export) need no partition — they're the
+read-only researchers.
 
 ## Pushing a preview INTO Figma for sign-off (#104 · #106)
 

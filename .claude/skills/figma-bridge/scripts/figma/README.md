@@ -1,6 +1,6 @@
 # figma-bridge toolkit
 
-Last updated: 2026-08-27 06:30
+Last updated: 2026-10-04 18:23
 
 One CLI (`figma.mjs`) for the **quota-free ClaudeTalkToFigma bridge** — a WebSocket relay
 (`ws://localhost:3055`) into a running Figma plugin, with **no** API quota (unlike the official
@@ -30,7 +30,7 @@ node "${CLAUDE_PROJECT_DIR}/.claude/skills/figma-bridge/scripts/figma/figma.mjs"
 
 | Family | Subcommands | Install |
 |---|---|---|
-| **core** | `tokens` `place` `rebind` `probe` `page` `png` | none — Node + built-in WebSocket only |
+| **core** | `tokens` `place` `rebind` `probe` `page` `png` `lanes` | none — Node + built-in WebSocket only |
 | **capture** | `capture` `export` | `npm install --prefix <this dir>` (playwright/esbuild/dom-to-svg) |
 
 `capture`/`export` `await import()` the heavy deps *inside* `run()`, so dispatching a core
@@ -90,6 +90,12 @@ the fill to that variable. `--strokes` also rebinds strokes; `--dry-run` reports
 - `probe --channel=<id>` (repeatable; `FIGMA_CHANNEL` seeds one) → the live channel's pages + fileKey.
 - `page --name=<pageName> [--file-key]` — ensure / rename / set-current a page.
 - `png [--all --filter=<substr> --scale=N --out=<dir> --channel]` — export selected frames → PNG on disk.
+- `lanes [channel=fileKey[@cwd] ...] [--max=N] [--prime=<text>] [--no-spawn]` — fan a single macOS
+  Figma launch out over N parallel channels/files, each in its own detached tmux session (also
+  reachable via `bin/figma-lanes`). Persistent default: `FIGMA_LANES` / `FIGMA_LANES_MAX` in
+  `.claude/worktrees.conf` (env/CLI still wins). `lanes` starts/probes its own relay per lane
+  instead of requiring one already up, so it is **preflight-exempt** — the normal "relay not
+  responding, run the ClaudeTalkToFigma plugin" dispatcher check is skipped for it.
 
 ## Wire protocol
 

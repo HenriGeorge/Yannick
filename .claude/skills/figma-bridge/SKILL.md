@@ -113,6 +113,7 @@ before touching the relay.
 - `probe` — probe channels → the live channel's pages + fileKey. `--channel=<id>` (repeatable).
 - `page` — ensure / rename / set-current a page. `--name=<pageName> [--file-key]`.
 - `png` — export a selection → PNG on disk. `[--all --filter=<substr> --scale=N --out=<dir> --channel]`.
+- `lanes` — launch N parallel Figma agents (one file/channel/session each); starts its own relay, so it bypasses the normal preflight. `<lane...> [--no-spawn --max=N]` (lane = `channel=fileKey[@cwd]`); also runnable as `bin/figma-lanes`.
 
 **Capture — optional deps (`playwright`/`esbuild`/`dom-to-svg`), lazy-imported:**
 

@@ -18,6 +18,7 @@ import json
 import os
 import random
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -114,7 +115,7 @@ GN_CONTENT_BULLET_RE = re.compile(r"^\s*[-*]\s+\S")
 
 GN_NOTICE = (
     "Notice: this plan has no non-empty '## Grill findings' section yet. "
-    "rules/workflow-adherence.md #5 requires grilling the PLAN (not just the design) before BUILD "
+    "rules/workflow.md (Adherence #5) requires grilling the PLAN (not just the design) before BUILD "
     "— run grill-me and record findings + dispositions. This never blocks; it's a reminder."
 )
 GN_SPEC_NOTICE = (
@@ -416,6 +417,88 @@ def _suite_overrun_nudge(data):
     return None
 
 
+# ---- rtk_nudge ------------------------------------------------------------------------------------
+# PostToolUse(Bash): instruction-mode RTK is a prose "prefix with rtk" rule that doesn't hold. When a
+# known-RTK-compressible command runs RAW (no `rtk ` prefix) and rtk is installed and hook mode is NOT
+# active, WARN once per distinct leading verb (capped per session). Observe-only: never rewrites,
+# never blocks. Silent when rtk is absent (graceful) or `.rtk/hook-mode` exists (rtk's -g hook already
+# rewrites, so a "you ran raw" warning would be false). See docs/RTK.md.
+RK_VERBS = frozenset((
+    "git", "npm", "pnpm", "yarn", "bun", "cargo", "go", "pytest", "psql", "aws", "docker",
+    "kubectl", "make", "ruff", "eslint", "tsc", "gh",
+))
+RK_CAP = 5  # max RTK nudges per session (anti-fatigue)
+# Strip a leading `sudo`/`env` and any `VAR=val` assignments to find the real leading verb.
+RK_ASSIGN_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+
+
+def _rk_leading_verb(command):
+    toks = command.strip().split()
+    i = 0
+    while i < len(toks):
+        t = toks[i]
+        if t in ("sudo", "env") or RK_ASSIGN_RE.match(t):
+            i += 1
+            continue
+        return t
+    return None
+
+
+def _rtk_nudge(data):
+    try:
+        if data.get("tool_name", "") != "Bash":
+            return None
+        ti = data.get("tool_input", {})
+        command = ti.get("command", "") if isinstance(ti, dict) else ""
+        if not isinstance(command, str) or not command.strip():
+            return None
+        verb = _rk_leading_verb(command)
+        if verb == "rtk" or verb not in RK_VERBS:
+            return None  # already prefixed, or not an RTK-compressible command
+        if shutil.which("rtk") is None:
+            return None  # rtk not installed → nothing to prefix with (graceful degrade)
+        proj = os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or os.getcwd()
+        if os.path.exists(os.path.join(proj, ".rtk", "hook-mode")):
+            return None  # B active: rtk's -g hook rewrites already; a raw-command warning would be false
+
+        raw_sid = data.get("session_id", "unknown") or "unknown"
+        session_id = re.sub(r"[^A-Za-z0-9_-]", "", str(raw_sid)) or "unknown"
+        state_dir = os.path.join(proj, ".claude", "state", "rtk_nudge")
+        state_file = os.path.join(state_dir, session_id + ".json")
+        state = {"verbs": [], "count": 0}
+        try:
+            with open(state_file, encoding="utf-8") as fh:
+                loaded = json.load(fh)
+            if isinstance(loaded, dict):
+                state["verbs"] = [v for v in loaded.get("verbs", []) if isinstance(v, str)]
+                state["count"] = int(loaded.get("count", 0))
+        except (OSError, json.JSONDecodeError, ValueError, TypeError):
+            pass
+
+        if verb in state["verbs"] or state["count"] >= RK_CAP:
+            return None  # already warned for this verb, or hit the per-session cap
+
+        state["verbs"] = sorted(set(state["verbs"]) | {verb})
+        state["count"] += 1
+        try:
+            os.makedirs(state_dir, exist_ok=True)
+            tmp = state_file + "." + str(os.getpid()) + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as fh:
+                json.dump(state, fh)
+            os.replace(tmp, state_file)
+        except OSError:
+            pass  # can't persist → still warn this once
+
+        return (
+            f"`rtk` is enabled but `{verb} …` ran raw — prefix with `rtk ` (`rtk {verb} …`) to "
+            "compress its output. Instruction mode: prefixing is NOT automatic. Opt into "
+            "auto-rewrite with the `-g` hook (RTK_HOOK=1 at scaffold) — see docs/RTK.md."
+        )
+    except Exception:  # noqa: BLE001 - never brick a session
+        return None
+    return None
+
+
 # ---- merge_autoff ---------------------------------------------------------------------------------
 # After a `gh pr merge` tool call, safely ff the current repo's main checkout so a merged branch is
 # immediately live (#fleet-freshness, Trigger A). Command-matched REGARDLESS of exit code — `gh pr
@@ -445,6 +528,7 @@ MODULES = (
     ("parallel_nudge", _parallel_nudge),
     ("scope_creep", _scope_creep),
     ("suite_overrun_nudge", _suite_overrun_nudge),
+    ("rtk_nudge", _rtk_nudge),
     ("merge_autoff", _merge_autoff),  # network git — last, so a slow fetch never delays the nudges
 )
 
