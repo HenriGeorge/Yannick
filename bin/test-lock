@@ -3,10 +3,14 @@
 # (keyed by `git rev-parse --git-common-dir`, so every worktree of a repo shares ONE lock) for the
 # whole run. macOS ships no flock(1), so the mutex is an atomic
 # mkdir + stale-PID reclaim (a crash-safe atomic-mkdir pattern).
-# Exit: wrapped command's code; 75 (EX_TEMPFAIL) on contention; 64 on usage error.
+# `--wait [--timeout SECS]` (#961) queues FIFO instead of failing fast: it takes a ticket
+# <lock>.queue/<10-digit seq> (body = pid, created atomically via ln) and blocks until its ticket
+# is the oldest LIVE one AND the lock is free — no exit-75 retry loops racing for a freed lock.
+# Dead-pid tickets are reaped; holder + queue position go to stderr every ~10 s.
+# Exit: wrapped command's code; 75 (EX_TEMPFAIL) on contention or --wait timeout; 64 on usage error.
 set -u
 
-usage() { echo "usage: test-lock [--print-lock-path] -- <cmd> [args...]" >&2; exit 64; }
+usage() { echo "usage: test-lock [--print-lock-path] [--wait [--timeout SECS]] -- <cmd> [args...]" >&2; exit 64; }
 
 common_dir="$(git rev-parse --git-common-dir 2>/dev/null)" || { echo "test-lock: not in a git repo" >&2; exit 64; }
 case "$common_dir" in /*) : ;; *) common_dir="$(pwd)/$common_dir" ;; esac
@@ -17,38 +21,125 @@ key="$(printf '%s' "$common_dir" | cksum | awk '{print $1}')"
 lock_dir="${HOME}/.cache/claude-template/test-lock/${key}.lock"
 
 if [ "${1:-}" = "--print-lock-path" ]; then printf '%s\n' "$lock_dir"; exit 0; fi
+wait_mode=0; timeout=0 # 0 = wait forever
+if [ "${1:-}" = "--wait" ]; then
+  wait_mode=1; shift
+  if [ "${1:-}" = "--timeout" ]; then
+    case "${2:-}" in ''|*[!0-9]*) usage ;; esac
+    timeout="$2"; shift 2
+  fi
+fi
 [ "${1:-}" = "--" ] || usage
 shift
 [ $# -ge 1 ] || usage
 
 mkdir -p "$(dirname "$lock_dir")"
 
-write_holder() { printf 'pid=%s start=%s cmd=%s\n' "$$" "$(date '+%F %T')" "$*" > "$lock_dir/holder"; }
+write_holder() {
+  printf 'pid=%s start=%s cmd=%s\n' "$$" "$(date '+%F %T')" "$*" > "$lock_dir/holder" 2>/dev/null && return 0
+  echo "test-lock: cannot write holder file in $lock_dir — released the lock, not running (exit 75)" >&2
+  rm -rf "$lock_dir"; return 2 # 2 = fatal, already reported (callers must not say "lock held")
+}
+# GNU stat first: BSD/macOS `stat -c` fails, and GNU `stat -f` means --file-system (wrong answer)
+mtime() { stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null; }
+GRACE=2 # s — a holder-less lock younger than this is a winner between mkdir and write_holder
 
 acquire() {
   if mkdir "$lock_dir" 2>/dev/null; then
-    write_holder "$@"
-    return 0
+    write_holder "$@"; return
   fi
-  # stale reclaim: holder pid dead (or holder file empty/unparseable) → take over. The steal is
-  # an atomic rename — with two concurrent reclaimers only ONE mv succeeds, so the loser can't
-  # rm-rf the winner's freshly acquired lock (PR #282 review, Important #2).
-  local hpid
+  # stale reclaim: holder pid dead → take over. An empty/missing/unparseable holder only counts as
+  # stale once the lock dir is older than GRACE (else it's a live winner mid-write — #961 review).
+  # The steal is an atomic rename, so two reclaimers never both mv the SAME stale dir — but the race
+  # is not closed: B can judge the old lock stale, A renames + recreates it, then B's mv moves A's
+  # fresh lock away (two holders). Known gap — follow-up #969.
+  # Returns 0 = acquired, 1 = held (retry), 2 = fatal, already reported.
+  local hpid m
   hpid="$(sed -n 's/^pid=\([0-9]*\).*/\1/p' "$lock_dir/holder" 2>/dev/null | head -1)"
-  if [ -z "$hpid" ] || ! kill -0 "$hpid" 2>/dev/null; then
-    if mv "$lock_dir" "$lock_dir.stale.$$" 2>/dev/null; then
-      rm -rf "$lock_dir.stale.$$"
-      mkdir "$lock_dir" 2>/dev/null || return 1
-      write_holder "$@"
-      return 0
+  if [ -z "$hpid" ]; then
+    m="$(mtime "$lock_dir")"
+    if [ -z "$m" ] || [ $(( $(date +%s) - m )) -lt 0 ]; then
+      if [ -d "$lock_dir" ] && [ -z "${age_warned:-}" ]; then # a vanished dir is just a release
+        age_warned=1
+        echo "test-lock: cannot judge lock age of $lock_dir (stat failed / future mtime) — remove it if no run is active" >&2
+      fi
+      return 1
     fi
+    [ $(( $(date +%s) - m )) -ge "$GRACE" ] || return 1
+  elif kill -0 "$hpid" 2>/dev/null; then
+    return 1
+  fi
+  if mv "$lock_dir" "$lock_dir.stale.$$" 2>/dev/null; then
+    rm -rf "$lock_dir.stale.$$"
+    mkdir "$lock_dir" 2>/dev/null || return 1
+    write_holder "$@"; return
   fi
   return 1
 }
 
-if ! acquire "$@"; then
-  echo "test-lock: lock held — $(cat "$lock_dir/holder" 2>/dev/null || echo 'holder unknown')" >&2
-  exit 75
+holder() { cat "$lock_dir/holder" 2>/dev/null || echo 'holder unknown'; }
+
+if [ "$wait_mode" -eq 1 ]; then
+  q="$lock_dir.queue"; mine=""
+  qfail() { echo "test-lock: $1 — cannot queue (exit 75)" >&2; exit 75; }
+  trap 'rm -f "$q/.tmp.$$"; [ -z "$mine" ] || rm -f "$q/$mine"' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  mkdir -p "$q" 2>/dev/null || qfail "cannot create queue dir $q"
+  # ticket = max(highest ticket, high-water .seq) + 1; `ln` of a pre-written temp file is an atomic
+  # create-if-absent, so two arrivals never share a seq and a ticket is never visible without its
+  # pid. The .seq high-water mark keeps a reaped seq from being reused (reaper delete-race).
+  # ponytail: .seq is written non-atomically after ln — a racing pair can leave it one low, so a
+  # reaped seq can rarely be reused; the loser sees "ticket vanished" and exits 75 (loud, not hung).
+  printf '%s\n' "$$" > "$q/.tmp.$$" 2>/dev/null || qfail "cannot write ticket in $q"
+  D='[0-9]'; tglob="$D$D$D$D$D$D$D$D$D$D" # exactly 10 digits — a stray file can't break 10#$last
+  last=0; for f in "$q"/$tglob; do [ -e "$f" ] && last="${f##*/}"; done # glob sorts → last = max
+  hw="$(cat "$q/.seq" 2>/dev/null)"; case "$hw" in ''|*[!0-9]*) hw=0 ;; esac
+  seq=$(( 10#$last > 10#$hw ? 10#$last + 1 : 10#$hw + 1 ))
+  tries=0
+  while :; do
+    tk="$(printf '%010d' "$seq")"
+    if err="$(ln "$q/.tmp.$$" "$q/$tk" 2>&1)"; then break; fi
+    [ -e "$q/$tk" ] || qfail "cannot create ticket $q/$tk: $err"
+    tries=$((tries + 1)); [ "$tries" -lt 1000 ] || qfail "no free ticket after 1000 tries in $q"
+    seq=$((seq + 1))
+  done
+  mine="$tk"; rm -f "$q/.tmp.$$"
+  printf '%s\n' "$seq" > "$q/.seq" 2>/dev/null || true # best-effort: a stale .seq only risks the ponytail race above
+  # ponytail: a ticket is "live" by pid alone — a reused pid keeps a dead ticket alive until the
+  # unrelated process exits; add a start-time to the body if that ever bites.
+  start="$(date +%s)"; n=0
+  while :; do
+    [ -e "$q/$mine" ] || { echo "test-lock: ticket $mine vanished from $q — exit 75" >&2; exit 75; }
+    head=""; hpid=""; pos=0
+    for f in "$q"/$tglob; do
+      [ -e "$f" ] || continue
+      t="${f##*/}"; p="$(cat "$f" 2>/dev/null)"
+      if [ -z "$p" ]; then echo "test-lock: reaped unreadable/empty ticket $t" >&2; rm -f "$f"; continue; fi
+      if ! kill -0 "$p" 2>/dev/null; then rm -f "$f"; continue; fi # reap a dead waiter's ticket
+      pos=$((pos + 1)); [ -n "$head" ] || { head="$t"; hpid="$p"; }
+      [ "$t" = "$mine" ] && break
+    done
+    if [ "$head" = "$mine" ]; then
+      acquire "$@"; rc=$?
+      [ "$rc" -eq 0 ] && { rm -f "$q/$mine"; mine=""; break; }
+      [ "$rc" -eq 2 ] && exit 75 # fatal, already reported
+    fi
+    if [ "$head" = "$mine" ]; then blocker="lock holder: $(holder)"; else blocker="ahead: ticket $head (pid $hpid); lock holder: $(holder)"; fi
+    if [ "$timeout" -gt 0 ] && [ $(( $(date +%s) - start )) -ge "$timeout" ]; then
+      echo "test-lock: timed out after ${timeout}s waiting (queue position $pos) — $blocker" >&2
+      exit 75
+    fi
+    [ $((n % 10)) -eq 0 ] && echo "test-lock: waiting — queue position $pos; $blocker" >&2
+    n=$((n + 1)); sleep 1
+  done
+else
+  acquire "$@"; rc=$?
+  [ "$rc" -eq 2 ] && exit 75 # fatal, already reported
+  if [ "$rc" -ne 0 ]; then
+    echo "test-lock: lock held — $(holder)" >&2
+    exit 75
+  fi
 fi
 trap 'rm -rf "$lock_dir"' EXIT INT TERM
 

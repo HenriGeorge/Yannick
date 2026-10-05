@@ -94,7 +94,7 @@ def runs_test_cmd(cmd, test_cmd):
 # A suite run as stop_gate sees it: bare OR wrapped. The guard asks "is this an UNWRAPPED run?" (so
 # it allows the wrapper first); stop_gate asks "did the suite run?" — same definition, wrapper and a
 # leading `rtk ` stripped first (hook consolidation PR 7).
-_LOCK_WRAPPER_RE = re.compile(r"^(?:\S*/)?test-lock\s+--\s+|^cc-worktrees\s+test\s+--\s+")
+_LOCK_WRAPPER_RE = re.compile(r"^(?:\S*/)?test-lock\s+--\s+")
 _RUNNER_HINT_RE = re.compile(r"npm|pnpm|yarn|pytest|go\s+test|cargo|vitest|jest|python|uv\s+run|bash\s+tests/run\.sh")
 # Launchers that front a runner: `uv run pytest`, `python -m pytest`. Peeled before the runner check.
 _SUITE_LAUNCHER_RE = re.compile(r"^(?:uv\s+run\s+|python3?\s+-m\s+)")

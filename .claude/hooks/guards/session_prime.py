@@ -148,7 +148,7 @@ def check(ctx):
             return None  # #995: a worktree can't isolate a target outside it either
         if _is_gitignored(file_path, cwd):
             return None  # #995: nor a per-user gitignored file inside it (e.g. CLAUDE.local.md)
-    elif tool == "Bash":
+    elif tool in ("Bash", "PowerShell"):
         inline_cmd = tool_input.get("command", "")
         if not GIT_COMMIT_RE.search(inline_cmd):
             return None  # only `git commit` is gated on the Bash path

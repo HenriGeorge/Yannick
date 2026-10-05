@@ -87,6 +87,7 @@ FORCE_MERGE_BYPASS = "WORKFLOW:force-merge"
 NO_REVIEW_BYPASS = "WORKFLOW:no-review"
 NO_SECURITY_BYPASS = "WORKFLOW:no-security"
 NO_TESTQUALITY_BYPASS = "WORKFLOW:no-test-quality"
+NO_SUITE_BYPASS = "WORKFLOW:no-suite"
 SPEC_PATHS = ("docs/superpowers/specs", "docs/superpowers/plans")
 # All three merge-gate marker axes share ONE head-bound evaluator (`_axis_status`). A marker is
 # `<!-- {prefix}:VERDICT@<sha> -->`; the `@<sha>` is optional in the regex so a bare (old-format)
@@ -97,11 +98,19 @@ SPEC_PATHS = ("docs/superpowers/specs", "docs/superpowers/plans")
 MARKER_RE_TMPL = r"<!--\s*{prefix}:(\w+)(?:@([0-9a-f]+))?(?:\s+reason=([\w-]+))?\s*-->"
 FULL_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 AUTO_WAIVER_REASON = "docs-only"
+# #1073: a test-quality waiver for prose-only prompt-code markdown (commands/agents/rules) — prompt-code
+# keeps security review, but prose has no testable behavior, so test-quality is machine-waived. Valid
+# ONLY on the test-quality axis (a security:WAIVED reason=no-testable-behavior still blocks).
+NO_TESTABLE_BEHAVIOR = "no-testable-behavior"
 # Tier-0 (docs-only) path predicate, copied byte-for-byte from bin/pr-tier (#926). tests/test_pr_tier.sh
 # PT-DRIFT pins the three copies (bash, py, node) equal. Keep to portable ERE syntax. Case-INSENSITIVE:
 # macOS checkouts are case-insensitive, so `.Claude/x.md` loads exactly like `.claude/x.md`.
 TIER0_DOC_RE = re.compile(r"\.md$", re.IGNORECASE)
 TIER0_DENY_RE = re.compile(r"(^|/)(rules|commands|agents|global-agents|skills|hooks|\.claude|\.github)/|(^|/)(CLAUDE|CLAUDE\.local|project-context|SKILL)\.md$|(^|/)GATES[^/]*\.md$|\.template\.md$|(^|/)docs/lessons[^/]*\.md$|(^|/)plugins/[^/]+/docs/", re.IGNORECASE)
+# #1073: prompt-prose predicate, also copied byte-for-byte from bin/pr-tier (pinned by PT-DRIFT). A .md
+# under a plugin's prompt-code dirs (commands/agents/rules) or top-level rules/ — prose with no testable
+# behavior, so the no-testable-behavior test-quality waiver is valid when every changed path is prose.
+PROMPT_PROSE_RE = re.compile(r"(^|/)plugins/[^/]+/(commands|agents|rules)/.*\.md$|(^|/)rules/.*\.md$", re.IGNORECASE)
 # changeType values whose `path` is the WHOLE story. RENAMED/COPIED hide the old path; anything else
 # (missing, null, unknown) can't be verified — both fail closed.
 VERIFIABLE_CHANGE_TYPES = ("ADDED", "MODIFIED", "DELETED", "CHANGED")
@@ -120,6 +129,9 @@ SECURITY_OK_VERDICTS = {"PASS", "WAIVED"}
 # Test-quality axis (Deliverable L): verifies the plan-named acceptance tests are green at head +
 # ≥1 is mutation-proven able to fail.
 TESTQUALITY_OK_VERDICTS = {"PASS", "WAIVED"}
+# Suite axis (Task 1, suite merge-gate axis): active ONLY where CI is not required — where it is,
+# the CI axis itself owns regression and the suite axis stays inert (see _check_merge).
+SUITE_OK_VERDICTS = {"PASS", "WAIVED"}
 CREATE_NUDGE = (
     "PR opened — run /pr-open to AUTO-DISPATCH the review panel + docs-impact (a command can spawn "
     "agents; this hook cannot). A panel is dispatched only through `/pr-open` — a hand-dispatched "
@@ -814,13 +826,25 @@ def _axis_status(pr: dict, prefix: str, ok_verdicts: set, use_reviews: bool) -> 
         return False, (f"{prefix} is for {sha[:7]}, but the PR head is now {head[:7]} "
                        f"({_commit_distance(pr, sha, head)}). {_fix_hint(pr, prefix)}")
     if verdict == "WAIVED" and reason is not None:
-        if reason != AUTO_WAIVER_REASON:
-            return False, (f"{prefix}:WAIVED carries an unrecognized reason={reason} (only "
-                           f"reason={AUTO_WAIVER_REASON} is machine-checked). {_fix_hint(pr, prefix)}")
-        bad = _docs_only_violation(pr)
-        if bad:
-            return False, (f"{prefix}:WAIVED reason={AUTO_WAIVER_REASON} is only valid on a docs-only "
-                           f"PR, but {bad}. Run the {prefix} reviewer (/pr-open --full). "
+        if reason == AUTO_WAIVER_REASON:
+            bad = _docs_only_violation(pr)
+            if bad:
+                return False, (f"{prefix}:WAIVED reason={AUTO_WAIVER_REASON} is only valid on a docs-only "
+                               f"PR, but {bad}. Run the {prefix} reviewer (/pr-open --full). "
+                               f"{_fix_hint(pr, prefix)}")
+        elif reason == NO_TESTABLE_BEHAVIOR and prefix == "test-quality":
+            # #1073: prose-only prompt-code markdown has no testable behavior. Valid ONLY here — any
+            # other axis falls through to the unrecognized-reason reject below.
+            bad = _prose_only_violation(pr)
+            if bad:
+                return False, (f"{prefix}:WAIVED reason={NO_TESTABLE_BEHAVIOR} is only valid on a "
+                               f"prose-only PR (all changed paths markdown under docs or "
+                               f"commands/agents/rules), but {bad}. Run the {prefix} reviewer "
+                               f"(/pr-open --full). {_fix_hint(pr, prefix)}")
+        else:
+            return False, (f"{prefix}:WAIVED carries an unrecognized reason={reason} (this axis "
+                           f"machine-checks only reason={AUTO_WAIVER_REASON}"
+                           f"{f'/{NO_TESTABLE_BEHAVIOR}' if prefix == 'test-quality' else ''}). "
                            f"{_fix_hint(pr, prefix)}")
     return True, ""
 
@@ -849,6 +873,36 @@ def _docs_only_violation(pr: dict) -> str | None:
                     f"{'/'.join(VERIFIABLE_CHANGE_TYPES)} can be verified)")
         if not TIER0_DOC_RE.search(path) or TIER0_DENY_RE.search(path):
             return f"{path} is not a docs-only path"
+    return None
+
+
+def _prose_only_violation(pr: dict) -> str | None:
+    """None iff every changed path is prose markdown with no testable behavior (#1073). Otherwise,
+    the first problem. Prose = markdown that is either a tier-0 doc OR prompt-code markdown under
+    commands/agents/rules (PROMPT_PROSE_RE). Any non-.md, or a .md that is neither (e.g. a hook's
+    README), blocks. Fails closed on the same unverifiable shapes as _docs_only_violation.
+    """
+    files = pr.get("files")
+    if not isinstance(files, list) or not files:
+        return "the gate could not read the PR's changed files"
+    total = pr.get("changedFiles")
+    if not isinstance(total, int) or isinstance(total, bool) or total != len(files):
+        return f"the PR's file list is incomplete ({len(files)} of {total} files returned)"
+    for f in files:
+        path = f.get("path") if isinstance(f, dict) else None
+        if not isinstance(path, str) or not path:
+            return "a changed file has no path"
+        ctype = str(f.get("changeType") or "").upper()
+        if ctype in ("RENAMED", "COPIED"):
+            return f"{path} is a rename/copy (its old path is not visible to the gate)"
+        if ctype not in VERIFIABLE_CHANGE_TYPES:
+            return (f"{path} has changeType {ctype or 'missing'} (only "
+                    f"{'/'.join(VERIFIABLE_CHANGE_TYPES)} can be verified)")
+        if not TIER0_DOC_RE.search(path):
+            return f"{path} is not markdown (prose has no testable behavior; code does)"
+        # a .md is prose iff it's a tier-0 doc OR prompt-code markdown (commands/agents/rules)
+        if TIER0_DENY_RE.search(path) and not PROMPT_PROSE_RE.search(path):
+            return f"{path} is markdown but not prose-only prompt-code (commands/agents/rules)"
     return None
 
 
@@ -885,6 +939,7 @@ def _check_merge(command: str, tokens: list, end: int, cwd: str) -> None:
     review_bypass = NO_REVIEW_BYPASS in command
     security_bypass = NO_SECURITY_BYPASS in command
     testquality_bypass = NO_TESTQUALITY_BYPASS in command
+    suite_bypass = NO_SUITE_BYPASS in command
     # ponytail: always fetch (dropped the old `force_bypass and review_bypass → return` short-circuit).
     # With a THIRD axis it was a fail-OPEN hole — a `force-merge + no-review` command would skip the
     # fetch and never evaluate security. One `gh pr view` is cheap; removing the special case removes
@@ -906,12 +961,17 @@ def _check_merge(command: str, tokens: list, end: int, cwd: str) -> None:
     review_ok, review_why = _axis_status(pr, "code-review", {"APPROVE"}, True)
     security_ok, security_why = _axis_status(pr, "security-review", SECURITY_OK_VERDICTS, False)
     testquality_ok, testquality_why = _axis_status(pr, "test-quality", TESTQUALITY_OK_VERDICTS, False)
+    if ci_mode != "required":
+        suite_ok, suite_why = _axis_status(pr, "suite", SUITE_OK_VERDICTS, False)
+        suite_ok = suite_ok or suite_bypass
+    else:
+        suite_ok, suite_why = True, ""  # CI axis owns regression where CI is required
     match_head_ok, match_head_why = _match_head_ok(pr, tokens)
     review_ok = review_ok or review_bypass
     security_ok = security_ok or security_bypass
     testquality_ok = testquality_ok or testquality_bypass
     match_head_ok = match_head_ok or force_bypass
-    if ci_ok and mergeable_ok and match_head_ok and review_ok and security_ok and testquality_ok:
+    if ci_ok and mergeable_ok and match_head_ok and review_ok and security_ok and testquality_ok and suite_ok:
         _emit_merge_warning(cwd)  # advisory, additive — emitted ONLY on the ALLOW path
         return
     reasons = []
@@ -927,11 +987,14 @@ def _check_merge(command: str, tokens: list, end: int, cwd: str) -> None:
         reasons.append(security_why)
     if not testquality_ok:
         reasons.append(testquality_why)
+    if not suite_ok:
+        reasons.append(suite_why)
     _block(
         "Blocked: `gh pr merge` — " + " and ".join(reasons) + ". Fix the underlying issue, or "
         f"if this merge is genuinely safe, add '{FORCE_MERGE_BYPASS}' (CI/mergeable) and/or "
         f"'{NO_REVIEW_BYPASS}' (review) and/or '{NO_SECURITY_BYPASS}' (security) and/or "
-        f"'{NO_TESTQUALITY_BYPASS}' (test-quality) to the command as appropriate."
+        f"'{NO_TESTQUALITY_BYPASS}' (test-quality) and/or '{NO_SUITE_BYPASS}' (suite) to the command "
+        "as appropriate."
     )
 
 
@@ -942,7 +1005,7 @@ def main():
         sys.exit(0)
     if _set_denial_context is not None:  # #782 — attribute a later deny to tool + session
         _set_denial_context(data.get("tool_name", ""), data.get("session_id", ""))
-    if data.get("tool_name", "") != "Bash":
+    if data.get("tool_name", "") not in ("Bash", "PowerShell"):
         sys.exit(0)
     command = data.get("tool_input", {}).get("command", "")
     cwd = data.get("cwd", "")

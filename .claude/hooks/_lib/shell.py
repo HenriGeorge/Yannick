@@ -14,7 +14,7 @@ SHELL_SEGMENT_SPLIT_RE = re.compile(r"&&|\|\||;|\n|(?<!>)\|")
 # Leading tokens stripped (in a loop, so combos like "env FOO=bar npx ./node_modules/.bin/jest"
 # resolve) before anchoring TEST_LOCK_RE — this is a nudge-grade guard, not a shell parser: it does
 # NOT attempt to see through `bash -c '...'` or `$(subshell)` wrapping (accepted limitation, see
-# tests/test_pretooluse_guards.sh "H1-LIMIT" cases).
+# tests/test_pretooluse_h1h2.sh "H1-LIMIT" cases).
 LEADING_ENV_ASSIGN_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=\S*\s+")
 
 
@@ -283,3 +283,102 @@ def _chained_ops_warning(command: str) -> str:
         f" NOTE: this command chains {others} other operation(s) "
         f"({listed}) that did NOT run — re-run them separately."
     )
+
+# ---- PowerShell (hook consolidation PR 8, #908) -------------------------------------------------
+# Claude Code's PowerShell tool sends the command in tool_input.command, like Bash. Rather than teach
+# every guard a second shell, pre_tool / _lib.transcript translate it ONCE into the bash string with
+# the same quoting, separators and command words, and the bash guards judge that. Best-effort, like
+# _bare_shell_mask (a guard is not a shell parser): Invoke-Expression / cmd /c / Start-Process /
+# pwsh -c are executor strings and stay undetected — the same limit as `bash -c` (#744/#899).
+SHELL_TOOLS = ("Bash", "PowerShell")
+
+_PS_RM = frozenset({"remove-item", "del", "erase", "rd", "rmdir", "ri"})  # `rm` is already rm
+_PS_CMD_RE = re.compile(
+    r"(?i)(^\s*|[;|&\n{(=]\s*)(?:&\s+)?"
+    r"(remove-item|del|erase|rd|rmdir|ri|set-location|sl|chdir|push-location|pushd)(?=\s|$)")
+_PS_CALL_RE = re.compile(r"(^|[;|\n{(]\s*)&\s+(?=\S)")
+_PS_PATH_COLON_RE = re.compile(r"(?i)(\s-(?:path|literalpath|lp|pspath)):")
+
+
+def ps_to_sh(cmd: str) -> str:
+    """A PowerShell command as the equivalent BASH string (see the block comment above)."""
+    sh = _ps_requote(cmd)
+    sh = _PS_CMD_RE.sub(lambda m: m.group(1) + ("rm -f" if m.group(2).lower() in _PS_RM else "cd"), sh)
+    sh = _PS_CALL_RE.sub(r"\1", sh)
+    return _PS_PATH_COLON_RE.sub(r"\1 ", sh)
+
+
+def _ps_requote(cmd: str) -> str:
+    """PowerShell quoting → bash quoting, one char at a time. Backslash is a PowerShell PATH separator,
+    never an escape → '/'. Backtick IS the escape. States: bare | sub ($( … ) inside a string — runs) |
+    sq | dq | hsq | hdq (here-strings, closed only by '@ / "@ at the start of a line)."""
+    out, stack, depth = [], ["bare"], []
+    i, n = 0, len(cmd)
+    while i < n:
+        c, top, two = cmd[i], stack[-1], cmd[i:i + 2]
+        if top in ("hsq", "hdq") and two == ("'@" if top == "hsq" else '"@') and (i == 0 or cmd[i - 1] == "\n"):
+            out.append("'" if top == "hsq" else '"')
+            stack.pop()
+            i += 2
+            continue
+        if top in ("sq", "hsq"):
+            if top == "sq" and two == "''":
+                out.append("'\\''")
+                i += 2
+            elif top == "sq" and c == "'":
+                out.append("'")
+                stack.pop()
+                i += 1
+            else:
+                out.append("'\\''" if c == "'" else "/" if c == "\\" else c)
+                i += 1
+            continue
+        if top in ("dq", "hdq"):
+            if c == "`" and i + 1 < n:
+                nx = cmd[i + 1]
+                out.append('\\"' if nx == '"' else "\\`" if nx == "`" else "/" if nx == "\\" else nx)
+                i += 2
+            elif top == "dq" and two == '""':
+                out.append('\\"')
+                i += 2
+            elif top == "dq" and c == '"':
+                out.append('"')
+                stack.pop()
+                i += 1
+            elif two == "$(":
+                out.append("$(")
+                stack.append("sub")
+                depth.append(0)
+                i += 2
+            else:
+                out.append('\\"' if c == '"' else "/" if c == "\\" else c)
+                i += 1
+            continue
+        # command context: bare or sub
+        if c == "`" and i + 1 < n:
+            if cmd[i + 1] == "\n" or cmd[i + 1:i + 3] == "\r\n":  # line continuation
+                out.append(" ")
+                i += 2 if cmd[i + 1] == "\n" else 3
+            else:
+                out.append("\\" + cmd[i + 1])
+                i += 2
+            continue
+        if two in ("@'", '@"') and cmd[i + 2:i + 3] in ("\n", "\r"):
+            out.append(two[1])
+            stack.append("hsq" if two[1] == "'" else "hdq")
+            i += 2
+            continue
+        if c in ("'", '"'):
+            out.append(c)
+            stack.append("sq" if c == "'" else "dq")
+            i += 1
+            continue
+        if top == "sub" and c in "()":
+            if c == ")" and depth[-1] == 0:
+                stack.pop()
+                depth.pop()
+            else:
+                depth[-1] += 1 if c == "(" else -1
+        out.append("/" if c == "\\" else c)
+        i += 1
+    return "".join(out)

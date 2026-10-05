@@ -18,7 +18,7 @@ from _lib.shell import _bare_shell_mask, _has_short_flag, _process_env_override,
 SENSITIVE_RM_RF_TARGETS = (
     "/", "/*", "~", "~/", "$HOME", "..", "../", "/etc", "/etc/", "/usr", "/usr/",
     "/bin", "/bin/", "/var", "/var/", "/System", "/System/", "/Users", "/Users/",
-    "/home", "/home/",
+    "/home", "/home/", "$env:USERPROFILE", "$env:HOME",
 )
 
 
@@ -171,8 +171,16 @@ def _rm_rf_sensitive_target(segment: str):
         return None
     segment = _strip_shell_quotes(segment)  # #251 — match a quoted target (`rm -rf "/"`) too
     for target in SENSITIVE_RM_RF_TARGETS:
-        if re.search(r"(?:^|\s)" + re.escape(target) + r"(?:\s|$)", segment):
+        # #908: PowerShell `$env:` names are case-insensitive — fold just those targets, so
+        # `rm -rf $env:userprofile` is caught like `$env:USERPROFILE` (POSIX targets stay exact).
+        flags = re.IGNORECASE if target.startswith("$env:") else 0
+        if re.search(r"(?:^|\s)" + re.escape(target) + r"(?:\s|$)", segment, flags):
             return target
+    # PR 8 (#908): Windows drive roots — IGNORECASE, since the Windows FS (and the Windows/Users
+    # literals) is case-insensitive; without it `c:/windows` lowercase slips past this check.
+    m = re.search(r"(?:^|\s)([A-Za-z]:/(?:\*|Windows/?|Users/?)?)(?:\s|$)", segment, re.IGNORECASE)
+    if m:
+        return m.group(1)
     return None
 
 
@@ -185,11 +193,11 @@ def _worktree_roots(cwd: str):
             return p.stdout if p.returncode == 0 else ""
         except Exception:  # noqa: BLE001
             return ""
-    roots = {os.path.realpath(ln[len("worktree "):].strip())
+    roots = {os.path.normcase(os.path.realpath(ln[len("worktree "):].strip()))
              for ln in _git(["worktree", "list", "--porcelain"]).splitlines()
              if ln.startswith("worktree ")}
     top = _git(["rev-parse", "--show-toplevel"]).strip()
-    own = os.path.realpath(top) if top else ""
+    own = os.path.normcase(os.path.realpath(top)) if top else ""
     return own, roots
 
 
@@ -210,7 +218,7 @@ def _worktree_remove_clobber(segment: str, cwd: str):
     if not own:
         return None
     for p in paths:
-        target = os.path.realpath(p if os.path.isabs(p) else os.path.join(effective or ".", p))
+        target = os.path.normcase(os.path.realpath(p if os.path.isabs(p) else os.path.join(effective or ".", p)))
         if target in roots and target != own:
             return p
     return None
@@ -227,7 +235,7 @@ def _rm_rf_worktree_target(segment: str, cwd: str):
         if tok.startswith("-") or "=" in tok or tok in ("rm",):
             continue
         cand = tok.strip("'\"")
-        target = os.path.realpath(cand if os.path.isabs(cand) else os.path.join(cwd or ".", cand))
+        target = os.path.normcase(os.path.realpath(cand if os.path.isabs(cand) else os.path.join(cwd or ".", cand)))
         if target in roots and target != own:
             return cand
     return None
@@ -257,7 +265,7 @@ def _check_danger_guard(command: str, cwd: str):
     # cwd-tracking state machine across segments (out of scope for a nudge-grade guard); solving
     # the second half by treating a bare `*` as sensitive would false-positive on completely
     # ordinary cleanup like `rm -rf build/*` or `rm -rf dist/*`. Pinned by
-    # tests/test_pretooluse_guards.sh's "H7-LIMIT" case (asserts this is NOT detected) so the gap
+    # tests/test_pretooluse_h7h8.sh's "H7-LIMIT" case (asserts this is NOT detected) so the gap
     # stays a documented, intentional choice rather than a silent regression waiting to be found.
     if _process_env_override("CT_ALLOW_DANGER"):
         return

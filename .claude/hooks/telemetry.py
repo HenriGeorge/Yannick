@@ -379,7 +379,7 @@ def _capture_iterations(data):
             todos = tool_input.get("todos")
             if isinstance(todos, list):
                 _ci_handle_todo(session_id, todos, state)
-        elif tool_name == "Bash":
+        elif tool_name in ("Bash", "PowerShell"):
             _ci_handle_bash(session_id, tool_input, data.get("tool_response"), state)
     except Exception as e:  # noqa: BLE001 - never brick a session
         print(f"capture_iterations: {e}", file=sys.stderr)
@@ -419,7 +419,7 @@ def _cf_resp_exit(resp: dict):
 
 def _cf_classify(tool_name: str, tool_input: dict, resp: dict):
     """Return (kind, detail) for a failure, or None."""
-    if tool_name == "Bash":
+    if tool_name in ("Bash", "PowerShell"):
         code = _cf_resp_exit(resp)
         errored = (code not in (0, None)) or bool(resp.get("error"))
         if not errored:

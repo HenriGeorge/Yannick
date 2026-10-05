@@ -417,6 +417,146 @@ def _primary_worktree(project_dir):
     return None
 
 
+def _mainref(project_dir):
+    """`origin/main` when it exists (fresh from the startup fetch), else local `main`."""
+    r = _run(["git", "rev-parse", "--verify", "--quiet", "origin/main"], project_dir, timeout=5)
+    return "origin/main" if (r is not None and r.returncode == 0 and r.stdout.strip()) else "main"
+
+
+def _wt_merged(project_dir, tip, mainref):
+    """True if the branch's work is already in main — squash-safe: ancestry OR content-identical trees."""
+    a = _run(["git", "merge-base", "--is-ancestor", tip, mainref], project_dir, timeout=5)
+    if a is not None and a.returncode == 0:
+        return True
+    d = _run(["git", "diff", "--quiet", mainref, tip], project_dir, timeout=5)
+    return d is not None and d.returncode == 0
+
+
+def _backup_orphan(path):
+    """Copy an orphaned .claude/worktrees child to the backups dir before removal. Returns the backup
+    dir, or None on failure (caller must then NOT remove the path — never lose unbacked content)."""
+    import shutil
+    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+    dest = os.path.join(os.path.expanduser("~"), ".local", "share", "claude-template",
+                        "backups", f"{os.path.basename(path.rstrip(os.sep))}-{ts}")
+    try:
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        if os.path.isdir(path) and not os.path.islink(path):
+            shutil.copytree(path, dest, symlinks=True)
+        else:
+            shutil.copy2(path, dest)
+        return dest
+    except Exception:
+        return None
+
+
+def _cleanup_dangling_worktrees(project_dir):
+    """Clear stale `.git/worktrees/<name>` admin entries left by an incomplete ExitWorktree teardown.
+
+    Two ops (spec 2026-10-05-session-start-dangling-worktree-cleanup):
+    (1) `git worktree prune` — drops entries whose working-tree dir is already gone (#483-safe: prune
+        can only touch an already-absent dir).
+    (2) force-remove any `.claude/worktrees/*` entry whose branch is `refs/heads/main` — the pin-`main`
+        corruption signature (a linked worktree claiming `main`; never legitimate, since `main` lives
+        in the primary). NEVER the current session's worktree or the primary; a legit feature-branch
+        sibling never matches the signature, so this cannot recreate #483.
+
+    Session start is the only safe point (no agent occupies the stale tree). Best-effort; never raises;
+    returns a short status line describing what was cleaned, or None.
+    """
+    _run(["git", "worktree", "prune"], project_dir, timeout=5)  # op 1: gone-dir entries
+
+    r = _run(["git", "worktree", "list", "--porcelain"], project_dir, timeout=5)
+    if r is None or r.returncode != 0:
+        return None
+
+    own = None
+    tl = _run(["git", "rev-parse", "--show-toplevel"], project_dir, timeout=5)
+    if tl is not None and tl.returncode == 0 and tl.stdout.strip():
+        own = os.path.realpath(tl.stdout.strip())
+    primary = _primary_worktree(project_dir)
+    primary = os.path.realpath(primary) if primary else None
+    marker = os.sep + os.path.join(".claude", "worktrees") + os.sep
+
+    removed = []
+    for block in r.stdout.split("\n\n"):
+        path = branch = None
+        for line in block.splitlines():
+            if line.startswith("worktree "):
+                path = line[len("worktree "):].strip()
+            elif line.startswith("branch "):
+                branch = line[len("branch "):].strip()
+        if not path or branch != "refs/heads/main":
+            continue
+        rp = os.path.realpath(path)
+        if rp == own or rp == primary or marker not in (rp + os.sep):
+            continue  # never the current tree, the primary, or a non-managed path
+        rr = _run(["git", "worktree", "remove", "--force", path], project_dir, timeout=10)
+        if rr is not None and rr.returncode == 0:
+            removed.append(os.path.basename(rp))
+
+    # Op 3 — reap MERGED clean .claude/worktrees/* worktrees (plain remove; dirty trees are refused, so
+    # in-progress work is never lost; the branch ref survives, so unpushed commits are never lost).
+    mainref = _mainref(project_dir)
+    registered = set()
+    reaped = []
+    for block in r.stdout.split("\n\n"):
+        path = branch = head = None
+        for line in block.splitlines():
+            if line.startswith("worktree "):
+                path = line[len("worktree "):].strip()
+            elif line.startswith("branch "):
+                branch = line[len("branch "):].strip()
+            elif line.startswith("HEAD "):
+                head = line[len("HEAD "):].strip()
+        if not path:
+            continue
+        rp = os.path.realpath(path)
+        registered.add(rp)
+        if rp == own or rp == primary or marker not in (rp + os.sep):
+            continue
+        tip = branch or head
+        if not tip or not _wt_merged(project_dir, tip, mainref):
+            continue
+        rr = _run(["git", "worktree", "remove", path], project_dir, timeout=10)  # NO --force
+        if rr is not None and rr.returncode == 0:
+            reaped.append(os.path.basename(rp))
+
+    # Op 4 — sweep orphaned direct children of <primary>/.claude/worktrees/ (back up, then remove).
+    import shutil
+    swept = []
+    wt_dir = os.path.join(primary, ".claude", "worktrees") if primary else None
+    if wt_dir and os.path.isdir(wt_dir):
+        for name in sorted(os.listdir(wt_dir)):
+            child = os.path.join(wt_dir, name)
+            rp = os.path.realpath(child)
+            if rp in registered or rp == own:
+                continue
+            if _backup_orphan(child) is None:
+                print(f"worktree hygiene: could not back up orphan {name}; kept", file=sys.stderr)
+                continue  # never remove what we could not back up
+            try:
+                if os.path.isdir(child) and not os.path.islink(child):
+                    shutil.rmtree(child)
+                else:
+                    os.remove(child)
+                swept.append(name)
+            except Exception:
+                pass
+
+    parts = []
+    if removed:
+        noun = "entry" if len(removed) == 1 else "entries"
+        parts.append(f"removed {len(removed)} stale main-pinning worktree {noun} ({', '.join(removed)})")
+    if reaped:
+        noun = "tree" if len(reaped) == 1 else "trees"
+        parts.append(f"reaped {len(reaped)} merged worktree {noun} ({', '.join(reaped)})")
+    if swept:
+        noun = "path" if len(swept) == 1 else "paths"
+        parts.append(f"swept {len(swept)} orphaned {noun} ({', '.join(swept)})")
+    return ("worktree hygiene: " + "; ".join(parts)) if parts else None
+
+
 def _handoff_context(project_dir):
     """Return the primary worktree's HANDOFF.md (+ TASKS.md) as a labelled block, or None.
 
@@ -964,6 +1104,16 @@ def main():
         pg_line = _prime_gate_line(project_dir)
         if pg_line:
             status_lines.append(pg_line)
+    except Exception:
+        pass
+
+    # Dangling-worktree cleanup — clear stale .git/worktrees entries from an incomplete ExitWorktree
+    # teardown (gone-dir prune + the pin-main corruption signature). Isolated try/except (inject-only,
+    # never blocks); session start is the only safe point (no agent occupies the stale tree).
+    try:
+        wt_line = _cleanup_dangling_worktrees(project_dir)
+        if wt_line:
+            status_lines.append(wt_line)
     except Exception:
         pass
 

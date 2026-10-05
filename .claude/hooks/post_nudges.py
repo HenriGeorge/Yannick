@@ -367,7 +367,7 @@ def _so_threshold() -> int:
 
 def _suite_overrun_nudge(data):
     try:
-        if data.get("tool_name", "") != "Bash":
+        if data.get("tool_name", "") not in ("Bash", "PowerShell"):
             return None
         tool_input = data.get("tool_input", {})
         command = tool_input.get("command", "") if isinstance(tool_input, dict) else ""
@@ -446,7 +446,7 @@ def _rk_leading_verb(command):
 
 def _rtk_nudge(data):
     try:
-        if data.get("tool_name", "") != "Bash":
+        if data.get("tool_name", "") not in ("Bash",):  # rtk prefixes bash only; a PowerShell command is never rewritten
             return None
         ti = data.get("tool_input", {})
         command = ti.get("command", "") if isinstance(ti, dict) else ""
@@ -510,7 +510,7 @@ MA_GH_MERGE_RE = re.compile(r"\bgh\s+pr\s+merge\b")
 def _merge_autoff(data):
     if ff_checkout_if_safe is None:
         return None
-    if data.get("tool_name") != "Bash":
+    if data.get("tool_name") not in ("Bash", "PowerShell"):
         return None
     ti = data.get("tool_input")  # truthy non-dict (e.g. "x", 5, [1]) -> no command (parity with .cjs)
     cmd = ti.get("command", "") if isinstance(ti, dict) else ""

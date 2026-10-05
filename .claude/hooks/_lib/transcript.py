@@ -24,6 +24,7 @@ import shlex
 import time
 from datetime import datetime, timezone
 
+from _lib.shell import SHELL_TOOLS, ps_to_sh
 from _lib.test_cmd import is_suite_run
 
 SHELL_SEGMENT_SPLIT_RE = re.compile(r"&&|\|\||;|\n|\|")
@@ -264,10 +265,12 @@ def scan(path, test_cmd=None):
             for b in content:
                 if not isinstance(b, dict):
                     continue
-                if b.get("type") == "tool_use" and b.get("name") == "Bash":
+                if b.get("type") == "tool_use" and b.get("name") in SHELL_TOOLS:
                     cmd = (b.get("input") or {}).get("command", "")
                     if not isinstance(cmd, str):
                         continue
+                    if b.get("name") == "PowerShell":
+                        cmd = ps_to_sh(cmd)
                     if not (_BASH_PREFILTER_RE.search(cmd) or (test_cmd and test_cmd in cmd)):
                         continue  # no detector can fire — skip the full-command scans (speed)
                     if has_subcommand(cmd, "git", ("commit",), GIT_VALUE_FLAGS):

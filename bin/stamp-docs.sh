@@ -4,7 +4,8 @@
 # git only.
 #
 # Usage:
-#   stamp-docs.sh [--check|--check-time|--upgrade] [paths...]
+#   stamp-docs.sh [--check|--check-time|--check-fresh|--upgrade] [paths...]
+#   stamp-docs.sh --touch FILE...
 #
 #   --check      Report every *.md doc missing a `Last updated:` stamp (LENIENT — presence-only, a
 #                date-only stamp still counts as stamped); exit 1 if any are missing, 0 otherwise.
@@ -17,8 +18,15 @@
 #                refreshing its stamp. Commits that changed ONLY the `Last updated:` line are
 #                skipped, so a stamp-only re-commit never marks a doc "stale vs itself". Date-only
 #                stamps are out of scope here (use --check-time); untracked docs are skipped. Exit 1
-#                if any stale. Writes nothing. Template-repo opt-in — NOT wired into scaffold CI,
-#                which legitimately carries backfilled/propagated stamps newer than content.
+#                if any stale. ALSO flags a FUTURE stamp — later than now + 5 min (#930: agents
+#                hand-typing a plausible time instead of running `date`) — UNTRACKED docs included, since
+#                that needs no history; date-only stamps are still skipped. Writes
+#                nothing. Template-repo opt-in — NOT wired into scaffold CI, which legitimately
+#                carries backfilled/propagated stamps newer than content.
+#   --touch FILE...  Rewrite each given doc's EXISTING stamp to now (`date '+%Y-%m-%d %H:%M'`),
+#                preserving its style (bare, blockquote, emphasis, bold-list). Use this instead of
+#                hand-typing a time. A file with no stamp is an error (exit 1, left unchanged);
+#                no FILE at all is an error (exit 2) — it never defaults to every doc.
 #   --upgrade    Rewrite a DATE-ONLY `Last updated: YYYY-MM-DD` stamp to `YYYY-MM-DD HH:MM` IN
 #                PLACE, preserving the bare/blockquote style. The bold-list ADR form
 #                (`- **Last updated:** YYYY-MM-DD`) is intentionally left alone — hand-update those.
@@ -52,12 +60,13 @@ STAMP_TIME_RE='[Ll]ast [Uu]pdated:[[:space:]]*\**[[:space:]]*[0-9]{4}-[0-9]{2}-[
 # form never starts with `>` or nothing; it starts with `- **`, which this pattern does not match).
 STAMP_DATEONLY_BQ_RE='^[[:space:]]*>?[[:space:]]*[Ll]ast [Uu]pdated:[[:space:]]*[0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]*$'
 
-usage() { sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'; }
 
 check_only=0
 check_time_only=0
 check_fresh_only=0
 upgrade_only=0
+touch_only=0
 paths=()
 for arg in "$@"; do
   case "$arg" in
@@ -65,12 +74,40 @@ for arg in "$@"; do
     --check-time) check_time_only=1 ;;
     --check-fresh) check_fresh_only=1 ;;
     --upgrade) upgrade_only=1 ;;
+    --touch) touch_only=1 ;;
     -h|--help) usage; exit 0 ;;
     --) ;;
     -*) printf 'stamp-docs.sh: unknown option: %s\n' "$arg" >&2; exit 2 ;;
     *) paths+=("$arg") ;;
   esac
 done
+
+# --touch: explicit files only — rewrite the first stamp's date[+time] value to now, keeping every
+# character around it (prefix `>`/`- **`/`_`, suffix `_`/`**`). Runs before the docs/rules default
+# so a bare `--touch` can never restamp the whole tree.
+if [ "$touch_only" -eq 1 ]; then
+  [ "${#paths[@]}" -gt 0 ] || { printf 'stamp-docs.sh: --touch needs at least one FILE\n' >&2; exit 2; }
+  now="$(date '+%Y-%m-%d %H:%M')"
+  rc=0
+  for f in "${paths[@]}"; do
+    ln="$( { grep -anE "$STAMP_RE" "$f" 2>/dev/null || true; } | head -1 | cut -d: -f1)"
+    if [ ! -f "$f" ] || [ -z "$ln" ]; then
+      printf 'stamp-docs.sh: --touch: %s has no "Last updated:" stamp (not a file, or unstamped) — add one first\n' "$f" >&2
+      rc=1; continue
+    fi
+    tmp="$(mktemp "${TMPDIR:-/tmp}/stamp-touch.XXXXXX")"
+    sed -E "${ln}s/([Ll]ast [Uu]pdated:[^0-9]*)[0-9]{4}-[0-9]{2}-[0-9]{2}([[:space:]]+[0-9]{2}:[0-9]{2})?/\\1${now}/" "$f" > "$tmp"
+    if ! sed -n "${ln}p" "$tmp" | grep -qF "$now"; then
+      rm -f "$tmp"
+      printf 'stamp-docs.sh: --touch: %s:%s stamp carries no YYYY-MM-DD value to rewrite\n' "$f" "$ln" >&2
+      rc=1; continue
+    fi
+    cat "$tmp" > "$f"; rm -f "$tmp"   # cat-over keeps the doc's own file mode (mktemp is 0600)
+    printf 'touched %s -> %s\n' "$f" "$now"
+  done
+  exit "$rc"
+fi
+
 [ "${#paths[@]}" -eq 0 ] && paths=(docs rules)
 
 # --- collect target *.md files (files as-is; directories walked recursively) --------------------
@@ -93,9 +130,13 @@ git_date() { git log -1 --date=format:'%Y-%m-%d %H:%M' --format=%cd -- "$1" 2>/d
 # The `YYYY-MM-DD HH:MM` datetime carried by a doc's FIRST time-bearing stamp, in any style; empty
 # if the doc has no stamp or only a date-only one (freshness needs a time to compare).
 stamp_datetime() {
-  grep -oE "$STAMP_TIME_RE" "$1" 2>/dev/null | head -1 \
+  # -a: a doc with a stray NUL byte is "binary" to grep, whose -o then prints nothing; under
+  # pipefail + set -e that silently aborted the whole --check-fresh run with rc=1 (#930).
+  grep -aoE "$STAMP_TIME_RE" "$1" 2>/dev/null | head -1 \
     | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]+[0-9]{2}:[0-9]{2}' | head -1 \
-    | awk '{$1=$1; print}'   # collapse any multi-space date/time gap to a single space, no trailing
+    | awk '{$1=$1; print}' \
+    || true   # SIGPIPE from `head -1` under pipefail must not abort the caller; empty = skip
+  # (awk collapses any multi-space date/time gap to a single space, no trailing)
 }
 
 # Datetime (`YYYY-MM-DD HH:MM`) of the last commit that changed CONTENT of a file — i.e. skipping
@@ -197,7 +238,8 @@ insert_stamp() {
 # no stamp at all — both are "no-op", not errors).
 upgrade_doc() {
   local f="$1" ln full tmp
-  ln="$(grep -nE "$STAMP_DATEONLY_BQ_RE" "$f" | head -1 | cut -d: -f1)"
+  # -a: on a NUL-containing doc, BSD grep prints "Binary file … matches" — a non-numeric "line".
+  ln="$(grep -anE "$STAMP_DATEONLY_BQ_RE" "$f" | head -1 | cut -d: -f1)"
   [ -n "$ln" ] || return 1
   full="$(doc_date "$f")"     # "YYYY-MM-DD HH:MM" -- date+time from the SAME commit
   tmp="$(mktemp "${TMPDIR:-/tmp}/stamp-upg.XXXXXX")"
@@ -241,11 +283,22 @@ if [ "$check_fresh_only" -eq 1 ]; then
     exit 2
   fi
   stale=()
+  future=()
   unverified=0
+  # A stamp later than now + 5 min was hand-typed, not taken from `date` (#930). The tolerance
+  # absorbs minor clock skew. GNU `-d` and BSD `-v` both handled.
+  now="$(date '+%Y-%m-%d %H:%M')"
+  limit="$(date -d '+5 min' '+%Y-%m-%d %H:%M' 2>/dev/null || date -v+5M '+%Y-%m-%d %H:%M' 2>/dev/null)" \
+    || { echo 'stamp-docs.sh: cannot compute now+5min (date lacks -d/-v)' >&2; exit 2; }
   for f in ${docs[@]+"${docs[@]}"}; do
     has_time_stamp "$f" || continue          # only a date+time stamp is freshness-checkable
     s="$(stamp_datetime "$f")"; [ -n "$s" ] || continue
-    # An UNTRACKED doc has no history to compare against — a legitimate skip, not an error.
+    # The future check needs no history, so it runs BEFORE the untracked skip: a brand-new
+    # agent-written doc is exactly where a hand-typed time lands (#930).
+    if [[ "$s" > "$limit" ]]; then
+      future+=("$f (stamp $s is in the future; now $now)")
+    fi
+    # An UNTRACKED doc has no history to compare against — a legitimate skip for STALENESS only.
     git ls-files --error-unmatch "$f" >/dev/null 2>&1 || continue
     c="$(last_content_commit_date "$f")"
     # A tracked doc with an empty date means git itself failed (git_date's fallback also returned
@@ -266,8 +319,12 @@ if [ "$check_fresh_only" -eq 1 ]; then
   if [ "${#stale[@]}" -gt 0 ]; then
     printf 'STALE "Last updated:" stamp (older than the file'"'"'s last content commit):\n' >&2
     for f in "${stale[@]}"; do printf '  %s\n' "$f"; done
-    exit 1
   fi
+  if [ "${#future[@]}" -gt 0 ]; then
+    printf 'FUTURE "Last updated:" stamp (later than now + 5 min; hand-typed? use stamp-docs.sh --touch):\n' >&2
+    for f in "${future[@]}"; do printf '  %s\n' "$f"; done
+  fi
+  if [ "${#stale[@]}" -gt 0 ] || [ "${#future[@]}" -gt 0 ]; then exit 1; fi
   if [ "$unverified" -gt 0 ]; then
     printf 'stamp-docs.sh: --check-fresh: %d doc(s) could not be verified (git error, see above) — NOT an all-clear.\n' "$unverified" >&2
     exit 1

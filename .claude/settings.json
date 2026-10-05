@@ -11,7 +11,8 @@
       "source": {
         "source": "directory",
         "path": "../claude_template"
-      }
+      },
+      "autoUpdate": true
     }
   },
   "hooks": {
@@ -67,7 +68,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash|Agent|Task|Write|Edit|NotebookEdit|Read",
+        "matcher": "Bash|PowerShell|Agent|Task|Write|Edit|NotebookEdit|Read",
         "hooks": [
           {
             "type": "command",
@@ -77,7 +78,7 @@
         ]
       },
       {
-        "matcher": "Bash",
+        "matcher": "Bash|PowerShell",
         "hooks": [
           {
             "type": "command",
@@ -140,7 +141,7 @@
         ]
       },
       {
-        "matcher": "Write|Edit|Bash",
+        "matcher": "Write|Edit|Bash|PowerShell",
         "hooks": [
           {
             "type": "command",

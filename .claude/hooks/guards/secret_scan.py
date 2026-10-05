@@ -36,7 +36,7 @@ def _check_secret_scan(command: str, cwd: str):
     # working-tree diffs for modified-tracked files) — a real cost/complexity increase (binary
     # files, huge files, encoding) that's its own design pass, not a drive-by fix — same class of
     # call as the existing GENERIC_SECRET_RE TODO below. Pinned by
-    # tests/test_pretooluse_guards.sh's "H3-LIMIT" case so this gap can't silently regress further
+    # tests/test_pretooluse_h3h6.sh's "H3-LIMIT" case so this gap can't silently regress further
     # or be mistaken for "already handled".
     #
     # Find the segment that actually does the `git commit` (MED fix: the override must be scoped

@@ -145,8 +145,33 @@ def _probe_connected(project: str, channel: str):
     try:
         data = json.loads(r.stdout or "[]")
         return any(isinstance(x, dict) and x.get("status") == "CONNECTED" for x in data)
-    except Exception:
+    except Exception as e:
+        _log(f"probe parse failed: {e}")
         return None
+
+
+def _discover_channel(project: str):
+    # Learn the live channel from the bridge CLI's /status-backed discovery (probe with NO --channel,
+    # which self-discovers from the relay). Returns the first CONNECTED channel name, or None → the
+    # caller keeps the folder-channel default (so a renamed Figma file no longer strands on the folder).
+    override = os.environ.get(_PROBE_CMD_ENV, "")
+    if override:
+        cmd = [override]
+    else:
+        cli = _find_figma_cli(project)
+        if not cli:
+            return None
+        cmd = ["node", cli, "probe"]
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=15, check=False)
+        data = json.loads(r.stdout or "[]")
+    except Exception as e:
+        _log(f"discover failed: {e}")
+        return None
+    for x in data if isinstance(data, list) else []:
+        if isinstance(x, dict) and x.get("status") == "CONNECTED" and x.get("channel"):
+            return x["channel"]
+    return None
 
 
 def _poll_connected(project: str, channel: str) -> bool:
@@ -175,20 +200,37 @@ def _figma_ready() -> str:
     return "notfront"
 
 
+# A Figma window shorter than this is a utility sliver (e.g. the ~39px "window 1"), never the canvas.
+_MIN_WINDOW_H = 100
+
+
 def _screenshot(channel: str):
-    # Region-scoped grab of the Figma window (NEVER full-screen — privacy). Bounds via System Events;
-    # `screencapture -R` needs no CG window id. Needs macOS Screen Recording — on denial screencapture
-    # errors / writes nothing, so warn + skip. Returns the path or None.
-    r = _osa('tell application "System Events" to tell process "Figma" to return '
-             "(get position of window 1) & (get size of window 1)")
+    # Region-scoped grab of the Figma CANVAS (NEVER full-screen — privacy). Enumerate EVERY Figma window
+    # and pick the largest-area one, skipping the ~39px utility sliver that is window 1 — grabbing window
+    # 1 captured only that sliver (#871). `screencapture -R` needs no CG window id. Needs macOS Screen
+    # Recording — on denial screencapture errors / writes nothing, so warn + skip. Returns the path or None.
+    r = _osa('tell application "System Events" to tell process "Figma"\n'
+             'set out to ""\n'
+             'repeat with w in windows\n'
+             'set p to position of w\n'
+             'set s to size of w\n'
+             'set out to out & (item 1 of p) & "," & (item 2 of p) & "," & '
+             '(item 1 of s) & "," & (item 2 of s) & linefeed\n'
+             'end repeat\n'
+             'return out\n'
+             'end tell')
     if r is None or r.returncode != 0 or not (r.stdout or "").strip():
         _log("screenshot skipped: could not read Figma window bounds")
         return None
-    nums = re.findall(r"-?\d+", r.stdout)
-    if len(nums) < 4:
+    nums = [int(n) for n in re.findall(r"-?\d+", r.stdout)]
+    wins = [nums[i:i + 4] for i in range(0, len(nums) - len(nums) % 4, 4)]
+    if not wins:
         _log("screenshot skipped: unexpected window bounds")
         return None
-    x, y, w, h = nums[:4]
+    usable = [win for win in wins if win[3] > _MIN_WINDOW_H]
+    if len(usable) < len(wins):
+        _log(f"screenshot: skipped {len(wins) - len(usable)} degenerate window(s) (height<={_MIN_WINDOW_H})")
+    x, y, w, h = max(usable or wins, key=lambda win: win[2] * win[3])
     safe = re.sub(r"[^A-Za-z0-9._-]", "_", channel) or "figma"
     d = os.path.join(os.path.expanduser("~"), ".local", "share", "claude-template")
     try:
@@ -223,6 +265,9 @@ def _autolaunch_plugin(platform: str, conf: dict, project: str, channel: str) ->
         print("Figma plugin auto-launch skipped — Figma did not come to the front in time. "
               f"Run it manually: Cmd+P › ClaudeTalkToFigma › channel '{channel}'.")
         return
+    discovered = _discover_channel(project)
+    if discovered:
+        channel = discovered  # use the live open-file channel, not the folder-name guess
     connected = _probe_connected(project, channel)
     attempts = 0
     while not connected and attempts < _KEYSTROKE_CAP:

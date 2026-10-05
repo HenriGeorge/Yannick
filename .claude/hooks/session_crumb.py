@@ -66,7 +66,7 @@ def last_test_from_transcript(path):
             for block in content:
                 if (isinstance(block, dict)
                         and block.get("type") == "tool_use"
-                        and block.get("name") == "Bash"):
+                        and block.get("name") in ("Bash", "PowerShell")):
                     command = (block.get("input") or {}).get("command", "")
                     if isinstance(command, str) and TEST_RUNNER_RE.search(command):
                         last_test = command.strip()[:CRUMB_LAST_TEST_MAX]

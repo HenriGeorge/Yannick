@@ -19,16 +19,39 @@ case "${1:-}" in
   *.py)
     if [ ! -f "$1" ]; then
       _rph_name="$(basename "$1" | tr -cd 'A-Za-z0-9_.-')"
-      _rph_msg="hook $_rph_name not found — skipped (retired or not installed); run setup.sh --update-hooks"
+      # Guards (the PreToolUse gates): a MISSING guard means its checks are NOT running — a far louder
+      # failure than a retired nudge, so name it as OFF and repeat the warning (see dedup below).
+      _rph_guards="pre_tool_use session_prime_gate grill_gate pr_gate stale_base_guard tdd_gate nocommit_guard test_lock_enforce plan_interview_gate parallel_gate"
+      _rph_is_guard=0
+      case " $_rph_guards " in *" ${_rph_name%.py} "*) _rph_is_guard=1 ;; esac
+      if [ "$_rph_is_guard" = 1 ]; then
+        _rph_msg="⚠ GUARD OFF: $_rph_name not found — its checks are NOT running this session; run setup.sh --update-hooks"
+      else
+        _rph_msg="hook $_rph_name not found — skipped (retired or not installed); run setup.sh --update-hooks"
+      fi
       echo "$_rph_msg" >&2
       _rph_proj="${CLAUDE_PROJECT_DIR:-$PWD}"
-      # Once per hook per session: a retired-but-still-wired hook fires on EVERY tool call, so the
-      # user-visible warning (stdout systemMessage — exit-0 stderr is not shown) and the telemetry
-      # line are deduped by a session marker.
       _rph_sid="$({ [ -t 0 ] || cat; } 2>/dev/null | tr -d '\n' | sed -n 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([A-Za-z0-9_-]*\)".*/\1/p')"
-      _rph_mark="$_rph_proj/.claude/state/hook-missing/$_rph_name.${_rph_sid:-nosession}"
-      [ -e "$_rph_mark" ] && exit 0
-      mkdir -p "$(dirname "$_rph_mark")" 2>/dev/null && : > "$_rph_mark" 2>/dev/null
+      # Dedup the user-visible systemMessage + telemetry (exit-0 stderr is never shown). Three cases:
+      #  - no session_id → NEVER dedup (one shared 'nosession' marker would silence it across sessions)
+      #  - a guard → repeat every 25th call (a session runs unprotected; one counter file per session)
+      #  - otherwise → once per hook per session (boolean marker)
+      _rph_dir="$_rph_proj/.claude/state/hook-missing"
+      _rph_emit=1
+      if [ -z "$_rph_sid" ]; then
+        :
+      elif [ "$_rph_is_guard" = 1 ]; then
+        _rph_cf="$_rph_dir/$_rph_name.$_rph_sid.count"
+        mkdir -p "$_rph_dir" 2>/dev/null
+        _rph_n="$(cat "$_rph_cf" 2>/dev/null)"; case "$_rph_n" in ''|*[!0-9]*) _rph_n=0 ;; esac
+        _rph_n=$((_rph_n + 1)); echo "$_rph_n" > "$_rph_cf" 2>/dev/null
+        [ $(( (_rph_n - 1) % 25 )) -eq 0 ] || _rph_emit=0
+      else
+        _rph_mark="$_rph_dir/$_rph_name.$_rph_sid"
+        if [ -e "$_rph_mark" ]; then _rph_emit=0
+        else mkdir -p "$_rph_dir" 2>/dev/null && : > "$_rph_mark" 2>/dev/null; fi
+      fi
+      [ "$_rph_emit" = 0 ] && exit 0
       printf '{"systemMessage":"%s"}\n' "$_rph_msg"
       _rph_env="$(printf '%s' "${CLAUDE_TELEMETRY:-}" | tr '[:upper:]' '[:lower:]')"
       _rph_off=0

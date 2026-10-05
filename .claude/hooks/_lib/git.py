@@ -23,7 +23,7 @@ import subprocess
 # NAME its options, because nothing in the text of `--foo bar` says whether `bar` is that option's
 # value or the subcommand. The list covers git's real set as of 2.50; a future git option taking a
 # separate argument would reopen this one gap, in the safe-looking direction (the destroyer stops
-# being matched). Pinned as H7-LIMIT-230 in tests/test_pretooluse_guards.sh so it can't be mistaken
+# being matched). Pinned as H7-LIMIT-230 in tests/test_pretooluse_h7h8.sh so it can't be mistaken
 # for handled — the attached `--foo=bar` spelling of ANY option is always caught by the generic arm.
 _GIT_GLOBAL_OPT = (
     r"(?:"

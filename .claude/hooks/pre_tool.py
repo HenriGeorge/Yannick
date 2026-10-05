@@ -56,8 +56,9 @@ _DENY_GUARDS = {
         ("shared_checkout", "check"), ("giant_file", "check"), ("secret_file", "check"),
         ("secret_read", "check_bash"),
     ),
-    "Write": (("readonly", "check_write"), ("template_owned", "check")),
-    "Edit": (("readonly", "check_write"), ("template_owned", "check")),
+    "Write": (("readonly", "check_write"), ("template_owned", "check"), ("plugin_cache", "check")),
+    "Edit": (("readonly", "check_write"), ("template_owned", "check"), ("plugin_cache", "check")),
+    "NotebookEdit": (("plugin_cache", "check"),),
     "Read": (("secret_read", "check_read"),),
 }
 # H5/H6 + prune — INJECT-ONLY, Bash only, after every deny-capable guard; one additionalContext.
@@ -201,7 +202,7 @@ def _ctx(data):
         readonly_paths += _seam_readonly_paths(project_dir)
     except Exception:  # noqa: BLE001 - the seam only ever APPENDS; failure → the baseline
         readonly_paths = list(READONLY_PATHS)
-    command = tool_input.get("command", "") if tool_name == "Bash" else ""
+    command = tool_input.get("command", "") if tool_name in ("Bash", "PowerShell") else ""
     if not isinstance(command, str):
         command = ""
     return types.SimpleNamespace(data=data, tool_name=tool_name, tool_input=tool_input, command=command,
@@ -229,7 +230,7 @@ def _emit_allow(ctx, decide, off, full=False):
     In FULL mode the fail-open breadcrumbs (ctx.stderr_notes) also ride the systemMessage; the
     `--only` forwarder path flushes those to stderr instead (byte-parity, done by the caller)."""
     out = {}
-    if ctx.tool_name == "Bash":
+    if ctx.tool_name in ("Bash", "PowerShell"):
         reminders = []
         for module, fn in _BASH_REMINDERS:
             check = _load(module, fn, off)
@@ -430,7 +431,27 @@ def main(only=None):
     # (decide.deny / block_dual call sys.exit), which is NOT an Exception, so it propagates untouched.
     try:
         decide.set_context(data.get("tool_name", ""), data.get("session_id", ""))
+        ps_fail_note = None  # a fail-open translator crash, surfaced via ctx.stderr_notes once ctx exists
+        if data.get("tool_name") == "PowerShell":
+            # hook consolidation PR 8 (#908): judge a PowerShell command as its bash equivalent, so every
+            # guard, group and --only forwarder applies unchanged. set_context above keeps the REAL tool
+            # name on denial telemetry. A translator crash falls back to the raw command (still judged).
+            ti = data.get("tool_input") if isinstance(data.get("tool_input"), dict) else {}
+            raw = ti.get("command") if isinstance(ti.get("command"), str) else ""
+            try:
+                from _lib.shell import ps_to_sh
+                sh = ps_to_sh(raw)
+            except Exception as exc:  # noqa: BLE001
+                # fail OPEN to the raw command, but make the degraded coverage VISIBLE — stderr alone is
+                # invisible on an exit-0 hook, so ride ctx.stderr_notes → systemMessage like the sibling paths.
+                sys.stderr.write(f"[pre_tool] ps_to_sh failed ({exc!r}) — judging the raw command\n")
+                sh = raw
+                ps_fail_note = (f"pre_tool: ps_to_sh failed ({exc!r}) — judging the raw PowerShell command; "
+                                "guard coverage may be reduced")
+            data = dict(data, tool_name="Bash", tool_input={**ti, "command": sh})
         ctx = _ctx(data)
+        if ps_fail_note is not None:
+            ctx.stderr_notes.append(ps_fail_note)
         off = []  # guards that failed to load or threw this call — surfaced via systemMessage
         return _legacy(ctx, decide, off, only) if only is not None else _full(ctx, decide, off)
     except Exception as exc:  # noqa: BLE001 - never brick a PreToolUse call on an unexpected error

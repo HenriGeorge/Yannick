@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+# /// script
+# dependencies = []
+# ///
+"""Emit a compact session-friction digest for /dev-reflect, keyed by session id.
+
+Reads this session's nudge-hook state + gate-BLOCK telemetry (resolved against the git
+common dir, so friction written by BUILD work in any worktree is harvested) and prints a
+stable one-line-per-signal digest. Exit 0 always: a missing file means "no friction", not
+an error.
+"""
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+
+def repo_root() -> Path:
+    try:
+        cd = subprocess.run(
+            ["git", "rev-parse", "--git-common-dir"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        return Path(cd).resolve().parent
+    except Exception:
+        # Loud breadcrumb: a silently-cwd digest is otherwise indistinguishable from no-friction.
+        print("session-friction: git-common-dir lookup failed, using cwd", file=sys.stderr)
+        return Path.cwd()
+
+
+def load_json(p: Path):
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return None
+
+
+def iter_jsonl(p: Path):
+    """Yield each parseable object from a .jsonl file; skip blank/corrupt lines, absent file."""
+    if not p.exists():
+        return
+    for line in p.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            yield json.loads(line)
+        except Exception:
+            continue
+
+
+def human_tokens(n: int) -> str:
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.1f}K"
+    return str(n)
+
+
+def main() -> int:
+    if len(sys.argv) < 2 or not sys.argv[1].strip():
+        print("usage: session-friction <session_id>", file=sys.stderr)
+        return 0
+    sid = sys.argv[1].strip()
+    # sid is built into file paths; reject anything that isn't a bare id token so a
+    # traversing value (`../`) can never reach outside the state dirs (defense-in-depth —
+    # sid is normally $CLAUDE_CODE_SESSION_ID, a trusted UUID).
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", sid):
+        print("session-friction: refusing unsafe session id", file=sys.stderr)
+        return 0
+    root = repo_root()
+    st = root / ".claude" / "state"
+    lines = []
+
+    d = load_json(st / "loop_detector" / f"{sid}.json")
+    warned = isinstance(d, dict) and d.get("warned")
+    lines.append("loop_detector: warned" if warned else "loop_detector: # none")
+
+    d = load_json(st / "scope_creep" / f"{sid}.json")
+    n = len(d.get("files", [])) if isinstance(d, dict) else 0
+    lines.append(f"scope_creep: {n} files" if n else "scope_creep: # none")
+
+    d = load_json(st / "suite_overrun" / f"{sid}.json")
+    if isinstance(d, dict) and d.get("count"):
+        suffix = " (warned)" if d.get("warned") else ""
+        lines.append(f"suite_overrun: {d['count']} runs{suffix}")
+    else:
+        lines.append("suite_overrun: # none")
+
+    step = st / "compact_suggester" / f"{sid}.step"
+    if step.exists():
+        lines.append(f"compact_suggester: step {step.read_text().strip()}")
+    else:
+        lines.append("compact_suggester: # none")
+
+    d = load_json(st / "session" / sid / "edits.json")
+    n = len(d) if isinstance(d, list) else 0
+    lines.append(f"session_edits: {n} files" if n else "session_edits: # none")
+
+    tel = root / ".claude" / "telemetry"
+
+    blocks: dict[str, int] = {}
+    for o in iter_jsonl(tel / "hook-events.jsonl"):
+        if o.get("session_id") != sid:
+            continue
+        decision = str(o.get("decision", "")).lower()
+        if decision in ("deny", "block") or o.get("exit") in (1, 2):
+            hook = o.get("hook", "?")
+            blocks[hook] = blocks.get(hook, 0) + 1
+    if blocks:
+        lines.append("gate_blocks: " + " ".join(f"{k}={v}" for k, v in sorted(blocks.items())))
+    else:
+        lines.append("gate_blocks: # none")
+
+    # Token/message consumption — costs.jsonl appends cumulative snapshots per session; the LAST
+    # matching row is the latest total.
+    cost_row = None
+    for o in iter_jsonl(tel / "costs.jsonl"):
+        if o.get("session_id") == sid:
+            cost_row = o
+    # Guard the TYPE, not just presence: a non-numeric total_tokens (hand-edit / future writer)
+    # would crash human_tokens and break the exit-0-always contract for the whole digest.
+    tok = cost_row.get("total_tokens") if cost_row else None
+    if isinstance(tok, (int, float)) and tok:
+        lines.append(f"cost: {human_tokens(tok)} tokens ({cost_row.get('messages', '?')} messages)")
+    else:
+        lines.append("cost: # none")
+
+    # Suite wall-clock: sum of per-file seconds across this session's runs (overcounts vs parallel
+    # wall-clock, but a usable trend). Only rows stamped with this session_id count.
+    secs = 0
+    file_runs = 0
+    for o in iter_jsonl(tel / "suite-durations.jsonl"):
+        if o.get("session_id") == sid:
+            s = o.get("seconds", 0)
+            secs += s if isinstance(s, (int, float)) else 0  # non-numeric row must not crash the digest
+            file_runs += 1
+    lines.append(f"suite_time: {secs}s ({file_runs} file-runs)" if file_runs else "suite_time: # none")
+
+    print("\n".join(lines))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
