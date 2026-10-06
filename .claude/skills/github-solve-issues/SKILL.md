@@ -109,7 +109,7 @@ report line; **the script never calls `gh issue close` / `gh pr merge`** — a h
      **draft** PR describing the options rather than guessing.
    - **Hold the test lock** for any suite run: `bin/test-lock --wait [--timeout N] -- <TEST_CMD>` (queues FIFO; never a bare run).
    - **Test cadence:** run only the touched test files while building and in fix rounds;
-     one full suite per PR, at the final synced head; after the PR opens, CI (if any) is authoritative.
+     a full suite per PR for a tier-2 PR (tier-0/1 gates on the affected slice), at the final synced head; after the PR opens, CI (if any) is authoritative.
    - **Builder self-checks before ready:** surface any degraded/fail-open path on **stdout** (not only
      stderr); land a change to a twinned unit in **both** twins, each new test shown failing first;
      include the repo's deterministic doc checks (docs-drift / inventory-count) in the targeted run;

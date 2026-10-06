@@ -14,6 +14,8 @@ import os
 import subprocess
 import sys
 
+from _lib.notice import fail_open_notice
+
 try:
     # Reuse the primitive's FULL trunk chain (origin/HEAD -> main -> master -> @{u} ->
     # init.defaultBranch) so the sideways warn resolves an exotic default branch too, not a subset.
@@ -79,7 +81,7 @@ def main():
     # exit-0 stderr is invisible to the agent, so surface a declined-ff reason on stdout (#924).
     _verdict, reason = ff_checkout_if_safe(cwd)
     if reason:
-        sys.stdout.write(json.dumps({"systemMessage": reason}) + "\n")
+        fail_open_notice(reason)
     # Sideways leg (best-effort, warn-only): a fleet project's plugin-source primary behind its trunk.
     # Self-double-ff guard: if the primary IS this repo (same realpath as cwd), the direct leg already
     # handled it — don't also warn.

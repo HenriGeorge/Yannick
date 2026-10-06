@@ -34,6 +34,8 @@ _HERE = os.path.dirname(os.path.abspath(__file__))  # -P / PYTHONSAFEPATH drops 
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
+from _lib.notice import fail_open_notice  # noqa: E402 — needs _HERE on sys.path first
+
 # The 8 snapshot flag names, in lockstep with _lib.transcript.snapshot_flags.
 FLAG_NAMES = (
     "made_commit", "did_merge", "ran_reflect", "ran_test",
@@ -82,8 +84,8 @@ def main():
         conf = _find_conf(cwd)
         s = scan(transcript_path, _test_cmd(conf) if conf else None)
     except Exception as e:  # noqa: BLE001 — never block compaction; make the fail-open VISIBLE (R2 MEDIUM-6)
-        print(json.dumps({"systemMessage": f"precompact_evidence: scan skipped ({e}) — the Stop gates "
-                          "will fall back to their live transcript scan this session."}))
+        fail_open_notice(f"precompact_evidence: scan skipped ({e}) — the Stop gates "
+                         "will fall back to their live transcript scan this session.")
         sys.exit(0)
     flags, first_ts, ls = snapshot_flags(s), s.first_ts, last_suite(s)
 
@@ -125,8 +127,8 @@ def main():
             json.dump(snapshot, f)
         os.replace(tmp_path, snap_path)  # atomic within the same directory
     except OSError as e:
-        print(json.dumps({"systemMessage": f"precompact_evidence: snapshot write failed ({e}) — the "
-                          "Stop gates degrade to their live transcript scan this session."}))
+        fail_open_notice(f"precompact_evidence: snapshot write failed ({e}) — the "
+                         "Stop gates degrade to their live transcript scan this session.")
         try:
             os.unlink(tmp_path)
         except OSError:

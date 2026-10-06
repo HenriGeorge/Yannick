@@ -10,7 +10,6 @@ import re
 from _lib.shell import SHELL_SEGMENT_SPLIT_RE, _process_env_override, _segment_has_leading_override
 from _lib.test_cmd import _find_conf, _strip_prefix, _test_cmd, is_runner_segment, runs_test_cmd
 
-CT_WRAPPED_RE = re.compile(r"test-lock\b")
 _HEAD_WRAPPERS = ("bin/test-lock", "test-lock", "./bin/test-lock")
 
 
@@ -20,8 +19,10 @@ def check_runner(ctx):
         return None
     if _process_env_override("CT_ALLOW_UNLOCKED_TESTS"):
         return None
-    if CT_WRAPPED_RE.search(command):
-        return None
+    # #940: the wrapper must be the segment HEAD, not appear ANYWHERE in the command — a trailing
+    # `test-lock` token (`npm test; echo test-lock`) must not disarm the deny. A test-lock-wrapped
+    # run leads its segment with the wrapper, so is_runner_segment (head-anchored) is already False
+    # for it; no whole-command wrapper allow is needed (and a global one was the bug).
     for segment in SHELL_SEGMENT_SPLIT_RE.split(command):
         if is_runner_segment(segment):
             # MED fix: the override must lead THIS segment, not any segment of the command.

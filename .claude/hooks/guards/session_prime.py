@@ -86,12 +86,25 @@ def _bypass_marker(project_dir):
     return os.path.isfile(os.path.join(project_dir, ".claude", "state", "prime-bypass"))
 
 
-def _is_state_write(file_path):
-    """A Write/NotebookEdit targeting .claude/state/** is exempt (priming/markers/bypass writes)."""
+def _is_state_write(file_path, cwd):
+    """A Write/NotebookEdit targeting the repo's OWN .claude/state/** is exempt (priming / marker /
+    bypass writes). #1005: anchored to `<toplevel>/.claude/state` via the same realpath resolution
+    `_is_outside_repo` uses — a bare substring test matched a look-alike path (`src/evil.claude/
+    state/x`) ANYWHERE in the string and silently skipped the gate. Fails CLOSED (False = "not a
+    state write") when the toplevel or the path can't be resolved, so a non-state target is never
+    exempted on a resolution hiccup."""
     if not file_path:
         return False
-    norm = file_path.replace("\\", "/")
-    return "/.claude/state/" in norm or norm.endswith("/.claude/state") or ".claude/state/" in norm
+    toplevel = _repo_toplevel(cwd)
+    if toplevel is None:
+        return False
+    state_dir = os.path.join(toplevel, ".claude", "state")
+    target = file_path if os.path.isabs(file_path) else os.path.join(cwd or ".", file_path)
+    try:
+        target = os.path.realpath(target)
+    except ValueError:
+        return False
+    return target == state_dir or target.startswith(state_dir + os.sep)
 
 
 def _repo_toplevel(cwd):
@@ -142,7 +155,7 @@ def check(ctx):
     inline_cmd = ""
     if tool in MUTATING_TOOLS:
         file_path = tool_input.get("file_path", "")
-        if _is_state_write(file_path):
+        if _is_state_write(file_path, cwd):
             return None  # never block writing prime/marker/bypass state
         if _is_outside_repo(file_path, cwd):
             return None  # #995: a worktree can't isolate a target outside it either

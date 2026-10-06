@@ -258,6 +258,49 @@ def _reset_hard_remote_target(segment: str):
     return target if re.match(r"^[\w.-]+/[\w.-]+$", target) else None
 
 
+def _subst_body_spans(command: str, mask) -> list:
+    """(start, end) half-open ABSOLUTE offsets of every command-substitution body — the interior of
+    each `$( … )` and `` `…` `` in BARE context (#1089). A destroyer wrapped in a substitution
+    (`x=$(git push --force origin main)`) RUNS, but the assignment prefix and the substitution's own
+    `)` glue onto the command's tokens (`main)`), hiding the real branch from the raw-segment
+    force-push check. Recursing into the body as its own segment restores a clean
+    `git push --force origin main`. ADD-ONLY: it only yields extra body spans, never removes a
+    segment, so it can't disarm an existing catch. Same bare model as `_bare_shell_mask`; a
+    `sh -c "…"` / `eval "…"` executor STRING arg is NOT a substitution and stays the documented
+    H7-899 wrapper limit."""
+    spans = []
+    n = len(command)
+    i = 0
+    while i < n:
+        if not mask[i]:
+            i += 1
+            continue
+        if command[i:i + 2] == "$(":
+            depth = 1
+            j = start = i + 2
+            while j < n and depth:
+                if mask[j]:
+                    if command[j] == "(":
+                        depth += 1
+                    elif command[j] == ")":
+                        depth -= 1
+                        if not depth:
+                            break
+                j += 1
+            spans.append((start, j))
+            i = start  # recurse: a nested $()/backtick inside the body is found on the next pass
+            continue
+        if command[i] == "`":
+            j = start = i + 1
+            while j < n and not (mask[j] and command[j] == "`"):
+                j += 1
+            spans.append((start, j))
+            i = start
+            continue
+        i += 1
+    return spans
+
+
 def _check_danger_guard(command: str, cwd: str):
     # KNOWN LIMITATION, deliberately NOT solved (Increment-4 audit, LOW-MED): `cd / && rm -rf *`
     # evades `_rm_rf_sensitive_target` — we don't track cwd across `&&`-joined segments, and a
@@ -270,7 +313,15 @@ def _check_danger_guard(command: str, cwd: str):
     if _process_env_override("CT_ALLOW_DANGER"):
         return
     bare = _bare_shell_mask(command)  # #889: an op merely quoted / heredoc-embedded is inert text
-    for segment, seg_off in _segments_with_offsets(command):
+    segments = list(_segments_with_offsets(command))
+    # #1089: a force-push/destroyer wrapped in a $()/backtick substitution RUNS, but the wrapper
+    # text glues onto its tokens and hides it from the raw-segment checks — recurse segment-splitting
+    # into each substitution body (ADD-ONLY: extra segments, never fewer) so the inner command is
+    # checked clean. `sh -c "…"`-style executor args are NOT substitutions and stay uncaught (#899).
+    for b_start, b_end in _subst_body_spans(command, bare):
+        for seg, off in _segments_with_offsets(command[b_start:b_end]):
+            segments.append((seg, b_start + off))
+    for segment, seg_off in segments:
         # #889: every danger detector is git- or rm-based and quote-STRIPS before matching, so a
         # fully-quoted op (`--body "... git branch -D ..."` / a heredoc body) would still match the
         # stripped substring. Skip a segment whose only git/rm token is inside a quote/heredoc — it is

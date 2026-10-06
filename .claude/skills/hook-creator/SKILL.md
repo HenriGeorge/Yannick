@@ -45,8 +45,8 @@ regex can't decide. That's a rule, enforced by goodwill + review, not a hook.
 
 ```python
 data = json.loads(sys.stdin.read() or "{}")
-tool = data.get("tool_name", "")                       # "Bash", "Write", "Edit", ...
-cmd  = data.get("tool_input", {}).get("command", "")   # Bash
+tool = data.get("tool_name", "")                       # "Bash", "PowerShell", "Write", "Edit", ...
+cmd  = data.get("tool_input", {}).get("command", "")   # Bash and PowerShell
 path = data.get("tool_input", {}).get("file_path", "") # Write/Edit
 cwd  = data.get("cwd", "")
 ```
@@ -141,9 +141,13 @@ bash tests/test_<name>.sh                 # your new case — block AND allow pa
 bash tests/test_plugin_hooks_parity.sh    # twin/wiring parity
 ```
 
-Iterate on those case files only. The full suite runs once, as the one full suite per PR, at the
+Iterate on those case files only. The full suite runs once, as the a full suite per PR for a tier-2 PR (tier-0/1 gates on the affected slice), at the
 final synced head and under the lock: `bin/test-lock --wait [--timeout N] -- bash tests/run.sh`. A fix round re-runs only
 these case files, unless it also edits `setup.sh`, `propagate.sh`, or `tests/run.sh` (then a full run).
+
+## Gotchas
+
+- PowerShell tool: same `tool_input.command`; match `Bash|PowerShell`; never `if: PowerShell(…)` (#57137); run commands through `_lib.shell.ps_to_sh` before bash-style parsing.
 
 ## See also
 

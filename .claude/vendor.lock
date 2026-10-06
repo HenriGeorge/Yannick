@@ -23,12 +23,12 @@
     ".claude/agents/crew-coordinator.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "9b66a88b3179d4f37705dde0a90a3418a0d76dfd04356a4db54beb2e0bc30620"
+      "sha256": "2bbf575e582ecb0e9a92cf27ecc185803ffddba3560d62065a90500671e581ea"
     },
     ".claude/agents/crew-implementer.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "19b72895d081875604af3daed17f0617efd427156d95dd19fe5a69df20aaa239"
+      "sha256": "e7d967f90a6d8eef162d553ba118da01ab1b3e6c1dd30a76fe363db3c5c6915a"
     },
     ".claude/agents/critical-thinking.md": {
       "plugin": "claude-template-core",
@@ -93,7 +93,7 @@
     ".claude/commands/dev-reflect.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "81f401cbf6afc0e0b57530a98c03d73aa159e3a26055a40b7eaa4ce55e8db265"
+      "sha256": "1030a85574c096ed85d2e4c435d5f5e4bfe4098cb00c52889a02a4dba92038ea"
     },
     ".claude/commands/handoff.md": {
       "plugin": "claude-template-core",
@@ -103,17 +103,17 @@
     ".claude/commands/merge-prs.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "2711986b99f014aa4c5dd5440d33e217e99812d341852d9b94193c96741cd617"
+      "sha256": "e3d0390595a2446e17874909caf45479af3c08062e2c4a8773551d9227812e63"
     },
     ".claude/commands/pr-open.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "2df3b9f50f37aec585a21b4cd1d86b0d9f703cf0efec8584780c5d9221d51ffc"
+      "sha256": "bcbdc93dbda27bf45d024d7e78a8bebe8988981c8d796f3e1353d4c3679969cf"
     },
     ".claude/commands/prime-core.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "474ecb4d3d7e390ac7d41b7be32dd19d690833615b0b136786201861472e7338"
+      "sha256": "3fb62b32d061441c75c9ab5ac1a22f236a0b33e4575f51627ed14d532de5a182"
     },
     ".claude/commands/project-status.md": {
       "plugin": "claude-template-core",
@@ -138,7 +138,7 @@
     ".claude/commands/triage-lessons.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "0110eaebbd3ac7b19233759c94a97f4b3d3513d29c41832753c85e25dcfd3ef6"
+      "sha256": "1558cdd99bf7c3e9e39dbf801b96b6100ad404e9a3e27a464e7c35f649123a6d"
     },
     ".claude/commands/ui-aliveness-audit.md": {
       "plugin": "claude-template-core",
@@ -153,7 +153,7 @@
     ".claude/commands/verify-adversarial.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "4e9cce0a082ff85a6951ee3125f75a29d5562ba9aeb2d1b379ef8278b5b662f2"
+      "sha256": "7350497d92dd261430832d7992c90c90423c88519d63d8d5c71ee2c6e05f11d8"
     },
     ".claude/commands/workflow-diagrams.md": {
       "plugin": "claude-template-core",
@@ -173,7 +173,7 @@
     ".claude/hooks/_dispatch.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "b901ab5070c59467e78c33f3756bc45b32c2c2035cc8c1eb31982b1882af7a36"
+      "sha256": "ff1c6a5f39b5f92d407672d4aa8e90484b53c60935e730fcf9e2f31b53009ddc"
     },
     ".claude/hooks/_ff_checkout.py": {
       "plugin": "claude-template-hooks-py",
@@ -203,7 +203,12 @@
     ".claude/hooks/_lib/git.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "1800c36921d9d753509ec2ebd7c44b30474f7b037137b1055cca16da5e1ce521"
+      "sha256": "98adea1bc16f132bf0ab8f4b0bd28aa9a695364bda4d5ad3d71ecd1d8b126fc4"
+    },
+    ".claude/hooks/_lib/notice.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "67a371eef88a9994a9b6b4f283cf7f543297e2a2f64313d8be44201d7814a1bd"
     },
     ".claude/hooks/_lib/parallel_parse.py": {
       "plugin": "claude-template-hooks-py",
@@ -213,17 +218,17 @@
     ".claude/hooks/_lib/shell.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "c544c1f1935392c7d5d95c8c315a5b69f3dcf3f5a3829fe5c6964fbcbd6239cd"
+      "sha256": "06f27e0d152140192c35d702cd8373a9ad3dad307292ec35a1429e789f73ee8b"
     },
     ".claude/hooks/_lib/test_cmd.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "19a8ebaea716ab65ea6e0d8e00e4f4e359b450e042d2020ef66251c9e1c2c98f"
+      "sha256": "452f45634a09539e230eefee4c7b3ac83a2a78e8b77ebf07a2c04f0d621648f2"
     },
     ".claude/hooks/_lib/transcript.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "88f2b6ce1b93bcb18531e68a9105757658b1e77229db28625d3dae9fd0e0db0c"
+      "sha256": "76b2f57b03740c3cca53843c7982fe4de8c30836a92063cb340987b436d620e6"
     },
     ".claude/hooks/_lib/vendor_lock.py": {
       "plugin": "claude-template-hooks-py",
@@ -293,7 +298,7 @@
     ".claude/hooks/figma_launch.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "3892ad33364aea4631ae047ba0910f84cd00e1281f5de23a14c9bedbd272e6ac"
+      "sha256": "d264924e54f98a5b4c09ee74094e594977d29f8125f142052dcc956d9d98f77d"
     },
     ".claude/hooks/grill_nudge.py": {
       "plugin": "claude-template-hooks-py",
@@ -313,7 +318,7 @@
     ".claude/hooks/guards/danger.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "cc54a581fec88d1452cfeab487e813a7d3011df11cdac2a6c60c4c17e3e26bea"
+      "sha256": "977e5c601e78a8a4e8956c34a250fc0e4e836f04a33e026fb5c3064f5a24703b"
     },
     ".claude/hooks/guards/db_ops.py": {
       "plugin": "claude-template-hooks-py",
@@ -338,12 +343,12 @@
     ".claude/hooks/guards/model.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "d31e8b430d6c8e1980803fa268000cc61f2f852e099b85913f2c25796dc5062a"
+      "sha256": "995ae5938a75a958dcae24d10004bbf4858a4dbb7e4362abc474c74b4f557379"
     },
     ".claude/hooks/guards/nocommit.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "eabb997152ea1987f4de242b360acaef70282bf3f9ea827b69ed451d871b2864"
+      "sha256": "778b3ccd62fd3df04e10740da6e08b00dcd83612bc569c53dd4abde2511fa185"
     },
     ".claude/hooks/guards/parallel.py": {
       "plugin": "claude-template-hooks-py",
@@ -354,6 +359,11 @@
       "plugin": "claude-template-hooks-py",
       "ref": "local",
       "sha256": "9203108b1096bf544325c32217c1659a6c4907b1edc86e0bec7b9ed6053c6fd2"
+    },
+    ".claude/hooks/guards/plugin_cache.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "5368ed9754ee01538e077d2d71edbadf039f16f754d6dde2c129d46e5d58c447"
     },
     ".claude/hooks/guards/protected_branch.py": {
       "plugin": "claude-template-hooks-py",
@@ -373,7 +383,7 @@
     ".claude/hooks/guards/secret_file.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "ad13f3f1c06abe26dede1e4af697775d32e569e211c5fc1bdcc432885e5e5790"
+      "sha256": "a601361cd2c418a6432d51f0d12b45a41d1c94f75229c370d21d7d1997797375"
     },
     ".claude/hooks/guards/secret_read.py": {
       "plugin": "claude-template-hooks-py",
@@ -383,12 +393,12 @@
     ".claude/hooks/guards/secret_scan.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "d8caee0f148b1d0cacb2a66888eee31606b8c1f2cf6c3580012bc89b9f0b8445"
+      "sha256": "35081cb544f98c391e5c99b6a190d8b95765f7bd932cf36bbf4a14c425bd6c74"
     },
     ".claude/hooks/guards/session_prime.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "443ac245218e7b0dc6d4529509465e00d239a44eb62d1a0ef1ee8f552a4f2e11"
+      "sha256": "d34f5aa08739e54e21fd28c859dc645e203a29e3679a27643ef8cd512899f96c"
     },
     ".claude/hooks/guards/shared_checkout.py": {
       "plugin": "claude-template-hooks-py",
@@ -413,7 +423,7 @@
     ".claude/hooks/guards/test_lock.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "5b5ba8249488da08cecb6a3a861b9554ba0eed4deff4c5c751391fd9c212bb05"
+      "sha256": "d52bf54eda3319a3c34e4b7d3d42f0924bcc8d088e8e808694b4b6c21a18ebc9"
     },
     ".claude/hooks/guards/worktree_cwd.py": {
       "plugin": "claude-template-hooks-py",
@@ -458,7 +468,7 @@
     ".claude/hooks/post_nudges.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "42aee1fb7d24ceff3c97b48413f833b93a925edb4b1017cbfab2749dbbd4bd45"
+      "sha256": "7f49ead046855e6ee84f15d6ff4a53a1b1a04be178b28c08571da75c14c89044"
     },
     ".claude/hooks/post_tool_use_lint.py": {
       "plugin": "claude-template-hooks-py",
@@ -468,17 +478,17 @@
     ".claude/hooks/pr_gate.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "4e8a33930ef27c039b8f5bcd103e722e57954d0a7045017017ead2a2e8232df3"
+      "sha256": "01b96effb1fb42aeae6e9c267755b05318804336209dba1d517d906043d34817"
     },
     ".claude/hooks/pre_tool.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "968874164884e8db32265dabfb0e209a64896714ff8bf867c04d55a9749b652a"
+      "sha256": "457b4003975cbe56f085cfb7d8ee3cd1f36ac6a11ddb303c3063b765e5e90044"
     },
     ".claude/hooks/precompact_evidence.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "d39b011e97fd47ae6253c2ef0c85594058546474fb783fa1a1955818d33b9192"
+      "sha256": "58ce97d616063dbac2bbcd36754e1c7a6734c2f32d012d8e0ac09c2e276946c0"
     },
     ".claude/hooks/scope_creep.py": {
       "plugin": "claude-template-hooks-py",
@@ -488,17 +498,17 @@
     ".claude/hooks/session_autoff.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "2f6814110aef89f5ed40bb032298a0efd4898a13e68641c7dba72bb84df921df"
+      "sha256": "7d2653660065e138aa37427dfa5b7acbd7a1b38f454edd5efa67e1bfbe962b44"
     },
     ".claude/hooks/session_crumb.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "a1276941efcd7c9eabc840080650ac537a1f89b6088782c9f725f00de7460638"
+      "sha256": "119af128745c30a09443c29322ccc440a96c120b8e4e4f74530e43b1536ff2d2"
     },
     ".claude/hooks/session_start.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "d5086477a15c21b746efb661cb7ab54760d0363452398ee3aa19749d3d86ff5a"
+      "sha256": "4da13eb6b8bfe8cddc5d69c8b673f25aca00107f3187aba3bb6d6949df66699c"
     },
     ".claude/hooks/skill_nudge.py": {
       "plugin": "claude-template-hooks-py",
@@ -533,7 +543,7 @@
     ".claude/hooks/telemetry.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "ed6b6634960d3b570ac0cc3b58edb3cf1b9ddbc86962ef6b440318c7c24943ec"
+      "sha256": "b3d0a2c9249cfbb99b5d3a93eef771592088b1cbb8d68c4afebd3363098b1fc5"
     },
     ".claude/hooks/tool_events.py": {
       "plugin": "claude-template-hooks-py",
@@ -548,7 +558,7 @@
     ".claude/hooks/worktree_create.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "208692d1cc51d4b5c4035c85709ba14fca0bda25285d839bb13f3c3893c8c5a1"
+      "sha256": "c0eb8e403f27d3de4e1e588f8ba5b5cf8c325d091b2fd3d06913e625b65ce038"
     },
     ".claude/hooks/worktree_remove.py": {
       "plugin": "claude-template-hooks-py",
@@ -765,15 +775,20 @@
       "ref": "v6.2.0",
       "sha256": "05aa24a4d64c983ee2dc53db11290265650229deaa67994f73b167f7c239ff1d"
     },
+    ".claude/skills/field-guide/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "6abd82c141b0851a2de4cb652dac907cc173907677ac1fb2ce524a15b58d7e18"
+    },
     ".claude/skills/figma-bridge/SKILL.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "0bbc28846c95edd3c90bee1ff396ca41f1a356bc9154c9824fec199e5fd99f9e"
+      "sha256": "7dac06b2c4c04c08245f678882fc972644ea208f9bcb2f0b6113a67acb61d254"
     },
     ".claude/skills/figma-bridge/scripts/figma/README.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "293f3701040c7364e0cf45e152a85bc83e2adf86ed5d981a5494983c002bf1c5"
+      "sha256": "977395c7584244fa0c356eb1f6c00332ea314c9f214d793a1092b9704401c447"
     },
     ".claude/skills/figma-bridge/scripts/figma/figma-export.config.example.json": {
       "plugin": "claude-template-core",
@@ -783,7 +798,12 @@
     ".claude/skills/figma-bridge/scripts/figma/figma.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "05137bc1e543be636b09c04c7f569801dcfbb5c5735f79bf81a70223520cff60"
+      "sha256": "d1f8f9a99a8c0914377e4214f0da435b8ce0c6f496a5b320d5d0c2a15b11a43e"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/figma_digest.py": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "f602fe35f09eef71228c2fe68a7c1eb202ce7091bba62efc02bdc39481c13ec6"
     },
     ".claude/skills/figma-bridge/scripts/figma/lib/capture.mjs": {
       "plugin": "claude-template-core",
@@ -793,7 +813,7 @@
     ".claude/skills/figma-bridge/scripts/figma/lib/channel-resolve.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "85cb22be26610b5b68683174d54e027026a2c39afbf5ef4a0e32df2076145f30"
+      "sha256": "6e45cfac4f84ac988786539d00b1c198fca40228ddb26ca88a3ae7fba10a207a"
     },
     ".claude/skills/figma-bridge/scripts/figma/lib/ctf-autolaunch.mjs": {
       "plugin": "claude-template-core",
@@ -808,7 +828,7 @@
     ".claude/skills/figma-bridge/scripts/figma/lib/lanes.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "4d634469113f668a800697dc949514c7dd7b42a33f82058bffefd16b38879313"
+      "sha256": "05e6591a604decee5d1423df39ac3d0a3b40185e5e28f625ab59fce889697139"
     },
     ".claude/skills/figma-bridge/scripts/figma/lib/page.mjs": {
       "plugin": "claude-template-core",
@@ -833,7 +853,7 @@
     ".claude/skills/figma-bridge/scripts/figma/lib/probe.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "eba64e1aa29342a93bad6cae61732da5281fa801ab92f010d3823468f883b80f"
+      "sha256": "c72d10605dfcda8591a271e1b5bd0e24435193966d04aae75833330cd87b3ab4"
     },
     ".claude/skills/figma-bridge/scripts/figma/lib/rebind.mjs": {
       "plugin": "claude-template-core",
@@ -858,7 +878,7 @@
     ".claude/skills/figma-ui/SKILL.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "98902309f0aa0dabff202cf8b6e06d1a18a05c7258d591707b8f2ab715ac7384"
+      "sha256": "bf1e1cc2f987d552eaf49a5daf28b357a630385086b0824be361ad46603fe5be"
     },
     ".claude/skills/finishing-a-development-branch/SKILL.md": {
       "plugin": "superpowers",
@@ -938,7 +958,7 @@
     ".claude/skills/github-solve-issues/SKILL.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "f2936e9e1bf2d2725dc6dbeb58278901f6486bcfa4c71d84147cd5873c361b1e"
+      "sha256": "ee41d0f7152ad56eba3fcb614f73f636ae74c99643c2116f9b09726c95b35e50"
     },
     ".claude/skills/github-solve-issues/classify-prompt.md": {
       "plugin": "claude-template-core",
@@ -1043,7 +1063,7 @@
     ".claude/skills/hook-creator/SKILL.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "7eeba5f068f77ebda7da8b9f325f447865718fe7ace85ff828814adac0cf92fe"
+      "sha256": "5b134c566747647f830eccd1e0045241b4b746b21841600a8f16dd544fdea025"
     },
     ".claude/skills/improve-skills/SKILL.md": {
       "plugin": "claude-template-core",

@@ -23,6 +23,7 @@ import sys
 from pathlib import Path
 
 from _dispatch import dispatch
+from _lib.notice import skipped_notice
 from _lib.parallel_parse import evaluate as _pn_evaluate_plan
 
 # #554 — shared age-based state GC. Guarded: a missing module degrades to no-GC, never a crash.
@@ -80,8 +81,8 @@ def _skill_nudge(data):
         if body and SK_CHOICE_RE.search(body) and not SK_INTERVIEW_RE.search(body):
             msgs.append(SK_INTERVIEW_NOTICE)
         return " ".join(msgs)
-    except Exception:  # noqa: BLE001 - never brick a session
-        return None
+    except Exception as e:  # noqa: BLE001 - surface the skip (#953), don't swallow it to None
+        return skipped_notice("post_nudges", "skill_nudge", e)
 
 
 # ---- grill_nudge ----------------------------------------------------------------------------------
@@ -215,8 +216,8 @@ def _grill_nudge(data):
         if not _gn_spec_missing_interview(text):
             return None
         return GN_SPEC_NOTICE
-    except Exception:  # noqa: BLE001 - never brick a session
-        return None
+    except Exception as e:  # noqa: BLE001 - surface the skip (#953), don't swallow it to None
+        return skipped_notice("post_nudges", "grill_nudge", e)
 
 
 # ---- parallel_nudge -------------------------------------------------------------------------------
@@ -280,8 +281,8 @@ def _parallel_nudge(data):
                 "into different batches. This never blocks; it's a reminder."
             ).format(a=t_a, b=t_b, p=path)
         return None
-    except Exception:  # noqa: BLE001 - never brick a session
-        return None
+    except Exception as e:  # noqa: BLE001 - surface the skip (#953), don't swallow it to None
+        return skipped_notice("post_nudges", "parallel_nudge", e)
 
 
 # ---- scope_creep ----------------------------------------------------------------------------------
@@ -344,8 +345,8 @@ def _scope_creep(data):
                 "unit of work (R7/Ponytail: shortest diff that fully solves the task). If this is "
                 "one coherent change, carry on; if not, consider splitting it."
             )
-    except Exception:  # noqa: BLE001 - never brick a session
-        return None
+    except Exception as e:  # noqa: BLE001 - surface the skip (#953), don't swallow it to None
+        return skipped_notice("post_nudges", "scope_creep", e)
     return None
 
 
@@ -412,8 +413,8 @@ def _suite_overrun_nudge(data):
                 "for the integration gate once the batch is green (exit 75 = lock contention, "
                 "back off and retry)."
             )
-    except Exception:  # noqa: BLE001 - never brick a session
-        return None
+    except Exception as e:  # noqa: BLE001 - surface the skip (#953), don't swallow it to None
+        return skipped_notice("post_nudges", "suite_overrun_nudge", e)
     return None
 
 

@@ -33,12 +33,25 @@ GATE 1/GATE 2 (`WORKFLOW.md`) apply; `CLAUDE.md` wins.
 7. Strive for 1:1 visual parity; on conflict prefer design-system tokens, adjust minimally.
 8. Validate against the Figma screenshot AND drive the live site (GATE 2) before "done".
 
+**Token-cheap REST alternative (reads only, free):** when the bridge/MCP returns a huge tree you pay
+tokens for, `figma-bridge/scripts/figma/figma_digest.py --file-key <k> [--ids …] [--images …]` fetches
+the file via the Figma REST API and writes a few-KB `digest.json` ({id: name/type/box/fills/text}) +
+optional node PNG/SVG renders — so you read the digest + image paths, not the MB tree. Needs a
+`File content:read` PAT in `FIGMA_ACCESS_TOKEN` (or `FIGMA_TOKEN`). It never requests `geometry=paths`
+(the vector data that bloats the response).
+
 ## Code Connect first (try it — high leverage, unverified here)
 
 `get_code_connect_suggestions` → review → `send_code_connect_mappings`. Reportedly makes codegen emit
 your real components instead of guessing — confirm it actually references `src/components/ui` before
 relying on it. Capture the agreed design-system conventions into this skill yourself (there is
 no `create_design_system_rules` MCP call).
+
+For the CLI path, the web profile scaffolds **`bin/code-connect.sh`** (a dependency-free wrapper:
+`parse` / `dry` offline, `create` / `publish` / `repoint`, 429-backoff, token from gitignored
+`.env.local`) + a `figma.config.json` stub. Full runbook: the `claude-template-core` plugin's
+`docs/workflow/CODE-CONNECT.md`. ⚠ publish needs a **paid** Figma Org/Enterprise + Dev seat (parse /
+dry-run are free) — adopt as a scoped per-project exception, not by default.
 
 ## Parallel crew on the bridge (if used)
 
@@ -82,6 +95,13 @@ Setup: one Figma window on the file (plugin on the file's channel) → N `claude
 `join_channel <file-name>` → a coordinator hands out disjoint parents → each writer passes `parentId` on
 every `create_*`/`set_*`. Extra agents that only read (scan/export) need no partition — they're the
 read-only researchers.
+
+**Alternative transport — one window, N channels.** The vendored panel now holds **N channels at once**
+(default 5 rows `<file>_1..5`, + to add — see `figma-bridge`). So the N writers above can each join a
+distinct `_N` channel on the SAME open file through ONE plugin window, instead of all sharing one channel
+or opening N windows. The disjoint-`parentId` rule is unchanged — multiple channels isolate the command
+streams, not the document, so two writers on different channels still race if they touch the same subtree.
+Target a `_N` channel from the CLI with `--channel=<file>_N` / `FIGMA_CHANNEL=<file>_N`.
 
 ## Pushing a preview INTO Figma for sign-off (#104 · #106)
 

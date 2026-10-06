@@ -12,7 +12,8 @@ import { basename, dirname } from "node:path";
 import { connect, join, rpc, close } from "./relay-client.mjs";
 
 // folderChannel() — the deterministic default channel = basename of the MAIN working tree, so it is
-// identical across every worktree of the project ("one project = one Figma file = one channel"). Derives
+// identical across every worktree of the project ("one project = one Figma file = one DEFAULT channel";
+// the multi-channel panel can add further channels in the same window, this is just the auto-join one). Derives
 // from `git rev-parse --git-common-dir` (→ the main checkout's .git), realpath'd, up one dir, basenamed —
 // which is stable from any worktree, unlike basename(cwd). Total: falls back to the cwd basename outside
 // a git repo (rare). Never throws.
@@ -30,6 +31,35 @@ export function folderChannel() {
   } catch {
     return basename(realpathSync(process.cwd()));
   }
+}
+
+// discoverChannels(socketUrl) -> Promise<string[]> — ground-truth channel discovery from the relay's
+// HTTP /status endpoint. Reads queue.channels[].channel and expands each `Base_<n>` to the panel's
+// default family Base_1..5 (queue.channels under-reports — it lists only queue-active channels, not all
+// 5 joined rows). Fails OPEN: any unreachable/non-200/bad-JSON/timeout → []. Callers fall back to
+// folderChannel(), so a dead relay never regresses an explicit-channel or offline call.
+export async function discoverChannels(socketUrl, { timeoutMs = 1500 } = {}) {
+  const origin = (socketUrl ?? "ws://localhost:3055").replace(/^ws/, "http").replace(/\/+$/, "");
+  let body;
+  try {
+    const res = await fetch(`${origin}/status`, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!res.ok) return [];
+    body = await res.json();
+  } catch {
+    return [];
+  }
+  const raw = (body?.queue?.channels ?? [])
+    .map((c) => c?.channel)
+    .filter((s) => typeof s === "string" && s.length > 0);
+  const out = [];
+  const seen = new Set();
+  const add = (name) => { if (!seen.has(name)) { seen.add(name); out.push(name); } };
+  for (const ch of raw) {
+    const m = ch.match(/^(.*)_(\d+)$/);
+    if (m) for (let i = 1; i <= 5; i++) add(`${m[1]}_${i}`);
+    else add(ch);
+  }
+  return out;
 }
 
 // probeChannel(channel, socketUrl) -> {channel, status, currentPage?, pageCount?, pageNames?, pageIds?, fileKey?}
@@ -75,7 +105,13 @@ export async function resolveChannel({ channels = [], fileKey, env = process.env
   const socketUrl = env.FIGMA_WS_URL ?? "ws://localhost:3055";
   if (env.FIGMA_CHANNEL) return env.FIGMA_CHANNEL;
   if (channels.length === 1) return channels[0];
-  if (channels.length === 0) return folderChannel();
+  if (channels.length === 0) {
+    // Discover live channels from the relay /status before falling back to the folder name; a dead
+    // relay yields [] → keep the folder-name default (FT16/FT18 fail-open contract).
+    const discovered = await discoverChannels(socketUrl);
+    if (!discovered.length) return folderChannel();
+    channels = discovered; // fall through to the probe-and-pick-single-live logic below
+  }
   const results = await Promise.all(channels.map((c) => probeChannel(c, socketUrl)));
   let live = results.filter((r) => r.status === "CONNECTED");
   if (fileKey) live = live.filter((r) => r.fileKey === fileKey);

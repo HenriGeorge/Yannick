@@ -15,7 +15,7 @@ const SUBCOMMANDS = {
   tokens: "CSS custom-property hex → Figma COLOR variables (--css --prefix --collection)",
   place: "stream one SVG straight into a Figma page (set_svg)",
   rebind: "rebind an SVG's variable references to a Figma collection (--collection)",
-  probe: "probe channels → the live channel's pages + fileKey",
+  probe: "probe channels → the live channel's pages + fileKey (--all [--base] [--max] verifies <base>_1..N)",
   page: "ensure / rename / set-current a Figma page",
   png: "export a Figma selection → PNG on disk (--all --filter --channel)",
   // capture — optional deps, lazy-imported (needs `npm install --prefix <this dir>`)

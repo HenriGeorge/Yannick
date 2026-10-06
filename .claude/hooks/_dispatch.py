@@ -14,12 +14,18 @@ act on empty stdin passes empty_ok=True: empty stdin then runs every module with
 import json
 import sys
 
+from _lib.notice import fail_open_notice, skipped_notice
+
 
 def dispatch(entry, modules, only=None, empty_ok=False) -> int:
     if only and only not in {name for name, _ in modules}:
-        print(f"{entry}: unknown module {only}", file=sys.stderr)
+        print(f"{entry}: unknown module {only}", file=sys.stderr)  # noqa: T201
         return 0
-    raw = sys.stdin.read()
+    try:
+        raw = sys.stdin.read()
+    except Exception as e:  # noqa: BLE001 — align with the node twin: never crash on a stdin read
+        print(f"{entry}: stdin read failed ({e})", file=sys.stderr)  # noqa: T201
+        raw = ""
     if not raw.strip():
         if not empty_ok:
             return 0
@@ -37,10 +43,13 @@ def dispatch(entry, modules, only=None, empty_ok=False) -> int:
         try:
             msg = fn(data)
         except Exception as e:  # noqa: BLE001 - one module's crash must never skip the others
-            print(f"{entry}: {name} skipped ({e})", file=sys.stderr)
+            # #953/#960: surface the skip on STDOUT (an exit-0 hook never shows stderr), not just here.
+            crumb = skipped_notice(entry, name, e)
+            print(crumb, file=sys.stderr)  # noqa: T201
+            msgs.append(crumb)
             continue
         if msg:
             msgs.append(msg)
     if msgs:
-        print(json.dumps({"systemMessage": "\n".join(msgs)}))
+        fail_open_notice("\n".join(msgs))
     return 0

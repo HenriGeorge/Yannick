@@ -100,11 +100,39 @@ SENTINEL_RE = re.compile(r"(?<!no-)\b(?:NOCOMMIT|DO NOT COMMIT)\b", re.IGNORECAS
 DS_STORE = ".DS_Store"
 
 
-def _run_git(cwd, *args):
+def _run_git(cwd, *args, record=True):
     # #743: this guard's own breadcrumb pattern, now the SHARED runner. color_off=True keeps the
     # diff-scan seeing uncolored +/- prefixes (the machine may set color.ui=always globally). A scan
     # that couldn't run is a blind allow, not a clean allow — the shared runner leaves the trace.
-    return run_memo("nocommit_guard", cwd, ["git", *args], timeout=8, color_off=True)
+    # record=False for merge-probe calls (`rev-parse :<path>` / `MERGE_HEAD:<path>`) that fail by
+    # design for a non-merge / absent path — their failure is not a blind allow worth surfacing.
+    return run_memo("nocommit_guard", cwd, ["git", *args], timeout=8, color_off=True, record=record)
+
+
+def _in_merge(cwd):
+    """True if a merge is in progress (MERGE_HEAD exists) — resolved via `--git-path` so a
+    worktree's own MERGE_HEAD is checked, not the primary checkout's (#1029, same pattern as
+    grill_gate's #996 fix)."""
+    out = _run_git(cwd, "rev-parse", "--git-path", "MERGE_HEAD", record=False)
+    if out is None:
+        return False
+    out = out.strip()
+    full = out if os.path.isabs(out) else os.path.join(cwd or ".", out)
+    return os.path.isfile(full)
+
+
+def _unchanged_from_merge_head(cwd, path):
+    """True if `path`'s staged blob is identical to its blob at MERGE_HEAD — it arrived UNCHANGED
+    from the OTHER parent during a sync merge (#1029), so an upstream doc that merely quotes the
+    sentinel must not block a legit `git merge origin/main`. An author edit during the merge changes
+    the staged blob, so a genuinely newly-staged sentinel is still scanned and still blocks."""
+    staged = _run_git(cwd, "rev-parse", f":{path}", record=False)
+    if staged is None:
+        return False
+    other = _run_git(cwd, "rev-parse", f"MERGE_HEAD:{path}", record=False)
+    if other is None:
+        return False
+    return staged.strip() == other.strip()
 
 
 def _resolve_git_cwd(segment, cwd):
@@ -183,8 +211,10 @@ def _content_hit(cwd, opt_in, vendored=None):
     out = _run_git(cwd, "diff", "--cached")
     if not out:
         return None
+    in_merge = _in_merge(cwd)
     current = "?"
     current_vendored = False
+    current_unchanged_merge = False
     for line in out.split("\n"):  # split on \n only — parity with node's out.split('\n')
         # Only real file headers (`+++ b/path`, or `+++ /dev/null` on a deletion). An ADDED content
         # line whose text is `++ foo` renders as `+++ foo` in the diff — it must fall through to the
@@ -193,10 +223,15 @@ def _content_hit(cwd, opt_in, vendored=None):
             current = line[6:] if line.startswith("+++ b/") else line[4:]
             norm = current.replace("\\", "/")  # same normalization as tdd_gate's vendored lookup
             current_vendored = norm in vendored and sha_matches(cwd, norm, vendored[norm])
+            # #1029: on a merge, `git diff --cached` compares the index to the FIRST parent, so
+            # everything inherited from the OTHER parent shows as added. A file whose staged blob
+            # equals its MERGE_HEAD blob is unchanged upstream content, not authored by this commit.
+            current_unchanged_merge = (in_merge and norm != "/dev/null"
+                                       and _unchanged_from_merge_head(cwd, norm))
             continue
         if line.startswith("---") or not line.startswith("+"):
             continue
-        if current_vendored:  # vendored content is reviewed upstream, not re-gated here
+        if current_vendored or current_unchanged_merge:  # upstream content, not re-gated here
             continue
         if MARKER_RE.search(line):
             return ("merge-conflict marker", current)

@@ -1,6 +1,6 @@
 # figma-bridge toolkit
 
-Last updated: 2026-10-04 18:23
+Last updated: 2026-10-05 19:30
 
 One CLI (`figma.mjs`) for the **quota-free ClaudeTalkToFigma bridge** — a WebSocket relay
 (`ws://localhost:3055`) into a running Figma plugin, with **no** API quota (unlike the official
@@ -10,8 +10,10 @@ backbone (`relay-client`, `channel-resolve`, `preflight`) owns the wire protocol
 ## Prerequisites
 
 - **Node ≥21** (built-in global `WebSocket` — no `ws` dependency).
-- **The relay live and joined.** In Figma: `Command+P` → run the ClaudeTalkToFigma plugin → join a
-  channel. Override the relay URL with `FIGMA_WS_URL`, the channel with `--channel` / `FIGMA_CHANNEL`.
+- **The relay live and joined.** In Figma: `Command+P` → run the ClaudeTalkToFigma plugin. The CLI
+  auto-discovers the live channel from the relay's `/status` endpoint; override the relay URL with
+  `FIGMA_WS_URL`, or pin the channel with `--channel` / `FIGMA_CHANNEL` (the folder name is used only
+  when `/status` is unreachable).
   A RUN subcommand against a down relay exits non-zero with a legible `Command+P` hint, never a raw
   `ECONNREFUSED` / socket stack.
 - **Capture deps (only for `capture` / `export`):** `npm install --prefix <this dir>` (pulls the
@@ -87,7 +89,7 @@ the fill to that variable. `--strokes` also rebinds strokes; `--dry-run` reports
 
 ## Other subcommands
 
-- `probe --channel=<id>` (repeatable; `FIGMA_CHANNEL` seeds one) → the live channel's pages + fileKey.
+- `probe [--channel=<id>]` (repeatable; auto-discovers from the relay `/status` when none given, `FIGMA_CHANNEL` seeds one) → the live channel's pages + fileKey.
 - `page --name=<pageName> [--file-key]` — ensure / rename / set-current a page.
 - `png [--all --filter=<substr> --scale=N --out=<dir> --channel]` — export selected frames → PNG on disk.
 - `lanes [channel=fileKey[@cwd] ...] [--max=N] [--prime=<text>] [--no-spawn]` — fan a single macOS

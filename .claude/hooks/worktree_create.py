@@ -18,9 +18,11 @@ Steps after the worktree exists (each independent; network steps warn-and-contin
   1. `git fetch origin` in the primary checkout (warn on failure — offline is fine).
   2. WARN (never block) if the worktree's HEAD is behind origin/<default> — GATE-0 signal.
   3. Copy gitignored `.env*` files from the primary checkout into the worktree (idempotent).
-  4. If the repo's worktrees.conf says SETUP=npm, run `npm install --prefer-offline` (warn-only).
+  4. If the repo's worktrees.conf says SETUP=npm, provision node_modules by symlinking the primary's
+     into the worktree (fallback: `npm install`) — FAIL LOUD on error (#569), not warn-only.
   5. Allocate a free PORT (reservation files under ~/.cache/claude-template/ports/, TTL 90s) and
-     write it to <worktree>/.claude/worktree.env (kept if already present — idempotent).
+     write it to <worktree>/.claude/worktree.env (kept if already present — idempotent) — FAIL LOUD
+     when no port is free, rather than letting the dev server silently claim the default (#946/#178).
 
 WorktreeCreate is a blocking event. This hook exits 0 on success (creation + provisioning; the
 network-dependent provisioning steps warn-and-continue). It exits NON-ZERO — writing a one-line
@@ -77,8 +79,8 @@ def _emit_telemetry(primary: str, name: str, decision: str) -> None:
         os.makedirs(out_dir, exist_ok=True)
         with open(os.path.join(out_dir, "hook-events.jsonl"), "a", encoding="utf-8") as f:
             f.write(json.dumps(row) + "\n")
-    except Exception:  # noqa: BLE001 - never let telemetry wedge worktree creation
-        pass
+    except Exception as e:  # noqa: BLE001 - never let telemetry wedge worktree creation
+        _warn(f"WARN telemetry write skipped: {e}")  # breadcrumb, not a silent swallow (#946)
 
 
 def _run(args: list[str], cwd: str | None = None) -> tuple[int, str]:
@@ -112,6 +114,21 @@ def _primary_checkout(cwd: str) -> str:
         if os.path.isdir(cand):
             return cand
     return cwd if os.path.isdir(cwd) else ""
+
+
+def _is_worktree(path: str) -> bool:
+    """True only if `path` is a REAL registered worktree whose own toplevel is `path` (issue #946).
+
+    os.path.isdir alone trusts a leftover dir under .claude/worktrees/<name> (crash + prune residue):
+    git run from it resolves UP to the primary, so a session switched into it commits onto primary's
+    branch. show-toplevel == path is the check that a plain dir can't fake.
+    """
+    if not os.path.isdir(path):
+        return False
+    rc, top = _run(["git", "rev-parse", "--show-toplevel"], cwd=path)
+    if rc != 0 or not top:
+        return False
+    return os.path.realpath(top) == os.path.realpath(path)
 
 
 def _baseref_mode(primary: str) -> str:
@@ -223,8 +240,40 @@ def _allocate_port() -> int | None:
     return None
 
 
-def _provision(primary: str, wt: str) -> None:
-    """fetch → behind-check → env carry-in → npm → PORT. Every message goes to stderr."""
+def _provision_node_modules(primary: str, wt: str) -> bool:
+    """SETUP=npm: symlink the primary's node_modules into the worktree; install only as fallback.
+
+    Decided design (issue #569): share the primary's installed deps via a symlink — a per-worktree
+    `npm install` is slow and duplicates gigabytes. Fall back to a real install only when the primary
+    has none. FAIL LOUD on error (return False) — a half-provisioned node project is unbuildable, and
+    a warn-only on an exit-0 hook's stderr is effectively silent (issue #946 info note #6).
+    """
+    dst = os.path.join(wt, "node_modules")
+    if os.path.islink(dst) or os.path.isdir(dst):
+        return True  # idempotent — already provisioned
+    src = os.path.join(primary, "node_modules")
+    if os.path.isdir(src):
+        try:
+            os.symlink(os.path.abspath(src), dst)
+            _warn("node_modules → symlinked from primary checkout")
+            return True
+        except OSError as e:
+            _warn(f"FATAL could not symlink node_modules from primary: {e}")
+            return False
+    # primary has no node_modules — fall back to a real install.
+    rc, out = _run(["npm", "install", "--prefer-offline"], cwd=wt)
+    if rc != 0:
+        _warn(f"FATAL npm install failed: {out.splitlines()[-1] if out else 'unknown'}")
+        return False
+    return True
+
+
+def _provision(primary: str, wt: str) -> bool:
+    """fetch → behind-check → env carry-in → node_modules → PORT. Every message goes to stderr.
+
+    Returns False on a FATAL provisioning error (node_modules / PORT) so main() can fail loud; the
+    network-dependent steps (fetch/behind/env) stay warn-and-continue (G8).
+    """
     # 1. fetch (warn-and-continue — G8)
     rc, out = _run(["git", "fetch", "origin"], cwd=primary or wt)
     if rc != 0:
@@ -236,6 +285,10 @@ def _provision(primary: str, wt: str) -> None:
         rc, behind = _run(["git", "rev-list", "--count", f"HEAD..{default}"], cwd=wt)
         if rc == 0 and behind.isdigit() and int(behind) > 0:
             _warn(f"WARN base is {behind} commits behind {default} — rebase before building (GATE 0)")
+    else:
+        # #946(2): origin/HEAD unset → base silently branched from local HEAD and the behind-check
+        # can't run. Say so, don't vanish — a stale base is a real GATE-0 hazard.
+        _warn("WARN behind-check skipped — origin/HEAD unset (run: git remote set-head origin -a)")
 
     # 3. env carry-in (idempotent overwrite)
     if primary and os.path.isdir(primary):
@@ -245,13 +298,12 @@ def _provision(primary: str, wt: str) -> None:
             except OSError as e:
                 _warn(f"WARN could not copy {os.path.basename(src)}: {e}")
 
-    # 4. setup hook (warn-and-continue)
+    # 4. node_modules (SETUP=npm) — FAIL LOUD (#569)
     if primary and _conf_val(primary, "SETUP") == "npm":
-        rc, out = _run(["npm", "install", "--prefer-offline"], cwd=wt)
-        if rc != 0:
-            _warn("WARN npm install failed — run it manually")
+        if not _provision_node_modules(primary, wt):
+            return False
 
-    # 5. PORT (idempotent: keep an existing assignment)
+    # 5. PORT (idempotent: keep an existing assignment) — FAIL LOUD on no free port (#946(5), #178)
     env_path = os.path.join(wt, ".claude", "worktree.env")
     try:
         with open(env_path, encoding="utf-8") as f:
@@ -260,13 +312,19 @@ def _provision(primary: str, wt: str) -> None:
         has_port = False
     if not has_port:
         port = _allocate_port()
-        if port:
+        if not port:
+            # Don't warn-and-continue: the dev server would silently claim the default port (#178).
+            _warn("FATAL no free port in range — refusing to provision (would collide on the default port, #178)")
+            return False
+        try:
             os.makedirs(os.path.dirname(env_path), exist_ok=True)
             with open(env_path, "w", encoding="utf-8") as f:
                 f.write(f"PORT={port}\n")
-            _warn(f"PORT={port} → .claude/worktree.env")
-        else:
-            _warn("WARN no free port found in range")
+        except OSError as e:
+            _warn(f"FATAL could not write worktree.env PORT: {e}")
+            return False
+        _warn(f"PORT={port} → .claude/worktree.env")
+    return True
 
 
 def main() -> int:
@@ -297,7 +355,9 @@ def main() -> int:
             _warn("ERROR unusable payload: missing 'name' or could not resolve primary checkout")
             return 1
         wt = os.path.join(primary, ".claude", "worktrees", name)
-        if not os.path.isdir(wt):
+        # #946(1): verify it's a REAL worktree, not a leftover dir — a stale dir falls through to
+        # create, which then fails loudly on the non-empty path (never silently provisions primary).
+        if not _is_worktree(wt):
             status = _create_worktree(primary, wt, name)
             if status == "failed":
                 # NEVER exit 0 with empty stdout — the opaque "returned no worktree path" (#927).
@@ -309,7 +369,10 @@ def main() -> int:
     if not primary:
         _warn("WARN could not locate primary checkout — skipped .env* carry-in")
 
-    _provision(primary, wt)
+    if not _provision(primary, wt):
+        # FAIL LOUD (#569 / #946(5)): never echo a path for a half-provisioned worktree. The worktree
+        # exists on disk, so a retry is idempotent once the real cause (ports, npm) is fixed.
+        return 1
 
     # command-hook contract: the worktree path is the ONLY thing on stdout.
     print(wt)

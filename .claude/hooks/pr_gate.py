@@ -70,6 +70,7 @@ import sys
 import urllib.parse
 
 from _git import run as _git_run  # #743 — shared git-runner: fail-open BUT leave a stderr breadcrumb
+from _lib.shell import SHELL_SEGMENT_SPLIT_RE as _BASE_SEGMENT_SPLIT_RE  # #1091 — ONE shared split base
 
 # #782 — shared denial-capture helper (sibling module). Guarded: missing module → no-capture, never crash.
 try:
@@ -78,10 +79,12 @@ except Exception:  # noqa: BLE001 - capture is best-effort; never block hook loa
     _emit_denial = None
     _set_denial_context = None
 
-# `&` is LAST and `&&` is FIRST so `&&` matches whole (never splits into two empty `&` segments); a
-# lone `&` (backgrounding) starts a new command, so `sleep 1 & gh pr merge` puts `gh` at index 0 of
-# its own segment — required for command-position detection to see the real merge (#447 fix-round).
-SHELL_SEGMENT_SPLIT_RE = re.compile(r"&&|\|\||;|\n|\||&")
+# #1091 — the base boundaries are the ONE shared definition (_lib.shell, carrying the `(?<!>)` that
+# keeps a `>|` noclobber redirect joined). pr_gate ALONE also splits a bare `&`: a lone `&`
+# (backgrounding) starts a new command, so `sleep 1 & gh pr merge` must put `gh` at index 0 of its
+# own segment for command-position detection (#447 fix-round). `&` is LAST and `&&` is FIRST so `&&`
+# matches whole (never splits into two empty `&` segments).
+SHELL_SEGMENT_SPLIT_RE = re.compile(_BASE_SEGMENT_SPLIT_RE.pattern + r"|&")
 NO_DESIGN_BYPASS = "WORKFLOW:no-design"
 FORCE_MERGE_BYPASS = "WORKFLOW:force-merge"
 NO_REVIEW_BYPASS = "WORKFLOW:no-review"

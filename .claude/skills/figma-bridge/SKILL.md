@@ -40,24 +40,37 @@ so you're sure the plugin is joined to the *right* channel and Figma is showing 
 
 ### Finding the channel to join
 
-The channel is a free-text label you type into the plugin panel. One project = one channel: use the
-**project folder name**. The `figma_launch` SessionStart hook echoes it as `Bridge channel: <folder>`
-at startup (issue #830), and it is the default the CLI resolves when no `--channel` / `FIGMA_CHANNEL`
-is set (`folderChannel()` = the main-checkout basename, stable across every worktree). Confirm which
-channel is actually live with `probe`:
+The channel is a free-text label the plugin panel joins — by default the **open Figma file's name**
+(e.g. `Resonanz_Records_1`), NOT the repo folder. You rarely need to name it: the CLI now
+**auto-discovers the live channel from the relay `/status` endpoint**. Channel precedence is
+`FIGMA_CHANNEL` env → explicit `--channel` → `/status` discovery → `folderChannel()` (the folder-name
+fallback, used only when the relay is unreachable). So a bare `probe` lists every live channel:
 
 ```bash
-node "${CLAUDE_PROJECT_DIR}/.claude/skills/figma-bridge/scripts/figma/figma.mjs" probe            # the folder channel
+node "${CLAUDE_PROJECT_DIR}/.claude/skills/figma-bridge/scripts/figma/figma.mjs" probe            # auto-discovers live channels from /status (folder name only if the relay is down)
 node "${CLAUDE_PROJECT_DIR}/.claude/skills/figma-bridge/scripts/figma/figma.mjs" probe --channel=<id> --channel=<other>
 ```
 
 `CONNECTED` = the plugin is joined there (reports its pages + `fileKey`); `NOT_CONNECTED` = nothing
 joined — open Figma, `Command+P`, run ClaudeTalkToFigma, and join that channel.
 
+**Multi-channel panel (one window, N channels).** The patched panel holds **N channels at once** —
+default **5 rows** named `<fileName>_1 … _5`, a **"+ Add channel"** button for more, each row an
+independent Connect/Disconnect joined to its own channel. So N agents/sessions can drive ONE open
+Figma file through ONE plugin window (each on its own `_N` channel) — you no longer need N Figma
+windows for N channels on a single file. The sandbox stays channel-agnostic; the panel routes each
+reply back to the originating channel by command id and serializes commands into the one shared
+document. **CLI note:** these suffixed `_N` channels no longer need to be named by hand — a bare
+`probe` / the default channel resolution auto-discovers them from `/status` (expanding the open file's
+`<file>_1 … _5` family); pin a specific one with `--channel=<file>_N` or `FIGMA_CHANNEL=<file>_N`.
+Logical write conflicts between concurrent writers are still yours to avoid (disjoint `parentId` — see
+`figma-ui`); the queue only prevents API-call interleaving, not subtree collisions.
+
 **The patched panel is vendored** at `plugins/claude-template-core/vendor/ctf-plugin/` (see its
 `VENDOR.md`). Unlike stock CTF (which joins a *random* channel every connect), it **auto-joins the open
 file's name on run** (`figma.root.name`, ahead of the random fallback) — so a project whose Figma file
-is named after its repo folder joins the right channel with **no typing**. The channel field remains a
+is named after its repo folder joins the right channel with **no typing** (all 5 rows auto-connect on
+launch, each auto-reconnecting with capped backoff if it drops, until you Disconnect). The channel field remains a
 manual override and still persists via `figma.clientStorage`. The `figma_launch` hook mirrors the panel to a stable path
 (`~/.local/share/claude-template/ctf-plugin/manifest.json`) and prints it at startup; import it once in
 Figma Desktop (**Plugins › Development › Import plugin from manifest**), so the version-keyed plugin
@@ -110,7 +123,14 @@ before touching the relay.
 - `tokens` — CSS custom-property hex → Figma COLOR variables. `--css=<file> --prefix=--x- --collection=<name>` (`--dry-run` parses offline).
 - `place` — stream one SVG straight into a page. `--svg=<file> [--x --y --name]`.
 - `rebind` — rebind an SVG subtree's fills to a variable collection. `--root=<nodeId> [--collection --strokes --dry-run --max=N]`.
-- `probe` — probe channels → the live channel's pages + fileKey. `--channel=<id>` (repeatable).
+- `probe` — probe channels (auto-discovered from `/status` when none given) → the live channel's pages + fileKey. `--channel=<id>` (repeatable).
+- `probe --all [--base=<name>] [--max=N]` — verify the project's conventional channels
+  `<base>_1..N` (N default 5) are ALL reachable and on one file. Base is discovered from the
+  relay `/status` endpoint (strip `_N`); override with `--base`, or it falls back to the folder
+  name. Exit 0 iff every channel is CONNECTED and shares one fileKey; else exit 1 with a reason.
+  Note: checks the CONVENTIONAL `_1..N` set — it cannot read the panel's saved row list, so a
+  renamed/custom row set needs `--base`/`--max`. CONNECTED means "a plugin is joined," not "the
+  lane is free."
 - `page` — ensure / rename / set-current a page. `--name=<pageName> [--file-key]`.
 - `png` — export a selection → PNG on disk. `[--all --filter=<substr> --scale=N --out=<dir> --channel]`.
 - `lanes` — launch N parallel Figma agents (one file/channel/session each); starts its own relay, so it bypasses the normal preflight. `<lane...> [--no-spawn --max=N]` (lane = `channel=fileKey[@cwd]`); also runnable as `bin/figma-lanes`.

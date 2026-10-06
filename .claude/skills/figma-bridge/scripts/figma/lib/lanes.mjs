@@ -13,7 +13,7 @@ const LANE_RE = /^([A-Za-z0-9][\w-]*)=([A-Za-z0-9]+)(?:@(.+))?$/;
 
 export function parseLanes(confValue, argv) {
   const errors = [];
-  let max = 4, spawn = true, prime = null;
+  let max = process.env.FIGMA_LANES_MAX ? parseInt(process.env.FIGMA_LANES_MAX, 10) : 4, spawn = true, prime = null;
   const cliLanes = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -24,7 +24,6 @@ export function parseLanes(confValue, argv) {
     if (a.startsWith("--prime=")) { prime = a.slice("--prime=".length); continue; }
     if (a.includes("=")) cliLanes.push(a);
   }
-  if (process.env.FIGMA_LANES_MAX) max = parseInt(process.env.FIGMA_LANES_MAX, 10);
   const raw = (cliLanes.length ? cliLanes : (confValue || "").trim().split(/\s+/)).filter(Boolean);
   const lanes = [];
   for (const tok of raw) {

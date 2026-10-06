@@ -3,7 +3,7 @@
 import os
 
 from _lib.git import GIT_ADD_RE, GIT_COMMIT_INVOCATION_RE, _add_command_targets, _resolve_git_cwd, _staged_names
-from _lib.shell import SHELL_SEGMENT_SPLIT_RE, _process_env_override, _segment_has_leading_override
+from _lib.shell import SHELL_SEGMENT_SPLIT_RE, _process_env_override, _segment_has_leading_override, _strip_shell_quotes
 
 
 # H10 — secret-file staging: block staging an obviously-secret FILE by NAME (complements H3, which
@@ -40,8 +40,13 @@ def _check_secret_file_staging(command: str, cwd: str):
     if _process_env_override("CT_ALLOW_SECRET_FILE"):
         return
     for segment in SHELL_SEGMENT_SPLIT_RE.split(command):
-        if GIT_ADD_RE.search(segment):
-            for path in _add_command_targets(segment, cwd):
+        # #744(2): strip shell quotes before the `git add` match so a QUOTED verb (`git "add" .env`,
+        # `gi""t add .env`) — which the shell still dispatches as a real `git add` — can't slip past
+        # the bare `\bgit\s+add\b` regex. Same verb-normalize helper H7's destroyer arms use (#240/#251).
+        # Scoped to the add arm; the commit arm keeps its frozen `_GIT_GLOBAL_OPT` scope untouched.
+        add_segment = _strip_shell_quotes(segment)
+        if GIT_ADD_RE.search(add_segment):
+            for path in _add_command_targets(add_segment, cwd):
                 if not _is_secret_filename(path):
                     continue
                 if _segment_has_leading_override(segment, "CT_ALLOW_SECRET_FILE"):

@@ -24,10 +24,9 @@ import shlex
 import time
 from datetime import datetime, timezone
 
-from _lib.shell import SHELL_TOOLS, ps_to_sh
+from _lib.shell import SHELL_SEGMENT_SPLIT_RE, SHELL_TOOLS, ps_to_sh  # #1091: ONE shared split RE
 from _lib.test_cmd import is_suite_run
 
-SHELL_SEGMENT_SPLIT_RE = re.compile(r"&&|\|\||;|\n|\|")
 GIT_VALUE_FLAGS = frozenset({"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"})
 GH_VALUE_FLAGS = frozenset({"-R", "--repo", "--hostname"})
 # "A check ran" — the old close_gate TEST_RUNNER_RE, unchanged (suites AND lint; outcome not judged).
