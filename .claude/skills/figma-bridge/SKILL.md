@@ -21,9 +21,11 @@ with `FIGMA_WS_URL`, the channel with `--channel` / `FIGMA_CHANNEL`.
 Figma will not run a plugin from automation without a user gesture, so **the human runs it**: with
 the **file open** (not just the Figma app — a bare `figma://` deep link opens the app with *no
 window*, and `Command+P` needs a window), bring **Figma to the front**, press `Command+P`, type
-`ClaudeTalkToFigma`, and press `Enter`. **The patched panel then auto-joins a channel = the open
-file's name (`figma.root.name`) — no typing needed**, provided the Figma file is named exactly the
-repo folder (so it matches the CLI's `folderChannel()`). The channel field is only a manual override.
+`ClaudeTalkToFigma`, and press `Enter`. **The patched panel then auto-joins a channel whose base is
+`<figma.fileKey>_<figma.root.name>` — the immutable file key plus the readable file name — no typing
+needed** (an unsaved file with no key falls back to the name alone). The key makes the base
+collision-free; name the Figma file exactly the repo folder so the readable suffix matches the CLI's
+`folderChannel()`. The channel field is only a manual override.
 
 Automating the gesture (`osascript` System Events / `cliclick`) needs macOS **Accessibility** granted
 to the terminal + `osascript` + Figma (+ `cliclick`), and still only works when **Figma is frontmost
@@ -47,7 +49,7 @@ The channel is a free-text label the plugin panel joins — by default the **ope
 fallback, used only when the relay is unreachable). So a bare `probe` lists every live channel:
 
 ```bash
-node "${CLAUDE_PROJECT_DIR}/.claude/skills/figma-bridge/scripts/figma/figma.mjs" probe            # auto-discovers live channels from /status (folder name only if the relay is down)
+node "${CLAUDE_PROJECT_DIR}/.claude/skills/figma-bridge/scripts/figma/figma.mjs" probe            # auto-discovers live channels from /status (<FIGMA_FILE_KEY>_<folder> only if the relay is down)
 node "${CLAUDE_PROJECT_DIR}/.claude/skills/figma-bridge/scripts/figma/figma.mjs" probe --channel=<id> --channel=<other>
 ```
 
@@ -62,14 +64,15 @@ windows for N channels on a single file. The sandbox stays channel-agnostic; the
 reply back to the originating channel by command id and serializes commands into the one shared
 document. **CLI note:** these suffixed `_N` channels no longer need to be named by hand — a bare
 `probe` / the default channel resolution auto-discovers them from `/status` (expanding the open file's
-`<file>_1 … _5` family); pin a specific one with `--channel=<file>_N` or `FIGMA_CHANNEL=<file>_N`.
+`<fileKey>_<fileName>_1 … _5` family); pin a specific one with `--channel=<base>_N` or `FIGMA_CHANNEL=<base>_N`.
 Logical write conflicts between concurrent writers are still yours to avoid (disjoint `parentId` — see
 `figma-ui`); the queue only prevents API-call interleaving, not subtree collisions.
 
 **The patched panel is vendored** at `plugins/claude-template-core/vendor/ctf-plugin/` (see its
-`VENDOR.md`). Unlike stock CTF (which joins a *random* channel every connect), it **auto-joins the open
-file's name on run** (`figma.root.name`, ahead of the random fallback) — so a project whose Figma file
-is named after its repo folder joins the right channel with **no typing** (all 5 rows auto-connect on
+`VENDOR.md`). Unlike stock CTF (which joins a *random* channel every connect), it **auto-joins a
+fileKey-based channel on run** (base `<figma.fileKey>_<figma.root.name>`, ahead of the random fallback;
+the file key makes it collision-free) — so a project whose Figma file is named after its repo folder
+joins the right channel with **no typing** (all 5 rows auto-connect on
 launch, each auto-reconnecting with capped backoff if it drops, until you Disconnect). The channel field remains a
 manual override and still persists via `figma.clientStorage`. The `figma_launch` hook mirrors the panel to a stable path
 (`~/.local/share/claude-template/ctf-plugin/manifest.json`) and prints it at startup; import it once in
@@ -137,7 +140,7 @@ before touching the relay.
 
 **Capture — optional deps (`playwright`/`esbuild`/`dom-to-svg`), lazy-imported:**
 
-- `capture` — live page → sharp vector SVG. `--url=<url> --out=<file.svg> [--selector --strip-images --strip-selectors=<csv> --viewport-width --max-height]`.
+- `capture` — live page → sharp vector SVG. `--url=<url> --out=<file.svg> [--selector --strip-images --strip-selectors=<csv> --viewport-width --max-height --min-text=<n> --inline-remote-images]`.
 - `export` — config-driven: capture N targets → validate → distribute `set_svg`. `[--config --only --capture-only --no-capture --resolve-only --new-page --channel]`.
 
 ## Zero-dep core vs capture split

@@ -7,7 +7,7 @@
 // single-page file is always {0:1}, so empty files collide; any real file has distinct page ids.
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { realpathSync } from "node:fs";
+import { realpathSync, readFileSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { connect, join, rpc, close } from "./relay-client.mjs";
 
@@ -17,7 +17,32 @@ import { connect, join, rpc, close } from "./relay-client.mjs";
 // from `git rev-parse --git-common-dir` (→ the main checkout's .git), realpath'd, up one dir, basenamed —
 // which is stable from any worktree, unlike basename(cwd). Total: falls back to the cwd basename outside
 // a git repo (rare). Never throws.
-export function folderChannel() {
+// figmaFileKey(env) — the immutable Figma file key for this project, if known: env `FIGMA_FILE_KEY`
+// first (so a caller/test can inject), then `FIGMA_FILE_KEY="..."` in the main checkout's
+// `.claude/worktrees.conf`. Empty string when unknown. Never throws (fail-open, like folderChannel).
+export function figmaFileKey(env = process.env) {
+  let key = "";
+  if (env.FIGMA_FILE_KEY) {
+    key = String(env.FIGMA_FILE_KEY).trim();
+  } else {
+    try {
+      const gitCommonDir = execFileSync("git", ["rev-parse", "--git-common-dir"], { encoding: "utf8" }).trim();
+      const root = dirname(realpathSync(gitCommonDir));
+      const conf = readFileSync(`${root}/.claude/worktrees.conf`, "utf8");
+      const m = conf.match(/^\s*FIGMA_FILE_KEY=["']?([^"'\n]+)/m);
+      key = m ? m[1].trim() : "";
+    } catch {
+      return "";
+    }
+  }
+  // Validate like the figma_launch hooks do (`[A-Za-z0-9]+`): a real Figma file key is alphanumeric.
+  // A malformed key degrades to "" → bare folder, so the CLI's offline default matches the hooks'
+  // (no `<badkey>_folder` divergence) — the label never carries unexpected chars.
+  return /^[A-Za-z0-9]+$/.test(key) ? key : "";
+}
+
+export function folderChannel(env = process.env) {
+  let folder;
   try {
     const gitCommonDir = execFileSync("git", ["rev-parse", "--git-common-dir"], {
       encoding: "utf8",
@@ -27,10 +52,14 @@ export function folderChannel() {
     // relative `.git`, or a detached/edge layout, would realpath against the SUBDIR instead → ENOENT →
     // the catch falls back to the subdir basename (wrong channel). Safe for cwd = repo root (all toolkit
     // + test invocations); switch to `--show-toplevel` if a real subdir-cwd invocation surfaces (#830).
-    return basename(dirname(realpathSync(gitCommonDir)));
+    folder = basename(dirname(realpathSync(gitCommonDir)));
   } catch {
-    return basename(realpathSync(process.cwd()));
+    folder = basename(realpathSync(process.cwd()));
   }
+  // Prefix the immutable file key when known, so the offline default matches the panel's
+  // "<fileKey>_<fileName>" base (the live /status discovery path is name-agnostic and unaffected).
+  const key = figmaFileKey(env);
+  return key ? `${key}_${folder}` : folder;
 }
 
 // discoverChannels(socketUrl) -> Promise<string[]> — ground-truth channel discovery from the relay's
@@ -109,7 +138,7 @@ export async function resolveChannel({ channels = [], fileKey, env = process.env
     // Discover live channels from the relay /status before falling back to the folder name; a dead
     // relay yields [] → keep the folder-name default (FT16/FT18 fail-open contract).
     const discovered = await discoverChannels(socketUrl);
-    if (!discovered.length) return folderChannel();
+    if (!discovered.length) return folderChannel(env);
     channels = discovered; // fall through to the probe-and-pick-single-live logic below
   }
   const results = await Promise.all(channels.map((c) => probeChannel(c, socketUrl)));

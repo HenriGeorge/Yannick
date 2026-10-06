@@ -126,8 +126,12 @@ def _find_figma_cli(project: str):
     return hits[0]
 
 
-def _probe_connected(project: str, channel: str):
-    # Returns True (plugin joined the channel), False (not joined), or None (couldn't probe).
+_FINGERPRINT_RE = re.compile(r"^[0-9a-f]{8}$")
+
+
+def _probe_entry(project: str, channel: str):
+    # The first CONNECTED entry (dict with fileKey/currentPage) or None. _probe_connected wraps this,
+    # so FL-867's "probe parse failed" breadcrumb still fires on the keystroke-loop path.
     override = os.environ.get(_PROBE_CMD_ENV, "")
     if override:
         cmd = [override, f"--channel={channel}"]
@@ -144,10 +148,22 @@ def _probe_connected(project: str, channel: str):
         return None
     try:
         data = json.loads(r.stdout or "[]")
-        return any(isinstance(x, dict) and x.get("status") == "CONNECTED" for x in data)
     except Exception as e:
         _log(f"probe parse failed: {e}")
         return None
+    if not isinstance(data, list):
+        _log("probe returned non-list")
+        return None
+    for x in data:
+        if isinstance(x, dict) and x.get("status") == "CONNECTED":
+            return x
+    return None
+
+
+def _probe_connected(project: str, channel: str):
+    # True (plugin joined the channel) | False (not joined / couldn't probe). FL-867 asserts the
+    # breadcrumb, not the return value — _probe_entry logs the parse failure, so parity holds.
+    return _probe_entry(project, channel) is not None
 
 
 def _discover_channel(project: str):
@@ -279,6 +295,26 @@ def _autolaunch_plugin(platform: str, conf: dict, project: str, channel: str) ->
               "run manually: Cmd+P › ClaudeTalkToFigma › enter the channel.")
         return
     print(f"Figma plugin connected on channel: {channel}")
+    # Verify the connected file against a human-recorded fingerprint (one extra, cheap probe — the
+    # connection is stable; see the plan's grill findings). Fail-open: WARN on mismatch, never block.
+    entry = _probe_entry(project, channel)
+    page = (entry or {}).get("currentPage") or ""
+    expected = conf.get("FIGMA_FILE_FINGERPRINT", "")
+    if expected and not _FINGERPRINT_RE.match(expected):
+        _log(f"ignoring malformed FIGMA_FILE_FINGERPRINT={expected!r}")
+        # Surface the disabled safety check on stdout (SessionStart context), not just the log — a
+        # silently-degraded path an exit-0 hook never shows is the failure mode the builder-brief forbids.
+        print("WARNING: malformed FIGMA_FILE_FINGERPRINT ignored — file identity not checked")
+        expected = ""
+    if expected:
+        actual = (entry or {}).get("fileKey") or ""
+        if actual == expected:
+            print(f"Figma file verified: {page}")
+        else:
+            print(f"WARNING: Figma file mismatch — expected {expected}, got {actual or '(none)'} (channel {channel})")
+            return  # skip the screenshot — don't save a misleading wrong-file capture
+    elif page:
+        print(f"Figma file: {page}")
     shot = _screenshot(channel)
     if shot:
         print(f"Figma screenshot: {shot}")
@@ -294,19 +330,24 @@ def _log(msg: str) -> None:
         pass
 
 
-def _folder_channel(project: str) -> str:
-    # The bridge channel the ClaudeTalkToFigma plugin panel expects = the project folder name, matching
-    # channel-resolve.mjs folderChannel(): basename of the MAIN checkout (git-common-dir's parent), so it
-    # is identical across every worktree. `git -C project` because the hook's cwd is not the project.
+def _folder_channel(project: str, conf: dict | None = None) -> str:
+    # The bridge channel the ClaudeTalkToFigma plugin panel expects, matching channel-resolve.mjs
+    # folderChannel(): "<fileKey>_<folder>" when a valid FIGMA_FILE_KEY is configured, else the folder
+    # name alone. folder = basename of the MAIN checkout (git-common-dir's parent), identical across
+    # every worktree. `git -C project` because the hook's cwd is not the project.
     try:
         out = subprocess.run(
             ["git", "-C", project, "rev-parse", "--git-common-dir"],
             capture_output=True, text=True, timeout=5, check=True,
         ).stdout.strip()
         common = out if os.path.isabs(out) else os.path.join(project, out)
-        return os.path.basename(os.path.dirname(os.path.realpath(common)))
+        folder = os.path.basename(os.path.dirname(os.path.realpath(common)))
     except Exception:
-        return os.path.basename(os.path.realpath(project))
+        folder = os.path.basename(os.path.realpath(project))
+    key = (conf or {}).get("FIGMA_FILE_KEY", "")
+    if key and re.fullmatch(r"[A-Za-z0-9]+", key):
+        return f"{key}_{folder}"
+    return folder
 
 
 def _find_ctf_src(project: str):
@@ -394,7 +435,7 @@ def main() -> int:
 
     # Echo the bridge channel (folder-name default) to stdout so the human sees exactly what to type
     # into the ClaudeTalkToFigma plugin panel (issue #830). SessionStart surfaces stdout as context.
-    channel = _folder_channel(project)
+    channel = _folder_channel(project, conf)
     print(f"Bridge channel: {channel}")
 
     # Mirror the vendored (patched) ClaudeTalkToFigma panel to a stable path and tell the human where to

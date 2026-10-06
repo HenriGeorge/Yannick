@@ -4,7 +4,8 @@
     "claude-template-hooks-py@claude-template": false,
     "ponytail@ponytail": false,
     "superpowers@claude-plugins-official": false,
-    "superpowers@superpowers-dev": false
+    "superpowers@superpowers-dev": false,
+    "claude-template@claude-template": false
   },
   "extraKnownMarketplaces": {
     "claude-template": {

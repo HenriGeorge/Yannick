@@ -1,6 +1,6 @@
 # figma-bridge toolkit
 
-Last updated: 2026-10-05 19:30
+Last updated: 2026-10-06 23:33
 
 One CLI (`figma.mjs`) for the **quota-free ClaudeTalkToFigma bridge** — a WebSocket relay
 (`ws://localhost:3055`) into a running Figma plugin, with **no** API quota (unlike the official
@@ -64,7 +64,8 @@ node figma.mjs place --svg=out/pricing.svg --x=0 --y=0 --name=Pricing
 `capture` renders a live page to a sharp vector SVG (Playwright + dom-to-svg); `place` streams one
 SVG into a Figma page via `set_svg`. `capture` flags: `--selector` (one element),
 `--strip-images`, `--strip-selectors=<csv>`, `--detect-error-boundary`, `--viewport-width=<px>`
-(default 1440), `--max-height=<px>` (truncate + disclose), `--inline-remote-images` (opt-in — see
+(default 1440), `--max-height=<px>` (truncate + disclose), `--min-text=<n>` (min `<text>` nodes to count as a real
+capture, default 5 — lower for low-text visual components), `--inline-remote-images` (opt-in — see
 Security). `export` is the config-driven batch form: capture N targets → validate (xmllint) →
 distribute `set_svg` round-robin across resolved live channels (`--config`, `--only`,
 `--capture-only`, `--no-capture`, `--resolve-only`, `--new-page`; per-target/`cfg.inlineRemote`).

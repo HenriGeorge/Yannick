@@ -10,6 +10,9 @@
 //   --strip-selectors=<csv>     remove these selectors before capture (dev overlays etc.; project-set)
 //   --detect-error-boundary     opt-in: fail if a React/Next error boundary was captured
 //   --viewport-width=<px>       default 1440   ·   --max-height=<px>  truncate + disclose past this
+//   --min-text=<n>              min <text> nodes for a capture to count as real (default 5). Lower
+//                               (e.g. 1) for legitimately low-text visual components (color canvas,
+//                               swatch, spinner, dropzone) that the default floor false-rejects.
 // Node core only at load time; the capture deps load on first run().
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
@@ -257,6 +260,7 @@ export async function capture(
     detectErrorBoundary: detectEB = false,
     maxHeight = null,
     inlineRemote = false,
+    minText = MIN_REAL_TEXT_COUNT,
   },
   { chromium, esbuild },
 ) {
@@ -348,9 +352,9 @@ export async function capture(
         `captured an error boundary (aria-owns="__next_error__"), not the real page — ${url}`,
       );
     }
-    if (textCount < MIN_REAL_TEXT_COUNT) {
+    if (textCount < minText) {
       throw new Error(
-        `only ${textCount} <text> node(s) (< ${MIN_REAL_TEXT_COUNT}) — looks rasterized or unpainted, not a real capture of ${url}`,
+        `only ${textCount} <text> node(s) (< ${minText}) — looks rasterized or unpainted, not a real capture of ${url}`,
       );
     }
 
@@ -368,11 +372,19 @@ export async function capture(
 }
 
 export async function run(args) {
-  const deps = await loadCaptureDeps(); // lazy dep gate FIRST — a missing dep → the install hint
+  // Validate args BEFORE the dep gate so a bad flag fails fast with a clear message (not the install
+  // hint, and not a silently-skipped sanity gate). `--min-text` is `!== undefined` (not truthy) so
+  // `--min-text=0` is honored; a non-numeric or negative value must ERROR, never coerce to NaN/neg and
+  // silently disable the real-capture floor (`textCount < NaN` is always false).
   const flags = parseFlags(args);
   const url = flags.url;
   const outSvg = flags.out;
   if (!url || !outSvg) throw new Error("capture: --url=<url> and --out=<file.svg> are required");
+  const minText = flags["min-text"] !== undefined ? Number(flags["min-text"]) : MIN_REAL_TEXT_COUNT;
+  if (!Number.isFinite(minText) || minText < 0) {
+    throw new Error(`capture: --min-text must be a non-negative number, got "${flags["min-text"]}"`);
+  }
+  const deps = await loadCaptureDeps(); // lazy dep gate — a missing dep → the install hint
   await capture(
     {
       url,
@@ -387,6 +399,7 @@ export async function run(args) {
       detectErrorBoundary: Boolean(flags["detect-error-boundary"]),
       maxHeight: flags["max-height"] ? Number(flags["max-height"]) : null,
       inlineRemote: Boolean(flags["inline-remote-images"]),
+      minText,
     },
     deps,
   );

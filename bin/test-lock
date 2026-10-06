@@ -44,18 +44,15 @@ write_holder() {
 mtime() { stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null; }
 GRACE=2 # s — a holder-less lock younger than this is a winner between mkdir and write_holder
 
-acquire() {
-  if mkdir "$lock_dir" 2>/dev/null; then
-    write_holder "$@"; return
-  fi
-  # stale reclaim: holder pid dead → take over. An empty/missing/unparseable holder only counts as
-  # stale once the lock dir is older than GRACE (else it's a live winner mid-write — #961 review).
-  # The steal is an atomic rename, so two reclaimers never both mv the SAME stale dir — but the race
-  # is not closed: B can judge the old lock stale, A renames + recreates it, then B's mv moves A's
-  # fresh lock away (two holders). Known gap — follow-up #969.
-  # Returns 0 = acquired, 1 = held (retry), 2 = fatal, already reported.
+# Returns 0 if the lock looks stale (reclaimable), 1 if live or too fresh to judge. Sets stale_hpid
+# to the dead holder's pid (empty when the holder file is missing/empty). An empty/missing/
+# unparseable holder only counts as stale once the lock dir is older than GRACE (else it's a live
+# winner mid-write — #961 review). Factored out of acquire so the reclaim can RE-CHECK staleness
+# under the mutex, the instant before it steals (#969).
+lock_is_stale() {
   local hpid m
   hpid="$(sed -n 's/^pid=\([0-9]*\).*/\1/p' "$lock_dir/holder" 2>/dev/null | head -1)"
+  stale_hpid="$hpid"
   if [ -z "$hpid" ]; then
     m="$(mtime "$lock_dir")"
     if [ -z "$m" ] || [ $(( $(date +%s) - m )) -lt 0 ]; then
@@ -66,14 +63,41 @@ acquire() {
       return 1
     fi
     [ $(( $(date +%s) - m )) -ge "$GRACE" ] || return 1
-  elif kill -0 "$hpid" 2>/dev/null; then
-    return 1
+    return 0
   fi
-  if mv "$lock_dir" "$lock_dir.stale.$$" 2>/dev/null; then
-    rm -rf "$lock_dir.stale.$$"
-    mkdir "$lock_dir" 2>/dev/null || return 1
+  kill -0 "$hpid" 2>/dev/null && return 1
+  return 0
+}
+
+# Returns 0 = acquired, 1 = held (retry), 2 = fatal, already reported.
+acquire() {
+  if mkdir "$lock_dir" 2>/dev/null; then
     write_holder "$@"; return
   fi
+  lock_is_stale || return 1
+  [ -n "${TEST_LOCK_RECLAIM_DELAY:-}" ] && sleep "$TEST_LOCK_RECLAIM_DELAY" # test seam (TL-969): widen the reclaim window
+  # #969: SERIALIZE reclaimers. The old mv-then-recreate let a second reclaimer that had already
+  # judged the lock stale move the FIRST reclaimer's freshly recreated lock away — two live holders,
+  # no warning. mkdir of a reclaim mutex is atomic, so only one reclaimer proceeds; an abandoned
+  # reclaim (crashed mid-steal) is cleared once it is older than GRACE.
+  local reclaim="$lock_dir.reclaim" rm_m rc
+  if ! mkdir "$reclaim" 2>/dev/null; then
+    rm_m="$(mtime "$reclaim")"
+    { [ -n "$rm_m" ] && [ $(( $(date +%s) - rm_m )) -ge "$GRACE" ]; } || return 1 # another reclaimer active → retry
+    rm -rf "$reclaim"; mkdir "$reclaim" 2>/dev/null || return 1 # clear an abandoned reclaim; lost the re-race → retry
+  fi
+  # holder-identity recheck UNDER the mutex: a racing reclaimer may have installed a fresh LIVE
+  # holder between the staleness check above and winning this mutex — never steal a live lock.
+  if ! lock_is_stale; then rmdir "$reclaim" 2>/dev/null; return 1; fi
+  if mv "$lock_dir" "$lock_dir.stale.$$" 2>/dev/null; then
+    rm -rf "$lock_dir.stale.$$"
+    if ! mkdir "$lock_dir" 2>/dev/null; then rmdir "$reclaim" 2>/dev/null; return 1; fi
+    echo "test-lock: reclaimed stale lock (dead holder pid ${stale_hpid:-unknown}) in $lock_dir" >&2
+    write_holder "$@"; rc=$?
+    rmdir "$reclaim" 2>/dev/null
+    return "$rc"
+  fi
+  rmdir "$reclaim" 2>/dev/null
   return 1
 }
 
