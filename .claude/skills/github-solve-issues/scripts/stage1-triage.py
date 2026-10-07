@@ -37,6 +37,14 @@ CATEGORY_COLORS = {
     "chore": "fbca04",           # amber
     "question": "cc317c",        # pink
 }
+# Two best-effort prioritization dimensions applied ALONGSIDE category — impact (how much it matters)
+# and effort (how big the change is). "Most effective" = high impact + small effort. Unlike category,
+# a missing/invalid value is skipped (never a coverage-gate straggler); category stays load-bearing.
+IMPACTS = ["high", "med", "low"]
+EFFORTS = ["S", "M", "L"]
+IMPACT_COLORS = {"high": "b60205", "med": "d93f0b", "low": "fef2c0"}  # red / orange-red / pale-amber
+EFFORT_COLORS = {"S": "0e8a16", "M": "fbca04", "L": "5319e7"}         # green / amber / purple
+
 # Flag labels raised by the two GATE-0/dedup detectors — human-review only, NEVER auto-close.
 TRIAGE_SOLVED = "triage:likely-solved"
 TRIAGE_DUP = "triage:likely-dup"
@@ -67,6 +75,15 @@ def ensure_labels(dry_run: bool) -> None:
         # Recolour a label that pre-existed grey — `create` no-ops once it exists, so a
         # repo triaged before this map shipped keeps its grey `ededed` without this edit.
         gh(["label", "edit", f"category:{c}", "--color", color], check=False)
+    # Prioritization labels: impact:* and effort:* (same idempotent create+recolour as category).
+    for v in IMPACTS:
+        gh(["label", "create", f"impact:{v}", "--color", IMPACT_COLORS.get(v, "ededed"),
+            "--description", f"triage: {v} impact"], check=False)
+        gh(["label", "edit", f"impact:{v}", "--color", IMPACT_COLORS.get(v, "ededed")], check=False)
+    for v in EFFORTS:
+        gh(["label", "create", f"effort:{v}", "--color", EFFORT_COLORS.get(v, "ededed"),
+            "--description", f"triage: {v} effort"], check=False)
+        gh(["label", "edit", f"effort:{v}", "--color", EFFORT_COLORS.get(v, "ededed")], check=False)
     # The two detector flag labels (grill S3 — must exist before a detector edits with them).
     for name, desc in ((TRIAGE_SOLVED, "flag: likely already solved on the default branch"),
                        (TRIAGE_DUP, "flag: likely duplicate of another open issue")):
@@ -207,6 +224,18 @@ def classify_and_apply(issues: list[dict], classify_cmd: list[str], batch_size: 
                         gh(["issue", "edit", str(num), "--add-label", TRIAGE_DUP], check=False)
             if not dry_run:
                 gh(["issue", "edit", str(num), "--add-label", f"category:{cat}"], check=False)
+                # Additive prioritization labels: validated, best-effort — an absent/invalid value is
+                # skipped (NOT a coverage-gate straggler; category above is the gated one). Unlike
+                # category, a failed apply has no coverage backstop, so log a breadcrumb rather than
+                # drop it silently (verify-workflow: surface the failure even when you continue).
+                for field, valid in (("impact", IMPACTS), ("effort", EFFORTS)):
+                    val = row.get(field)
+                    if val not in valid:
+                        continue
+                    r = gh(["issue", "edit", str(num), "--add-label", f"{field}:{val}"], check=False)
+                    if r.returncode != 0:
+                        print(f"warn: {field}:{val} not applied to #{num}: {r.stderr.strip()}",
+                              file=sys.stderr)
     return results, dups
 
 
@@ -228,16 +257,18 @@ def stragglers() -> list[int]:
 def print_table(issues: list[dict], results: dict[int, dict],
                 solved: dict[int, int], dups: dict[int, list[int]]) -> None:
     by_num = {i["number"]: i for i in issues}
-    print("| # | title | category | confidence | reason | solved-by | dups |")
-    print("|---|---|---|---|---|---|---|")
+    print("| # | title | category | impact | effort | confidence | reason | solved-by | dups |")
+    print("|---|---|---|---|---|---|---|---|---|")
     for num in sorted(by_num):
         r = results.get(num, {})
         title = (by_num[num].get("title", "") or "").replace("|", "/")[:60]
         conf = r.get("confidence", "")
         flag = " ⚠" if isinstance(conf, (int, float)) and conf < 0.6 else ""
+        imp = r.get("impact") if r.get("impact") in IMPACTS else ""
+        eff = r.get("effort") if r.get("effort") in EFFORTS else ""
         sb = f"#{solved[num]}" if num in solved else ""
         dg = ",".join(str(x) for x in dups[num]) if num in dups else ""
-        print(f"| {num} | {title} | {r.get('category', '—')}{flag} | {conf} | "
+        print(f"| {num} | {title} | {r.get('category', '—')}{flag} | {imp} | {eff} | {conf} | "
               f"{(r.get('reason', '') or '').replace('|', '/')} | {sb} | {dg} |")
     if solved:
         # W2: a DEFAULT exclusion, not a lock — an explicit `N` argument still solves these.

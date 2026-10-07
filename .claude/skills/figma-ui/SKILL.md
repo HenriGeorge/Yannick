@@ -60,15 +60,16 @@ Server-side queue makes parallel agents safe, with two hard rules:
 - `set_current_page` is **blocked** in parallel mode.
 - Every `create_*`/`set_*` **must pass an explicit `parentId`**. One writer per channel; researchers
   read-only — a **safe default, not a hard limit** (see "Multiple writers on ONE file" below for safe
-  concurrent writers). Connect: `Connect to Figma, channel <repo-folder-name>` (`join_channel`) — the project's
-  stable channel = the repo folder name, derived automatically by the toolkit (no manual
-  `export FIGMA_CHANNEL` needed). Once the plugin is opened, the patched panel **auto-joins the open
-  file's name** as the channel — no typing — so it lands on the folder channel provided you **name the
-  Figma file exactly the repo folder basename** (what `create_new_file` does at bootstrap); the panel
-  field is only a manual override, never a random id. The project's Figma file is `FIGMA_FILE_KEY` in
-  `.claude/worktrees.conf` (one project = one file = one channel). Vendored + patched at
-  `vendor/ctf-plugin/`, imported once from the hook's stable-path mirror — see the `figma-bridge` skill
-  for install + the `figma.root.name` auto-join details.
+  concurrent writers). Connect: `Connect to Figma, channel <base>` (`join_channel`) — the project's
+  stable channel base = `<FIGMA_FILE_KEY>_<folder>` (the immutable file key + folder name), derived
+  automatically by the toolkit (no manual `export FIGMA_CHANNEL` needed; the live `/status` path is
+  name-agnostic). Once the plugin is opened, the patched panel **auto-joins a base of
+  `<figma.fileKey>_<figma.root.name>`** — the immutable file key plus readable name, no typing — so the
+  key makes the base collision-free; **name the Figma file exactly the repo folder basename** (what
+  `create_new_file` does at bootstrap) so the readable suffix matches. The panel field is only a manual
+  override, never a random id. The project's Figma file is `FIGMA_FILE_KEY` in `.claude/worktrees.conf`
+  (one project = one file = one channel). Vendored + patched at `vendor/ctf-plugin/`, imported once from
+  the hook's stable-path mirror — see the `figma-bridge` skill for install + the fileKey-based channel details.
 
 ### Multiple writers on ONE file (same channel)
 
@@ -97,11 +98,11 @@ every `create_*`/`set_*`. Extra agents that only read (scan/export) need no part
 read-only researchers.
 
 **Alternative transport — one window, N channels.** The vendored panel now holds **N channels at once**
-(default 5 rows `<file>_1..5`, + to add — see `figma-bridge`). So the N writers above can each join a
+(default 5 rows `<fileKey>_<fileName>_1..5`, + to add — see `figma-bridge`). So the N writers above can each join a
 distinct `_N` channel on the SAME open file through ONE plugin window, instead of all sharing one channel
 or opening N windows. The disjoint-`parentId` rule is unchanged — multiple channels isolate the command
 streams, not the document, so two writers on different channels still race if they touch the same subtree.
-Target a `_N` channel from the CLI with `--channel=<file>_N` / `FIGMA_CHANNEL=<file>_N`.
+Target a `_N` channel from the CLI with `--channel=<base>_N` / `FIGMA_CHANNEL=<base>_N` (base = `<fileKey>_<fileName>`).
 
 ## Pushing a preview INTO Figma for sign-off (#104 · #106)
 

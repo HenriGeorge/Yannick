@@ -298,7 +298,7 @@
     ".claude/hooks/figma_launch.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "d264924e54f98a5b4c09ee74094e594977d29f8125f142052dcc956d9d98f77d"
+      "sha256": "0aff9b9db44fafae947d43e77a688f884f59150b8787b80637fa1ba1a4cd2c15"
     },
     ".claude/hooks/grill_nudge.py": {
       "plugin": "claude-template-hooks-py",
@@ -783,12 +783,12 @@
     ".claude/skills/figma-bridge/SKILL.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "7dac06b2c4c04c08245f678882fc972644ea208f9bcb2f0b6113a67acb61d254"
+      "sha256": "a78818c12f51d35038b2b1ab2c25fe9e6879767978e559203792d158b287f256"
     },
     ".claude/skills/figma-bridge/scripts/figma/README.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "977395c7584244fa0c356eb1f6c00332ea314c9f214d793a1092b9704401c447"
+      "sha256": "14793eac89d12ced0c5882521c9f48e34b37be3b7e99a4c66a0db3829739f1c2"
     },
     ".claude/skills/figma-bridge/scripts/figma/figma-export.config.example.json": {
       "plugin": "claude-template-core",
@@ -808,12 +808,12 @@
     ".claude/skills/figma-bridge/scripts/figma/lib/capture.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "97536c60d4afc2138b9dba39cac7115250afbef4ed66540f4117993b59b64cb4"
+      "sha256": "9a4b572418f2d023180ae153055c69fba0f465729b64508cdfc17d7cea32e60b"
     },
     ".claude/skills/figma-bridge/scripts/figma/lib/channel-resolve.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "6e45cfac4f84ac988786539d00b1c198fca40228ddb26ca88a3ae7fba10a207a"
+      "sha256": "9e4363cb20def0dff440faee076c82e31cb756feb2f690b802a4bc98ce50a4fe"
     },
     ".claude/skills/figma-bridge/scripts/figma/lib/ctf-autolaunch.mjs": {
       "plugin": "claude-template-core",
@@ -878,7 +878,7 @@
     ".claude/skills/figma-ui/SKILL.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "bf1e1cc2f987d552eaf49a5daf28b357a630385086b0824be361ad46603fe5be"
+      "sha256": "1c73e7ebe17f80de5be0e39e3edeeb9b6c22f8815e3aba77ecf3e44f9d643c6d"
     },
     ".claude/skills/finishing-a-development-branch/SKILL.md": {
       "plugin": "superpowers",
@@ -958,17 +958,17 @@
     ".claude/skills/github-solve-issues/SKILL.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "ee41d0f7152ad56eba3fcb614f73f636ae74c99643c2116f9b09726c95b35e50"
+      "sha256": "418c710b5c9c0b16b255eac16f724bbcb92c2525675bee95fd41e1ab3a3c73a8"
     },
     ".claude/skills/github-solve-issues/classify-prompt.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "138a26e2fd19e0228fc3a7434e6e0fa0da1f6141ee85aa9d042bafe205f397e7"
+      "sha256": "2a79e53dd9625b8b9e57c288e2a8a3f6a88a943571b458cfe9cdc962043f9f7d"
     },
     ".claude/skills/github-solve-issues/scripts/stage1-triage.py": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "f5e29903a23a8186684f2253c6e3dc715fc74fbea5ba41d2c1eaa48eb7815856"
+      "sha256": "ba98897a3aa9b347c1a49ff5413a3e8a447ef83fa635c079a632bce60b04dddd"
     },
     ".claude/skills/github/SKILL.md": {
       "plugin": "claude-template-core",
@@ -1739,11 +1739,27 @@
       "plugin": "superpowers",
       "ref": "v6.2.0",
       "sha256": "0dba46de2d2640af8df1530692587a2b6896b249d74016ac9d8e06c74cd195c2"
+    },
+    "bin/stamp-docs.sh": {
+      "plugin": "claude-template",
+      "ref": "local",
+      "sha256": "09c089d293a11cc57c92b998cf3c509ccef179469579b6f361a6871af13c5599"
+    },
+    "scripts/cloud-setup.sh": {
+      "plugin": "claude-template",
+      "ref": "local",
+      "sha256": "6204dc739201c8df364649ff7f42e4d86d0c6444698681f79ccc3cd51a24aabf"
     }
   },
   "mcp_servers": [],
   "prev_hooks": null,
   "sources": {
+    "claude-template": {
+      "market": "claude-template",
+      "markets": [
+        "claude-template"
+      ]
+    },
     "claude-template-core": {
       "market": "claude-template",
       "markets": [

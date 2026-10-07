@@ -56,8 +56,15 @@ python3 ~/.claude/skills/github-solve-issues/scripts/stage1-triage.py --json
 
 What the script guarantees: **every open issue ends with exactly one `category:*` label**, or it
 exits **non-zero** listing the stragglers it could not clear (it re-classifies stragglers **at most
-twice** — never the old unbounded loop). It prints the `#n | title | category | confidence | reason`
-table (`--json` also emits the rows).
+twice** — never the old unbounded loop). It prints the `#n | title | category | impact | effort |
+confidence | reason | solved-by | dups` table (`--json` also emits the rows).
+
+Alongside the category it applies two **best-effort prioritization** labels per issue —
+`impact:{high,med,low}` (how much it matters) and `effort:{S,M,L}` (how big the change is) — so the
+backlog sorts by "most effective" (`impact:high` + `effort:S` = quick win). These are **additive and
+NOT coverage-gated**: a missing/invalid rating is skipped (blank in the table), never a straggler —
+only `category:*` is load-bearing. Browse the result with
+`gh issue list --label impact:high --label effort:S`.
 
 **Your judgment stays here — the script never makes these calls:**
 - **Stragglers that survive the bounded loop** (non-zero exit): escalate exactly those numbers to a
