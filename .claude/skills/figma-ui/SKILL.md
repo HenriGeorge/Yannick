@@ -21,6 +21,16 @@ GATE 1/GATE 2 (`WORKFLOW.md`) apply; `CLAUDE.md` wins.
   three things worth the **metered reads (~6/mo Starter; verify current metering)**. Spend them **only
   on the final, locked design**. Everything else: free path (`FIGMA-UI.md` quota table).
 
+> **Why writes still go to the bridge, not the official MCP (verified 2026-10-11).** Figma's docs do
+> say "tools that write to Figma files … are exempt from the rate limits" — but the *named* exempt
+> tools are only `create_new_file`, `add_code_connect_map`, `whoami`. The assembly/token/recolor writes
+> the bridge does run through `use_figma`, which is **NOT** on the official exempt list (third-party
+> claims it is — unconfirmed), so routing them to the official MCP risks the read quota. `create_new_file`
+> (bootstrap) and `add_code_connect_map` (Code Connect) already go to the official MCP. Net: the split
+> above is correct — keep bulk writes on the arinspunk bridge. (Caveat: a third-party source says
+> write-to-canvas may become usage-based *paid* post-beta — unconfirmed, not in Figma's rate-limit docs.)
+> Source: developers.figma.com/docs/figma-mcp-server/rate-limits-access/
+
 ## Reading a design INTO code
 
 1. `get_design_context` for the exact node(s) first.
@@ -40,18 +50,33 @@ optional node PNG/SVG renders — so you read the digest + image paths, not the 
 `File content:read` PAT in `FIGMA_ACCESS_TOKEN` (or `FIGMA_TOKEN`). It never requests `geometry=paths`
 (the vector data that bloats the response).
 
-## Code Connect first (try it — high leverage, unverified here)
+## Code Connect first (try it — highest-leverage lever)
 
-`get_code_connect_suggestions` → review → `send_code_connect_mappings`. Reportedly makes codegen emit
-your real components instead of guessing — confirm it actually references `src/components/ui` before
-relying on it. Capture the agreed design-system conventions into this skill yourself (there is
-no `create_design_system_rules` MCP call).
+Code Connect is the single highest-value thing to set up before any codegen: **without it the model
+GUESSES at components; with it, generated code references your real `src/components/ui`** (Figma's own
+MCP guide states this outright). Try it before spending metered reads on anything else.
 
-For the CLI path, the web profile scaffolds **`bin/code-connect.sh`** (a dependency-free wrapper:
-`parse` / `dry` offline, `create` / `publish` / `repoint`, 429-backoff, token from gitignored
-`.env.local`) + a `figma.config.json` stub. Full runbook: the `claude-template-core` plugin's
-`docs/workflow/CODE-CONNECT.md`. ⚠ publish needs a **paid** Figma Org/Enterprise + Dev seat (parse /
-dry-run are free) — adopt as a scoped per-project exception, not by default.
+- **MCP path:** `get_code_connect_suggestions` → review → `send_code_connect_mappings`. Confirm it
+  actually references `src/components/ui` before relying on it. Capture the agreed design-system
+  conventions into this skill yourself (there is no `create_design_system_rules` MCP call).
+- **CLI path:** the web profile scaffolds **`bin/code-connect.sh`** (a dependency-free wrapper over
+  the `figma connect` CLI: `parse` / `dry` offline, `create` / `publish` / `repoint`, 429-backoff,
+  token from gitignored `.env.local`) + a `figma.config.json` stub. Full runbook: the
+  `claude-template-core` plugin's `docs/workflow/CODE-CONNECT.md`.
+
+**⚠ Use the project-pinned CLI, not a global one — they can be a MAJOR version apart.** `bin/code-connect.sh`
+runs the scaffolded project's **LOCAL** `node_modules/.bin/figma` (the `@figma/code-connect` version
+pinned in that project's `package.json`). A `npm i -g @figma/code-connect@latest` can install a MAJOR
+version ahead of the pin, with different parser / `figma.config.json` behavior (a consumer repo on
+2026-10-11 hit a local **v1.x** vs global **v2.x** split). For a project's mappings always go through the
+wrapper (or `node_modules/.bin/figma`) so behavior matches the pin; a globally-installed `figma` is for
+ad-hoc `figma connect parse`/`create` outside a repo only, and the wrapper hard-fails loud if the local
+install is missing rather than silently falling back to the global one — so a green global
+`figma --version` is NOT evidence the project tooling works. Check the project's `package.json` for the
+actual pinned version.
+
+**⚠ `publish` needs a paid Figma Org/Enterprise + Dev seat** (parse / dry-run are free) — adopt as a
+scoped per-project exception, not by default.
 
 ## Parallel crew on the bridge (if used)
 

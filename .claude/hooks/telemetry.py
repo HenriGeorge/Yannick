@@ -252,6 +252,9 @@ def _tool_events(data):
         "exit": exit_code,
         "duration_ms": data.get("duration_ms"),
         "file": ti.get("file_path"),          # path only — never contents
+        # spawn attribution (F2): the dispatched agent TYPE on an Agent/Task row (never the prompt),
+        # so spawn cost is attributable by agent; null for every other tool.
+        "subagent": ti.get("subagent_type") if data.get("tool_name") in ("Agent", "Task") else None,
         "retry_count": data.get("retry_count", 0),
         "session_id": data.get("session_id"),
     }
@@ -399,14 +402,26 @@ CF_REDACTIONS = [
     re.compile(r"AIza[0-9A-Za-z_-]{35}"),
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
     re.compile(r"(?i)(token|secret|password|api[_-]?key)\s*[=:]\s*\S+"),
+    re.compile(r"[a-zA-Z][a-zA-Z0-9+.\-]*://[^\s/@]+:[^\s/@]+@"),  # #1236: inline-credential URL (scheme://user:pass@)
 ]
 CF_TEST_KWS = ("pytest", "vitest", "jest", "test")
+CF_DETAIL_CAP = 200  # #1236: a classification needs the first diagnostic line, never the full output
 
 
 def _cf_redact(text: str) -> str:
     for pat in CF_REDACTIONS:
         text = pat.sub("«redacted»", text)
     return text
+
+
+def _cf_first_line(text) -> str:
+    """First non-empty line, length-capped — #1236: enough to classify a failure without slurping
+    the full stdout/stderr (the content-leak surface) into the telemetry sink."""
+    for line in str(text or "").splitlines():
+        s = line.strip()
+        if s:
+            return s[:CF_DETAIL_CAP]
+    return ""
 
 
 def _cf_resp_exit(resp: dict):
@@ -434,10 +449,14 @@ def _cf_classify(tool_name: str, tool_input: dict, resp: dict):
             kind = "test_fail"
         else:
             kind = "cmd_fail"
-        detail = " | ".join(
-            str(resp.get(k, "")) for k in ("error", "stderr", "stdout")
-        ).strip(" |")
-        return kind, (cmd + " :: " + detail).strip(" :")
+        # #1236: drop stdout entirely and keep only the FIRST diagnostic line of error/stderr —
+        # capturing full stdout/stderr content leaked secrets past the regex backstop.
+        diag = ""
+        for k in ("error", "stderr"):
+            diag = _cf_first_line(resp.get(k, ""))
+            if diag:
+                break
+        return kind, (cmd + " :: " + diag).strip(" :")
     # non-Bash: a tool that returned an error is friction worth logging as blocked.
     if resp.get("error"):
         return "blocked", str(resp.get("error"))

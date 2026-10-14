@@ -108,7 +108,7 @@
     ".claude/commands/pr-open.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "bcbdc93dbda27bf45d024d7e78a8bebe8988981c8d796f3e1353d4c3679969cf"
+      "sha256": "e16f0918a4c5e297bf0c013001684ce3a4c471de77556920c1f827722f685a5d"
     },
     ".claude/commands/prime-core.md": {
       "plugin": "claude-template-core",
@@ -233,7 +233,7 @@
     ".claude/hooks/_lib/vendor_lock.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "1fe9cc49deca00db531c481b38455fd2d21b2cdcd541cee2ccb9d9bfaafbdcca"
+      "sha256": "086085589fc2dd5838dcdc5b40d78e008fd080e532c48646e77bedaa43f0bb2e"
     },
     ".claude/hooks/_state_prune.py": {
       "plugin": "claude-template-hooks-py",
@@ -353,12 +353,12 @@
     ".claude/hooks/guards/parallel.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "b49db0013644fedc3050f0d999acf30bbd26f56ea9a5fd39662a7c821c57ee5c"
+      "sha256": "c0b95b42a5326803e3c8920180c5947340c4fef2e691f6a8daf6c7be2103456b"
     },
     ".claude/hooks/guards/plan_interview.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "9203108b1096bf544325c32217c1659a6c4907b1edc86e0bec7b9ed6053c6fd2"
+      "sha256": "4e886850a48b2f0c2ce400c6f5f1fc599c0d9705fcf5d913d0c6aa07910820ad"
     },
     ".claude/hooks/guards/plugin_cache.py": {
       "plugin": "claude-template-hooks-py",
@@ -425,6 +425,11 @@
       "ref": "local",
       "sha256": "d52bf54eda3319a3c34e4b7d3d42f0924bcc8d088e8e808694b4b6c21a18ebc9"
     },
+    ".claude/hooks/guards/vendor_owned.py": {
+      "plugin": "claude-template-hooks-py",
+      "ref": "local",
+      "sha256": "0b90569508ab52be5e190b8f8b9c19070ca05645541b007171481d8f74a01b7e"
+    },
     ".claude/hooks/guards/worktree_cwd.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
@@ -468,7 +473,7 @@
     ".claude/hooks/post_nudges.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "7f49ead046855e6ee84f15d6ff4a53a1b1a04be178b28c08571da75c14c89044"
+      "sha256": "9d70ad42a7fe9782e267bd3a2a32d25d1e99e3a9affdab8dc1f1b9e058c57192"
     },
     ".claude/hooks/post_tool_use_lint.py": {
       "plugin": "claude-template-hooks-py",
@@ -483,7 +488,7 @@
     ".claude/hooks/pre_tool.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "457b4003975cbe56f085cfb7d8ee3cd1f36ac6a11ddb303c3063b765e5e90044"
+      "sha256": "a0b2aeeff5575d568412c64720aa71eb9f2e81f08c9cf7932200289505363a8d"
     },
     ".claude/hooks/precompact_evidence.py": {
       "plugin": "claude-template-hooks-py",
@@ -508,7 +513,7 @@
     ".claude/hooks/session_start.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "4da13eb6b8bfe8cddc5d69c8b673f25aca00107f3187aba3bb6d6949df66699c"
+      "sha256": "05a523d6ee252f0cf1375bd1539cda4a5a7f2bcac0be00ed3ef8f9c076abfd00"
     },
     ".claude/hooks/skill_nudge.py": {
       "plugin": "claude-template-hooks-py",
@@ -543,7 +548,7 @@
     ".claude/hooks/telemetry.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "b3d0a2c9249cfbb99b5d3a93eef771592088b1cbb8d68c4afebd3363098b1fc5"
+      "sha256": "c65662fdc6333976d43978ac03f6938522b4a109fd5c589d6503d2690283264b"
     },
     ".claude/hooks/tool_events.py": {
       "plugin": "claude-template-hooks-py",
@@ -780,15 +785,20 @@
       "ref": "local",
       "sha256": "6abd82c141b0851a2de4cb652dac907cc173907677ac1fb2ce524a15b58d7e18"
     },
+    ".claude/skills/figma-bridge/GOTCHAS.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "828fb148235eb88f94ba26751cc7764df9241ee65a109e52faa5ad9bd68dd980"
+    },
     ".claude/skills/figma-bridge/SKILL.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "a78818c12f51d35038b2b1ab2c25fe9e6879767978e559203792d158b287f256"
+      "sha256": "be415dde8f15fbaacd3a6e7367402c1a2554aa0d5e5559c514e24f9db20e5bdc"
     },
     ".claude/skills/figma-bridge/scripts/figma/README.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "14793eac89d12ced0c5882521c9f48e34b37be3b7e99a4c66a0db3829739f1c2"
+      "sha256": "860332cae405d813d25cc8f2c54fcc4bd318cbc4ba6c8bbc5465b8ed8064a5ce"
     },
     ".claude/skills/figma-bridge/scripts/figma/figma-export.config.example.json": {
       "plugin": "claude-template-core",
@@ -798,22 +808,67 @@
     ".claude/skills/figma-bridge/scripts/figma/figma.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "d1f8f9a99a8c0914377e4214f0da435b8ce0c6f496a5b320d5d0c2a15b11a43e"
+      "sha256": "1b3aad7df479e662be19fdf16f987949321cb3025b3541540e8f4e38c9f76ed6"
     },
     ".claude/skills/figma-bridge/scripts/figma/figma_digest.py": {
       "plugin": "claude-template-core",
       "ref": "local",
       "sha256": "f602fe35f09eef71228c2fe68a7c1eb202ce7091bba62efc02bdc39481c13ec6"
     },
+    ".claude/skills/figma-bridge/scripts/figma/lib/arrange.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "873cfae6c9e491283d1899ff653ef4d76bb6428e0a2fa1c2d2d764f742bde6d2"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/arrange.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "bd1dd0bd1f3f8dbf486cc4bdec6546455ed5147828ae379c7570b0a97c054e1e"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/auth.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ecd8d8f9ae7d126954b89ec06dcc9ba0e51f623f59e44617aa0673283bdfd0d3"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/auth.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "50c971d39a0699109330aa939c719c2c3668295c7dc1d6689a2b9afa79dc1a6d"
+    },
     ".claude/skills/figma-bridge/scripts/figma/lib/capture.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "9a4b572418f2d023180ae153055c69fba0f465729b64508cdfc17d7cea32e60b"
+      "sha256": "c02232705f4ed159049e3db41767f5b82f0ad6dfeed81e6223ab5b859ef4ae6d"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/capture.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "a43f323b54f9a4b89969f17fe506b35d20a5a708f661e2a5663b062d453cddd4"
     },
     ".claude/skills/figma-bridge/scripts/figma/lib/channel-resolve.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
       "sha256": "9e4363cb20def0dff440faee076c82e31cb756feb2f690b802a4bc98ce50a4fe"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/checklist.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "4efd7d0bb6c1c87b9c2ab0ab4dc5d0b009daa158a253b16f877fefba84a94f50"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/checklist.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "1daf84b00c366a4c5a5ca18d285611b7093940186d4a6aa131abbafe032caa14"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/code-connect-index.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "5b57feade80150876387d1795d86b97efb259c3287da92c3e9717fc47e7d12dc"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/code-connect-index.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "52f23d516fed109bcbf20b85cafe9bfe2e88bd4728617696434d8ad84fea55d3"
     },
     ".claude/skills/figma-bridge/scripts/figma/lib/ctf-autolaunch.mjs": {
       "plugin": "claude-template-core",
@@ -829,6 +884,16 @@
       "plugin": "claude-template-core",
       "ref": "local",
       "sha256": "05e6591a604decee5d1423df39ac3d0a3b40185e5e28f625ab59fce889697139"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/manifest.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "b163a4d9bb51566136c9e2f13fda5e3a9c4a3bfb84a945526d2e9600508b6b0a"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/manifest.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2c34dc45beed73f4d5a5e6d267170ea0ca9df742e73b49ba54ad12ae9d13be50"
     },
     ".claude/skills/figma-bridge/scripts/figma/lib/page.mjs": {
       "plugin": "claude-template-core",
@@ -855,30 +920,155 @@
       "ref": "local",
       "sha256": "c72d10605dfcda8591a271e1b5bd0e24435193966d04aae75833330cd87b3ab4"
     },
+    ".claude/skills/figma-bridge/scripts/figma/lib/reactions.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "27e05d71cf52eb7831fcefccfa7bc93d7c36a07ad2a317fcfdbce80ddd4ff9da"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/read-frames.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "5f23e1b55a81d183e1812e69c0747735ddd7fc9e58680cc8c51407efd5dabf06"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/read-frames.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "04946c2924483290949b848f78c41a7b72111a976655fc4c221f013ae9c6d976"
+    },
     ".claude/skills/figma-bridge/scripts/figma/lib/rebind.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
       "sha256": "af8e74df2df8f35403991e9125f92e12aa3d187b1404379cc34026ed36b03e33"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/recolor.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "37f383d99173064a1344acda13f46efc4eb4914d732f44c546a93028d388d715"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/recolor.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "0c442e75dab965a15d19670006cf40567552b824e41974881a7d5cd252344bb0"
     },
     ".claude/skills/figma-bridge/scripts/figma/lib/relay-client.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
       "sha256": "e9515a65dbc434d708b5614cb837e93c9bc0555dbf62b38d2876bb2bc872b91b"
     },
+    ".claude/skills/figma-bridge/scripts/figma/lib/routes.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "5aeb1d58f5410977146a8e64152a7f32094a295a6397655fc808a731723c0fea"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/routes.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "1081c2b99751234445e410bae954733ec65c009b2bd4c9d6773701aff727d300"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/screens-spec.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "fe3bb38680365f2964dbe2b687d202178544b65c6320275b182eeb5915a05b1b"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/screens-spec.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "e39f5410e08d660020fa85d925813e04b80ec73b0936de750993b9573d2f8a69"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/site-build.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "f4bfc4c6bed0f78acdcbd4c1e58e65356a4148c043451b1995dcdbc8c8c9319e"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/site-capture.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "fe5e6ee421bb3d88445ae72117b1a67618dd757a0bcc94a9bbb778bd0643471f"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/site-capture.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ae580a54d356090847a194784d3e27829bed24fc3475cc3a8714a5c058a8f9c5"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/site-cli.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ece17d1f1f36d9baa30713cc0953474de1cff584e7be8ad2cd3607fe264baf5e"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/site-cli.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "2fb82451baf507c74846066b61f1ce2b1f54267edeace41c017f5526b48375b4"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/site-config.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "1feabdbca32eb203bb5e9301401172f8d16fbb89b3e3d008d37bd0b781ffd22a"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/site-config.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "3ec84514cd65f0b4e3502e8a029baec9466fa968189087146c3f5e7487ed8bd2"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/site-palette.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "7fc22712c5d533e2dd65f0cf8283091a5491da0efd833da5ced850db97c63b4c"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/site-verify.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ece1530fc3a238033254af8d48c754e1562a7e0a616cb46fb7ce912d3d9d52ab"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/snapshot.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "fe3f70c7dcd7e36fbfeea0f1f3317cf3e304a4ebe727450bc5c2e0322db596b1"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/snapshot.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "64ca72f7fb37991a24f312c7e0238e17eab7fc8404d4205fc0edd9fb0f24e420"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/theme.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "d3ccf8764fc7a754c386a5bbc33daeac94623642b1daa2d409be9e2bbb21c72e"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/theme.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "7161ab8b7acccfeb1cb5658e4052bfcb215191870d0208e855117d630e636d49"
+    },
     ".claude/skills/figma-bridge/scripts/figma/lib/tokens.mjs": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "b43f3e53deffffc320d2a19929d23adf16ce152167cf9a2b18522ea1d5c5718f"
+      "sha256": "55da5de05e25ea6fbdf6ef90c93219e2d691a0819bb7886e314288a61090f303"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/vars.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "1ad30404b1601486dc9c6731f5ef2e1c05cbbe23bca0b4db94568ce784a257bb"
+    },
+    ".claude/skills/figma-bridge/scripts/figma/lib/vars.test.mjs": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "acdf672186b5032cc0eb8a382a6ae8bfe1c9eff05e83e03cb3f71feeca266f00"
     },
     ".claude/skills/figma-bridge/scripts/figma/package.json": {
       "plugin": "claude-template-core",
       "ref": "local",
       "sha256": "8e4894cd6ed9357066ab66a2f0a32cdad52f073ed532eca8156800e4227b5d26"
     },
+    ".claude/skills/figma-bridge/scripts/figma/site-to-figma.config.example.json": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "ca4ad282f08094bd4e3db43038f5c8c43728b17c1880f959c6e3775b802a9424"
+    },
     ".claude/skills/figma-ui/SKILL.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "1c73e7ebe17f80de5be0e39e3edeeb9b6c22f8815e3aba77ecf3e44f9d643c6d"
+      "sha256": "903c595154d06d75c5936589fc640f18277bad8f09e7b3ad7b28320714332458"
     },
     ".claude/skills/finishing-a-development-branch/SKILL.md": {
       "plugin": "superpowers",
@@ -1300,10 +1490,20 @@
       "ref": "local",
       "sha256": "0fe83fcac24e66b91312af00ddeb71154231c534862f7655d5d201a001e422b7"
     },
+    ".claude/skills/shadcn-figma-kit/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "57f9036161d080a1c4383d2764a6415ca2fc32b1103bed0f63d0a8768b6c449a"
+    },
     ".claude/skills/shell-scripting/SKILL.md": {
       "plugin": "claude-template-core",
       "ref": "local",
       "sha256": "e13f425dfc554cd7f2cbecff2ef0b1c2cd02c486ca8478c2284238903fc9f52a"
+    },
+    ".claude/skills/site-to-figma/SKILL.md": {
+      "plugin": "claude-template-core",
+      "ref": "local",
+      "sha256": "35b4c00646ebdb7f4cd70ca0999d6f7686f1e3700724327bc63866bf7e342f1a"
     },
     ".claude/skills/skill-audit/SKILL.md": {
       "plugin": "claude-template-core",

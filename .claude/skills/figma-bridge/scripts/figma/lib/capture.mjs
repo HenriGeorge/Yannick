@@ -10,6 +10,8 @@
 //   --strip-selectors=<csv>     remove these selectors before capture (dev overlays etc.; project-set)
 //   --detect-error-boundary     opt-in: fail if a React/Next error boundary was captured
 //   --viewport-width=<px>       default 1440   ·   --max-height=<px>  truncate + disclose past this
+//   --storage-state=<file>      Playwright storageState JSON (cookies + localStorage) to log the
+//                               browser context into a gated site. Build one with the `auth` subcommand.
 //   --min-text=<n>              min <text> nodes for a capture to count as real (default 5). Lower
 //                               (e.g. 1) for legitimately low-text visual components (color canvas,
 //                               swatch, spinner, dropzone) that the default floor false-rejects.
@@ -261,6 +263,7 @@ export async function capture(
     maxHeight = null,
     inlineRemote = false,
     minText = MIN_REAL_TEXT_COUNT,
+    storageState = null,
   },
   { chromium, esbuild },
 ) {
@@ -270,6 +273,9 @@ export async function capture(
     deviceScaleFactor: 2,
     reducedMotion: "reduce",
     viewport: { width: viewportWidth, height: 1200 },
+    // A Playwright storageState file (cookies + localStorage) logs the context into a gated site.
+    // Build one from a browser-console export with the `auth` subcommand.
+    ...(storageState ? { storageState } : {}),
   });
   const page = await context.newPage();
   try {
@@ -384,6 +390,12 @@ export async function run(args) {
   if (!Number.isFinite(minText) || minText < 0) {
     throw new Error(`capture: --min-text must be a non-negative number, got "${flags["min-text"]}"`);
   }
+  // Fail loud on a present-but-unusable --storage-state: a bare `--storage-state` parses to boolean
+  // true, `--storage-state=` to "". Both would silently fall through to an UNAUTHENTICATED context
+  // and capture the login page — the exact outcome the flag is meant to avoid. Require a real path.
+  if (flags["storage-state"] !== undefined && (typeof flags["storage-state"] !== "string" || flags["storage-state"] === "")) {
+    throw new Error("capture: --storage-state requires a file path (build one with the `auth` subcommand)");
+  }
   const deps = await loadCaptureDeps(); // lazy dep gate — a missing dep → the install hint
   await capture(
     {
@@ -400,6 +412,7 @@ export async function run(args) {
       maxHeight: flags["max-height"] ? Number(flags["max-height"]) : null,
       inlineRemote: Boolean(flags["inline-remote-images"]),
       minText,
+      storageState: typeof flags["storage-state"] === "string" ? flags["storage-state"] : undefined,
     },
     deps,
   );

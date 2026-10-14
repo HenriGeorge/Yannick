@@ -1,12 +1,14 @@
 ---
 description: Open a PR AND auto-run the P5 review panel (docs-impact included at tier ≥ 1) on the diff, then post one comment + the code-review verdict marker the merge-gate reads. The orchestration a hook cannot do.
-argument-hint: [--full] [PR title] (blank title = derive from the branch's commits)
+argument-hint: [--full] [--deep] [PR title] (blank title = derive from the branch's commits)
 allowed-tools: Task, Bash(git status:*), Bash(git fetch:*), Bash(git rev-list:*), Bash(git log:*), Bash(git diff:*), Bash(git branch:*), Bash(git push:*), Bash(git merge-base:*), Bash(claude-template docs-drift:*), Bash(claude-template pr-tier:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr comment:*)
 ---
 
 # /pr-open — create the PR and dispatch the review panel (docs-impact included)
 
-**Arguments (optional):** $ARGUMENTS — `--full` forces the full (tier-2) panel; the rest is the title.
+**Arguments (optional):** $ARGUMENTS — `--full` forces the full (tier-2) panel; `--deep` adds the
+opt-in advisory lenses (`code-simplifier` + `comment-analyzer`) on top of whatever tier is picked; the
+rest is the title.
 
 **Why this command exists.** A PreToolUse hook is a deterministic guard — it *cannot invoke an agent
 or skill* (the `claude-template-core` plugin (`docs/workflow/ENFORCEMENT.md`), `hooks/grill_nudge.py`). So the P5 REVIEW panel
@@ -35,7 +37,8 @@ docs-impact and the round bookkeeping below, so it is not a panel.
    diffs the author's diff-read rubber-stamps (lessons #374/#396).
 
 ## Phase 1 — Create (or reuse) the PR
-- Strip `--full` from `$ARGUMENTS`; the rest is the title.
+- Strip `--full` and `--deep` from `$ARGUMENTS`; the rest is the title. Pass each flag through to
+  `claude-template pr-tier` in Phase 1b so the `panel=` line already reflects them.
 - If the branch already has an open PR (`gh pr view --json number` succeeds), **reuse it** and skip
   `gh pr create`. This is the re-review path after a fix-up push.
 - Otherwise `gh pr create` with the title (or derive a conventional title from the commits when
@@ -55,7 +58,10 @@ docs-impact and the round bookkeeping below, so it is not a panel.
   round 1 a confirmation, it is never a substitute for it.
 
 ## Phase 1b — Pick the review tier (deterministic, never by eye)
-1. Whole PR: `claude-template pr-tier [--full] origin/main`. If its output has a second line
+1. Whole PR: `claude-template pr-tier [--full] [--deep] origin/main`. **The `panel=` field is
+   authoritative — dispatch exactly the agents it lists, no more, no fewer.** (It already applies the
+   spawn diet: advisory lenses only when `--deep`, and `docs-impact-agent` dropped on a tests/config-only
+   diff.) If its output has a second line
    `SPLIT: <files> files / <lines> lines > 30 / 1500` (R2 — generated files from
    `bin/lib/generated-paths.txt` never count), **surface it** to the user: split the PR into
    smaller ones, or, if it stays as one PR, write a `Size: <reason>` line in the PR body. Never a
@@ -101,8 +107,8 @@ docs-impact and the round bookkeeping below, so it is not a panel.
 |---|---|---|
 | 0 docs-only | `code-reviewer` | `WAIVED@<headRefOid> reason=docs-only` (both) |
 | 1 prose prompt-code (#1073 — pr-tier emits a `WAIVE: test-quality` line) | `code-reviewer` + `security-reviewer` + `docs-impact-agent` (NO `test-quality-reviewer`) | security from the reviewer; `test-quality:WAIVED@<headRefOid> reason=no-testable-behavior` |
-| 1 low-risk (incl. a large markdown-only diff, #999) | `code-reviewer` + `security-reviewer` + `test-quality-reviewer` + `docs-impact-agent` | from the reviewers |
-| 2 logic | the full Phase 2 panel + Phase 3 `docs-impact-agent` | from the reviewers |
+| 1 low-risk (incl. a large markdown-only diff, #999) | `code-reviewer` + `security-reviewer` + `test-quality-reviewer` + `docs-impact-agent` (docs-impact dropped on a tests/config-only diff — no documented surface) | from the reviewers |
+| 2 logic | `code-reviewer` + `silent-failure-hunter` + `security-reviewer` + `test-quality-reviewer` + `docs-impact-agent` (advisory `code-simplifier` + `comment-analyzer` only with `--deep`) | from the reviewers |
 
 **Prose prompt-code sub-case (#1073).** When `pr-tier`'s output carries a second line
 `WAIVE: test-quality reason=no-testable-behavior` (prose-only `.md` under a plugin's
@@ -119,14 +125,15 @@ path. Never write `reason=docs-only` by hand on a tier-1 or tier-2 PR. `--full` 
 A docs-only **rename** still gets blocked: the gate sees it as `RENAMED`, and can't see the old path. So run `/pr-open --full` for any PR that renames or moves a file.
 
 ## Phase 2 — Dispatch the tier's panel CONCURRENTLY (one message, parallel agents)
-Dispatch the agents the tier names. The full list below is the **tier-2** panel.
+Dispatch exactly the agents in `pr-tier`'s `panel=` line. The full list below is the **tier-2 default**
+panel (the two advisory lenses appear only when `--deep` added them to `panel=`).
 Spawn them on the PR diff **in a single message** (they hold no locks — run them together):
 - **`code-reviewer`** (required — owns the code-review verdict word)
 - **`silent-failure-hunter`** (required — may escalate)
 - **`security-reviewer`** (required — owns the SEPARATE security verdict `PASS`/`FINDINGS`/`WAIVED`; the merge-gate fails CLOSED without a fresh `PASS`)
 - **`test-quality-reviewer`** (required — owns the SEPARATE test-quality verdict `PASS`/`FINDINGS`/`WAIVED`; verifies the plan-named acceptance tests are green at head AND ≥1 is mutation-proven able to fail; the merge-gate fails CLOSED without a fresh `PASS`)
-- **`code-simplifier`** (advisory)
-- **`comment-analyzer`** (advisory; on a docs-only diff it reports "no applicable findings")
+- **`code-simplifier`** (advisory — **opt-in via `--deep`**, not in the default panel)
+- **`comment-analyzer`** (advisory — **opt-in via `--deep`**; on a docs-only diff it reports "no applicable findings")
 
 Scope each agent to the diff (`git diff origin/main...HEAD` or `gh pr diff <n>`), not the whole repo.
 Ask each for a terse findings list, not a file dump. **Do NOT pass a `model:` param** — the agent
@@ -144,7 +151,10 @@ no neighbor read is needed at all (the only drift-proof option — use it whenev
 enough). A reviewer finding that reduces to "I couldn't find the change" is this drift, not a defect:
 re-dispatch with the worktree root, don't act on it.
 
-## Phase 3 — Dispatch docs-impact — tier ≥ 1, in the same message as the panel (tier 0 keeps only the `docs-drift` pre-pass)
+## Phase 3 — Dispatch docs-impact — only when `panel=` lists it (tier ≥ 1 with a documented surface; tier 0 and a tests/config-only diff keep only the `docs-drift` pre-pass)
+- `docs-impact-agent` is dispatched **iff `pr-tier`'s `panel=` line names it** — it's dropped on a
+  tests/config-only diff (no doc the change could make stale). When listed, spawn it in the SAME
+  message as the Phase 2 panel.
 - **Deterministic pre-pass (this repo):** run `claude-template docs-drift --since "$(git merge-base origin/main HEAD)"`
   — it reports, scoped to THIS diff only, doc→code stale-refs (a doc citing a `bin/x` or `<name>_gate`
   removed in this PR) and code surfaces added without a doc mention. **Advisory / non-blocking** — fold
