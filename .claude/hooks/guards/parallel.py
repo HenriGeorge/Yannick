@@ -20,7 +20,11 @@ from _lib.git import run_memo
 from _lib.parallel_parse import evaluate as _evaluate_plan
 
 PLAN_PREFIX = "docs/superpowers/plans/"
-GIT_COMMIT_RE = re.compile(r"\bgit\s+(?:-C\s+\S+\s+)*commit\b")
+GIT_COMMIT_RE = re.compile(
+    # #1238: tolerate ANY global option between `git` and `commit` (not just -C), matching the
+    # grill/tdd guards — else `git -c <cfg> commit` / `git --git-dir … commit` slips the early-exit.
+    r"\bgit\s+(?:(?:-C|-c|--git-dir|--work-tree|--namespace|--exec-path)\s+\S+\s+|-{1,2}\S+\s+)*commit\b(?!-)"
+)
 GIT_DASH_C_RE = re.compile(r"\bgit\s+-C\s+(\S+)")
 GIT_CD_RE = re.compile(r"^\s*cd\s+(\S+)")
 SHELL_SEGMENT_SPLIT_RE = re.compile(r"&&|\|\||;|\n|\|")

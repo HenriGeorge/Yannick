@@ -74,3 +74,17 @@ def sha_matches(cwd, path, locked_sha):
         return False
     actual = _staged_blob_sha256(cwd, path)
     return actual is not None and actual == locked_sha
+
+
+def vendored_entries(cwd):
+    """Return ({rel: full-entry-dict}, err). ({}, None) when no vendor.lock; ({}, msg) on corrupt."""
+    lock = os.path.join(cwd or ".", ".claude", "vendor.lock")
+    if not os.path.isfile(lock):
+        return {}, None
+    try:
+        with open(lock, encoding="utf-8") as fh:
+            data = json.load(fh)
+        files = data.get("files", {})
+    except (OSError, ValueError, AttributeError) as exc:
+        return {}, f"vendor.lock unreadable: {exc!r}"
+    return (files if isinstance(files, dict) else {}), None

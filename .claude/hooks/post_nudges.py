@@ -460,7 +460,14 @@ def _rtk_nudge(data):
             return None  # rtk not installed → nothing to prefix with (graceful degrade)
         proj = os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or os.getcwd()
         if os.path.exists(os.path.join(proj, ".rtk", "hook-mode")):
-            return None  # B active: rtk's -g hook rewrites already; a raw-command warning would be false
+            # Hook mode: rtk's -g hook rewrites every NON-excluded verb, so a raw-command warning
+            # would be false — EXCEPT for the excluded verb (git), which runs raw by design. Nudge
+            # git only where `rtk git` is legal: a primary (non-worktree) session. In a worktree
+            # `rtk git` is refused (#709) → stay silent.
+            cwd = str(data.get("cwd") or proj)
+            in_worktree = f"{os.sep}.claude{os.sep}worktrees{os.sep}" in (cwd + os.sep)
+            if verb != "git" or in_worktree:
+                return None
 
         raw_sid = data.get("session_id", "unknown") or "unknown"
         session_id = re.sub(r"[^A-Za-z0-9_-]", "", str(raw_sid)) or "unknown"
@@ -523,12 +530,74 @@ def _merge_autoff(data):
     return reason or None
 
 
+# ---- spawn_count_nudge ----------------------------------------------------------------------------
+# Token cost is ~98% context replay and tracks subagent spawn COUNT, yet no spawn-count guard existed
+# (F2). WARN once a session passes SPAWN_COUNT_THRESHOLD total Agent/Task spawns. Mirrors
+# suite_overrun_nudge: per-session state counter, warn-once, atomic write.
+SPAWN_DEFAULT_THRESHOLD = 40
+
+
+def _spawn_threshold() -> int:
+    raw = os.environ.get("SPAWN_COUNT_THRESHOLD", "")
+    try:
+        return max(1, int(raw)) if raw.strip() else SPAWN_DEFAULT_THRESHOLD
+    except ValueError:
+        return SPAWN_DEFAULT_THRESHOLD
+
+
+def _spawn_count_nudge(data):
+    try:
+        if data.get("tool_name", "") not in ("Agent", "Task"):
+            return None
+        threshold = _spawn_threshold()
+        # session_id reaches a filename — strip anything but a safe charset (parity with the other nudges).
+        raw_sid = data.get("session_id", "unknown") or "unknown"
+        session_id = re.sub(r"[^A-Za-z0-9_-]", "", raw_sid) or "unknown"
+        project_dir = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+        state_dir = Path(project_dir) / ".claude" / "state" / "spawn_count"
+        state_file = state_dir / f"{session_id}.json"
+        state = {"count": 0, "warned": False}
+        try:
+            loaded = json.loads(state_file.read_text())
+            if isinstance(loaded, dict):
+                state = {
+                    "count": int(loaded.get("count", 0)),
+                    "warned": bool(loaded.get("warned", False)),
+                }
+        except (OSError, json.JSONDecodeError, ValueError, TypeError):
+            pass
+
+        state["count"] += 1
+        warn = state["count"] > threshold and not state["warned"]
+        if warn:
+            state["warned"] = True
+
+        state_dir.mkdir(parents=True, exist_ok=True)
+        # Atomic write (tmp+replace): parallel spawns in one message could race this file.
+        tmp_file = state_dir / f"{session_id}.json.{os.getpid()}.tmp"
+        tmp_file.write_text(json.dumps(state))
+        os.replace(tmp_file, state_file)
+
+        if warn:
+            return (
+                f"{state['count']} subagents spawned this session (>{threshold}). Each spawn + "
+                "handback re-feeds context, and context replay is ~98% of token cost — prefer ONE "
+                "focused agent with a tight brief that returns a SUMMARY over many wide spawns, and "
+                "do trivial lookups inline. Read-only reviewers/auditors (they hold no locks) are the "
+                "exception worth their cost."
+            )
+    except Exception as e:  # noqa: BLE001 - surface the skip (#953), don't swallow it to None
+        return skipped_notice("post_nudges", "spawn_count_nudge", e)
+    return None
+
+
 MODULES = (
     ("skill_nudge", _skill_nudge),
     ("grill_nudge", _grill_nudge),
     ("parallel_nudge", _parallel_nudge),
     ("scope_creep", _scope_creep),
     ("suite_overrun_nudge", _suite_overrun_nudge),
+    ("spawn_count_nudge", _spawn_count_nudge),
     ("rtk_nudge", _rtk_nudge),
     ("merge_autoff", _merge_autoff),  # network git — last, so a slow fetch never delays the nudges
 )

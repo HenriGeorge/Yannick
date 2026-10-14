@@ -24,8 +24,9 @@ window*, and `Command+P` needs a window), bring **Figma to the front**, press `C
 `ClaudeTalkToFigma`, and press `Enter`. **The patched panel then auto-joins a channel whose base is
 `<figma.fileKey>_<figma.root.name>` — the immutable file key plus the readable file name — no typing
 needed** (an unsaved file with no key falls back to the name alone). The key makes the base
-collision-free; name the Figma file exactly the repo folder so the readable suffix matches the CLI's
-`folderChannel()`. The channel field is only a manual override.
+collision-free; name the Figma file exactly the repo folder so `probe --all`'s base-discovery
+(it strips `_N` from the `/status` channel base and compares against the folder name) resolves to
+the project. The channel field is only a manual override.
 
 Automating the gesture (`osascript` System Events / `cliclick`) needs macOS **Accessibility** granted
 to the terminal + `osascript` + Figma (+ `cliclick`), and still only works when **Figma is frontmost
@@ -46,7 +47,9 @@ The channel is a free-text label the plugin panel joins — by default the **ope
 (e.g. `Resonanz_Records_1`), NOT the repo folder. You rarely need to name it: the CLI now
 **auto-discovers the live channel from the relay `/status` endpoint**. Channel precedence is
 `FIGMA_CHANNEL` env → explicit `--channel` → `/status` discovery → `folderChannel()` (the folder-name
-fallback, used only when the relay is unreachable). So a bare `probe` lists every live channel:
+fallback, used only when the relay is unreachable). To pin a single explicit channel, use `<base>_1`
+— the bare `folderChannel()` value (no key prefix, no `_N` suffix) is never live-joined by the panel
+in normal use. So a bare `probe` lists every live channel:
 
 ```bash
 node "${CLAUDE_PROJECT_DIR}/.claude/skills/figma-bridge/scripts/figma/figma.mjs" probe            # auto-discovers live channels from /status (<FIGMA_FILE_KEY>_<folder> only if the relay is down)
@@ -137,11 +140,23 @@ before touching the relay.
 - `page` — ensure / rename / set-current a page. `--name=<pageName> [--file-key]`.
 - `png` — export a selection → PNG on disk. `[--all --filter=<substr> --scale=N --out=<dir> --channel]`.
 - `lanes` — launch N parallel Figma agents (one file/channel/session each); starts its own relay, so it bypasses the normal preflight. `<lane...> [--no-spawn --max=N]` (lane = `channel=fileKey[@cwd]`); also runnable as `bin/figma-lanes`.
+- `arrange` — tidy a page's top-level frames into vertical bands grouped by name prefix (shelf-packed, or a fixed `--cols` grid). Auto-glues a frame fully contained in another to its parent (overlays follow). Moves stream serially (no burst drop). `[--page=<name> --delimiter=<s> --cols=N --budget --col-gap --row-gap --band-gap --start-x --start-y --group-sort=name|count|size --sort=name|none --no-glue --include=<s> --exclude=<s> --dry-run]`.
+- `recolor` — set solid fills on a frame's DIRECT children by name/regex selector (one depth:0 read per frame, set_fill_color streams serially). `<frameId...> --set=<sel>=<hex> [--white=<sel>=<hex>] [--other=<sel>=<hex>] [--dry-run --channel --file-key]`. `<sel>` = exact child name or `/regex/`; `--set` is unconditional, `--white`/`--other` fire only when the child's CURRENT fill is / isn't ~white (so they are ONE-SHOT — re-running re-tests the new colours). Built for dark→light rail/field recolors. Example: `recolor 21379:588609 --set=nav=#f4f4f4 --set=logo=#0a0a0a --set=sub=#707070 --set=activebar=#0a0a0a --white='/^nav\d+$/'=#0a0a0a --other='/^nav\d+$/'=#707070`.
+- `snapshot` — save the current page's top-level frame positions to JSON (an undo net for any move command). `[--page=<name> --out=<file> --channel --file-key]`. Default `./figma-snapshot-<page>.json`.
+- `restore` — move frames back to a saved snapshot, matched by node id (name = label; ids no longer present are skipped). Operates on the current page (ids are file-unique). `--in=<file> [--channel --file-key]`.
+- `vars` — read-only CSS↔Figma variable drift check: `--prefix`-matched `--css` props vs the live `--collection`, reporting missing / extra / changed (float-tolerant color compare; VARIABLE_ALIAS values skipped). `--css=<file> --prefix=<s> --collection=<name> [--strict] [--channel --file-key]`. `--strict` exits 1 on drift.
+- `reactions` — wire prototype `ON_CLICK` → NAVIGATE / OPEN-URL reactions from a flow-map JSON (write-only by default; `--verify` does one spaced read-back per write). Exits non-zero if any write failed. `--map=<file.json> [--verify --dry-run --channel --file-key]`. Read its hazards in `GOTCHAS.md` ("Prototype reactions") before use — batched reads WEDGE the plugin.
+- `auth` — build a Playwright storageState (for `capture --storage-state`) from a browser-console session export, so `capture` can log into **any** gated page. `--session=<export.json> --out=<state.json>`. Zero-dep (pure JSON transform). In a logged-in tab's DevTools console, copy the export: `copy(JSON.stringify({ origin: location.origin, cookie: document.cookie, localStorage: Object.fromEntries(Object.entries(localStorage)) }, null, 2))`, save it, then `auth` → `state.json`. ⚠ httpOnly session cookies never appear in `document.cookie` — a site that keeps its session only in an httpOnly cookie needs a headed-login export instead; most SPAs stash the token in localStorage (exported here).
 
 **Capture — optional deps (`playwright`/`esbuild`/`dom-to-svg`), lazy-imported:**
 
-- `capture` — live page → sharp vector SVG. `--url=<url> --out=<file.svg> [--selector --strip-images --strip-selectors=<csv> --viewport-width --max-height --min-text=<n> --inline-remote-images]`.
+- `capture` — live page → sharp vector SVG. `--url=<url> --out=<file.svg> [--selector --strip-images --strip-selectors=<csv> --viewport-width --max-height --min-text=<n> --inline-remote-images --storage-state=<file>]`. `--storage-state` logs the browser context into a gated site (build the file with `auth`).
 - `export` — config-driven: capture N targets → validate → distribute `set_svg`. `[--config --only --capture-only --no-capture --resolve-only --new-page --channel]`.
+
+**site-to-figma pipeline — pull a whole site into Figma (see the `site-to-figma` skill):**
+
+- `site-palette` / `site-build` / `site-verify` — CORE (zero-dep): resolve a project's Code Connect index → clone DS instances → assemble screens from a per-project screens JSON (`site-build --theme=light|dark|auto`) → read-back structural checklist. `--config=<site-to-figma.config.json>`.
+- `site-capture` — CAPTURE (lazy playwright): auth (headed `--login` or console `--from-session`, reusing `auth`) + full-page crawl of N routes → PNGs + manifest. `[--routes --max --route --config]`.
 
 ## Zero-dep core vs capture split
 
@@ -158,4 +173,7 @@ A capture run with the deps absent exits non-zero with this exact install hint, 
 ## See also
 
 `scripts/figma/README.md` (full pipelines, flags, wire protocol) · `figma-ui` (per-change
-checklist; official metered Figma MCP vs. this free bridge) · `docs/workflow/FIGMA-UI.md` (bridge how-to).
+checklist; official metered Figma MCP vs. this free bridge; **Code Connect CLI + the local-vs-global
+`@figma/code-connect` version pin**) · `site-to-figma` (pull a website into Figma via these
+`site-*` subcommands) · `docs/workflow/FIGMA-UI.md` (bridge how-to) · `docs/workflow/SITE-TO-FIGMA.md`
+(site-capture runbook).

@@ -54,11 +54,13 @@ _DENY_GUARDS = {
         ("test_lock", "check_runner"), ("conventional_commit", "check"), ("secret_scan", "check"),
         ("danger", "check"), ("protected_branch", "check"), ("worktree_cwd", "check"),
         ("shared_checkout", "check"), ("giant_file", "check"), ("secret_file", "check"),
-        ("secret_read", "check_bash"),
+        ("secret_read", "check_bash"), ("vendor_owned", "check_commit"),
     ),
-    "Write": (("readonly", "check_write"), ("template_owned", "check"), ("plugin_cache", "check")),
-    "Edit": (("readonly", "check_write"), ("template_owned", "check"), ("plugin_cache", "check")),
-    "NotebookEdit": (("plugin_cache", "check"),),
+    "Write": (("readonly", "check_write"), ("template_owned", "check"), ("vendor_owned", "check"),
+              ("plugin_cache", "check")),
+    "Edit": (("readonly", "check_write"), ("template_owned", "check"), ("vendor_owned", "check"),
+              ("plugin_cache", "check")),
+    "NotebookEdit": (("vendor_owned", "check"), ("plugin_cache", "check")),
     "Read": (("secret_read", "check_read"),),
 }
 # H5/H6 + prune — INJECT-ONLY, Bash only, after every deny-capable guard; one additionalContext.

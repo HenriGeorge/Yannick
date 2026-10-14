@@ -498,6 +498,7 @@ def _cleanup_dangling_worktrees(project_dir):
     # Op 3 — reap MERGED clean .claude/worktrees/* worktrees (plain remove; dirty trees are refused, so
     # in-progress work is never lost; the branch ref survives, so unpushed commits are never lost).
     mainref = _mainref(project_dir)
+    peer_cwds = _live_peer_cwds(project_dir)  # #1235: never reap a worktree a live peer occupies
     registered = set()
     reaped = []
     for block in r.stdout.split("\n\n"):
@@ -515,6 +516,8 @@ def _cleanup_dangling_worktrees(project_dir):
         registered.add(rp)
         if rp == own or rp == primary or marker not in (rp + os.sep):
             continue
+        if rp in peer_cwds:
+            continue  # #1235: a live peer session is working here — reaping would destroy its work
         tip = branch or head
         if not tip or not _wt_merged(project_dir, tip, mainref):
             continue
@@ -723,6 +726,32 @@ def _pid_alive(pid):
         return False
 
 
+def _live_peer_cwds(project_dir):
+    """Realpath'd cwds of OTHER live sessions holding a §81 lock for this repo — used to protect a
+    peer's worktree from the Op-3 reap (#1235). Best-effort; never raises (inject-only)."""
+    out = set()
+    try:
+        d = _session_lock_dir(project_dir)
+        me = os.getppid()
+        for name in os.listdir(d):
+            if not name.endswith(".json"):
+                continue
+            try:
+                with open(os.path.join(d, name)) as fh:
+                    rec = json.load(fh)
+                pid = int(rec.get("pid"))
+            except Exception:
+                continue
+            if pid == me or not _pid_alive(pid):
+                continue
+            cwd = rec.get("cwd")
+            if cwd:
+                out.add(os.path.realpath(cwd))
+    except Exception:
+        pass
+    return out
+
+
 def _concurrent_session_line(project_dir):
     """One-line warning if another LIVE session holds a lock for this repo, else None. Prunes
     dead/unreadable locks as a side effect. Never raises (inject-only)."""
@@ -823,14 +852,20 @@ def _cost_line(project_dir):
                 continue
     if not rows:
         return None
-    tot_tok = sum(r.get("total_tokens", 0) or 0 for r in rows)
-    tot_cost = sum(r.get("cost_usd", 0) or 0 for r in rows)
-    last = rows[-1]
-    lt = last.get("total_tokens", 0) or 0
-    lc = last.get("cost_usd", 0) or 0
+    # costs.jsonl appends CUMULATIVE per-session snapshots (the same session_id reappears with a
+    # growing total), so the cross-session total is the sum of each session's LAST snapshot — summing
+    # every row double-counts. cost_usd is never recorded, so the dead $ display is dropped (F2).
+    final = {}
+    for r in rows:
+        sid = r.get("session_id")
+        if not sid:  # #1255: an id-less row must not collapse into one bucket (under-counts)
+            continue
+        final[sid] = r.get("total_tokens", 0) or 0
+    tot_tok = sum(final.values())
+    lt = rows[-1].get("total_tokens", 0) or 0
     return (
-        f"\U0001f4b0 last session: {_fmt_tok(lt)} tok · ${lc:.2f}"
-        f"   (total: {_fmt_tok(tot_tok)} · ${tot_cost:.2f})"
+        f"\U0001f4b0 last session: {_fmt_tok(lt)} tok"
+        f"   (total across {len(final)} sessions: {_fmt_tok(tot_tok)})"
     )
 
 

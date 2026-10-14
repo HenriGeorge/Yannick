@@ -27,11 +27,11 @@ function parseFlags(args) {
 }
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-function hexToRgba(hex) {
+export function hexToRgba(hex) {
   const n = parseInt(hex.slice(1), 16);
   return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255, a: 1 };
 }
-function parseTokens(css, prefix) {
+export function parseTokens(css, prefix) {
   const out = [];
   // Accept a 6-hex color followed by any valid trailing CSS (`!important`, whitespace) up to the `;`.
   // The `(?![0-9a-fA-F])` lookahead rejects an 8-digit `#rrggbbaa` (would else silently truncate to 6);
@@ -45,25 +45,32 @@ function parseTokens(css, prefix) {
 const asObj = (r) => (typeof r === "string" ? JSON.parse(r) : r);
 const near = (a, b) => Math.abs(a - b) < 0.01;
 
+// parseColorTokens — strip block comments, parse, and FAIL LOUD on an empty or malformed result.
+// The single source of truth for "turn a CSS file into prefix-matched color tokens" so `tokens` and
+// `vars` can't drift (a silent empty parse from a wrong --prefix is a real footgun). `src` names the
+// file for the error messages.
+export function parseColorTokens(rawCss, prefix, src = "css") {
+  const css = rawCss.replace(/\/\*[\s\S]*?\*\//g, "");
+  const tokens = parseTokens(css, prefix);
+  if (!tokens.length) throw new Error(`no "${prefix}*" 6-digit-hex custom properties found in ${src}`);
+  const declared = (css.match(new RegExp(`${esc(prefix)}[a-zA-Z0-9-]+\\s*:\\s*#[0-9a-fA-F]+`, "g")) || []).length;
+  if (declared !== tokens.length) {
+    throw new Error(
+      `color-parse mismatch in ${src} — ${declared} "${prefix}*: #…" declaration(s), ${tokens.length} parsed. ` +
+        `Only 6-digit "#rrggbb" is supported. Parsed: ${tokens.map((t) => t.name).join(", ") || "(none)"}`,
+    );
+  }
+  return tokens;
+}
+
 export async function run(args) {
   const { flags, channels } = parseFlags(args);
   if (!flags.css) throw new Error("tokens: --css=<file> is required");
   const prefix = flags.prefix ?? "--";
   const collection = flags.collection ?? "tokens";
 
-  // Strip block comments ONCE, then parse + fail-loud guard against the same source (no asymmetry).
-  const css = readFileSync(flags.css, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-  const tokens = parseTokens(css, prefix);
-  if (!tokens.length) throw new Error(`tokens: no "${prefix}*" 6-digit-hex custom properties found in ${flags.css}`);
-  // Every COLOR-VALUED declaration must parse: denominator is only `#…` attempts, so a malformed color
-  // (3/8-digit hex) fails loud instead of being silently dropped.
-  const declared = (css.match(new RegExp(`${esc(prefix)}[a-zA-Z0-9-]+\\s*:\\s*#[0-9a-fA-F]+`, "g")) || []).length;
-  if (declared !== tokens.length) {
-    throw new Error(
-      `tokens: color-parse mismatch in ${flags.css} — ${declared} "${prefix}*: #…" declaration(s), ${tokens.length} parsed. ` +
-        `Only 6-digit "#rrggbb" is supported. Parsed: ${tokens.map((t) => t.name).join(", ") || "(none)"}`,
-    );
-  }
+  // Strip block comments, parse, and fail loud on empty/malformed — the shared strict parser.
+  const tokens = parseColorTokens(readFileSync(flags.css, "utf8"), prefix, flags.css);
   console.log(`parsed ${tokens.length} colors (prefix ${prefix}) → collection "${collection}": ${tokens.map((t) => t.name).join(", ")}`);
   if (flags["dry-run"]) {
     console.log(`dry-run: would sync ${tokens.length} variable(s) into "${collection}" (no relay touched)`);

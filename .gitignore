@@ -16,3 +16,4 @@ worktrees/
 .claude/state/session_resume/crumb.md
 .env.local
 .env.test
+.work/
