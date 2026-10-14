@@ -27,7 +27,9 @@ def main():
         return
 
     result = subprocess.run(
-        ["uvx", "ruff", "check", file_path],
+        # `--` stops a file named like a flag from being read as a ruff option (sibling to the
+        # node format twin's option-injection fix); already shell-free via the argv list.
+        ["uvx", "ruff", "check", "--", file_path],
         capture_output=True,
         text=True,
     )

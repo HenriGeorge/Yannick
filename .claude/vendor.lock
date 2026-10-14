@@ -108,7 +108,7 @@
     ".claude/commands/pr-open.md": {
       "plugin": "claude-template-core",
       "ref": "local",
-      "sha256": "e16f0918a4c5e297bf0c013001684ce3a4c471de77556920c1f827722f685a5d"
+      "sha256": "25812c3748e059036d036caddd93dea3867cddcbe89a71631eefa257c06205e7"
     },
     ".claude/commands/prime-core.md": {
       "plugin": "claude-template-core",
@@ -478,7 +478,7 @@
     ".claude/hooks/post_tool_use_lint.py": {
       "plugin": "claude-template-hooks-py",
       "ref": "local",
-      "sha256": "98d82ad43fb77b9767c5517ba2685883ee5d3a834438a4c5d5464105a0993686"
+      "sha256": "56e359de4b5f6661a950ec31822dbf34511df80f64790a757bd9369e7e69348c"
     },
     ".claude/hooks/pr_gate.py": {
       "plugin": "claude-template-hooks-py",

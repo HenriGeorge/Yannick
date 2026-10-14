@@ -108,6 +108,7 @@ docs-impact and the round bookkeeping below, so it is not a panel.
 | 0 docs-only | `code-reviewer` | `WAIVED@<headRefOid> reason=docs-only` (both) |
 | 1 prose prompt-code (#1073 — pr-tier emits a `WAIVE: test-quality` line) | `code-reviewer` + `security-reviewer` + `docs-impact-agent` (NO `test-quality-reviewer`) | security from the reviewer; `test-quality:WAIVED@<headRefOid> reason=no-testable-behavior` |
 | 1 low-risk (incl. a large markdown-only diff, #999) | `code-reviewer` + `security-reviewer` + `test-quality-reviewer` + `docs-impact-agent` (docs-impact dropped on a tests/config-only diff — no documented surface) | from the reviewers |
+| 1 prose-dominant (#1251 — prompt-prose + a non-gated code delta ≤ 20 lines, prose dominant) | `code-reviewer` + `security-reviewer` + `test-quality-reviewer` + `docs-impact-agent` (drops only `silent-failure-hunter`; a `GATED_RE` code path never takes this route) | from the reviewers |
 | 2 logic | `code-reviewer` + `silent-failure-hunter` + `security-reviewer` + `test-quality-reviewer` + `docs-impact-agent` (advisory `code-simplifier` + `comment-analyzer` only with `--deep`) | from the reviewers |
 
 **Prose prompt-code sub-case (#1073).** When `pr-tier`'s output carries a second line
