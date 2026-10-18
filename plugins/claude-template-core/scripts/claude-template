@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# claude-template — dispatcher for the plugin-runtime scripts/ helpers (#711).
+#
+# Installed as ~/.local/bin/claude-template (a copy of the cached plugin dispatcher), this resolves
+# the plugin's scripts/ dir and execs the requested helper:  `claude-template <helper> [args…]`.
+# Canonical here in the source repo's bin/; mirrored byte-identically into
+# plugins/claude-template-core/scripts/ by `sync.sh plugin-bin` (parity: tests/test_dispatcher.sh DP4/DP5).
+# NOTE: the plugin mirror dir is `scripts/`, NOT `bin/`, because claude.ai cloud ingestion rejects any
+# plugin that ships a top-level `bin/` (it PATH-adds it). The source repo keeps its canonical `bin/`.
+#
+# Dependency-free: bash 3.2 (macOS) + coreutils/find + node (for the .mjs helpers). No `mapfile`
+# (bash 4+), no GNU-only flags beyond `sort -V`.
+set -euo pipefail
+
+# 1. Resolve THIS script's real dir (follow the ~/.local/bin symlink chain to the plugin scripts/ dir).
+src="${BASH_SOURCE[0]:-$0}"
+while [ -L "$src" ]; do
+  d="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$d/$src" ;; esac
+done
+BIN="${PLUGIN_BIN:-$(cd -P "$(dirname "$src")" && pwd)}"   # test override via PLUGIN_BIN
+
+# 2. Fallback (C1): a copy-install, or a symlink whose pinned <version>/scripts was GC'd by a plugin
+#    auto-update, leaves BIN without the helpers. The real cache layout is
+#    cache/<marketplace>/<plugin>/<VERSION>/scripts — the <VERSION> segment MUST be in the glob, and
+#    multiple versions (e.g. 0.8.1 AND 0.9.0) can coexist, so pick deliberately: prefer a version
+#    carrying the harness's `.in_use` marker (highest among those), else the highest <VERSION> by
+#    `sort -V`. NEVER lexical-first.
+#    ponytail: probe on a shipped helper (churn.sh), not on claude-template — the dispatcher ships
+#    ALONGSIDE the helpers, so its own presence can't distinguish a helper-bearing scripts/ dir from an
+#    isolated copy of just this script.
+if [ ! -e "$BIN/churn.sh" ]; then
+  base="$HOME/.claude/plugins/cache"
+  cands=()
+  # Layout is cache/<marketplace>/<plugin>/<VERSION>/scripts — exactly 4 levels below cache. `-maxdepth 4
+  # -mindepth 4` both keeps this fast (no descent into a version's huge skills/.venv trees) and
+  # excludes the spurious nested `bin/` dirs a bare `-path '*/…/*/scripts'` would match (a `*` in -path
+  # spans `/`). The post-filter (grandparent == claude-template-core) is belt-and-suspenders.
+  while IFS= read -r c; do
+    [ -n "$c" ] || continue
+    [ "$(basename "$(dirname "$(dirname "$c")")")" = "claude-template-core" ] || continue
+    cands+=("$c")
+  done < <(find "$base" -maxdepth 4 -mindepth 4 -type d -path '*/claude-template-core/*/scripts' 2>/dev/null)
+  chosen=""
+  if [ "${#cands[@]}" -gt 0 ]; then
+    # version key = the second-to-last path segment (last is `scripts`); depth-independent, so it does
+    # not depend on how deep $HOME/.claude/plugins/cache sits in the filesystem.
+    inuse=""
+    for c in "${cands[@]}"; do
+      [ -e "$(dirname "$c")/.in_use" ] && inuse="$inuse$c
+"
+    done
+    if [ -n "$inuse" ]; then
+      chosen="$(printf '%s' "$inuse" | awk -F/ 'NF{print $(NF-1)"\t"$0}' | sort -V | tail -1 | cut -f2-)"
+    else
+      chosen="$(printf '%s\n' "${cands[@]}" | awk -F/ 'NF{print $(NF-1)"\t"$0}' | sort -V | tail -1 | cut -f2-)"
+    fi
+  fi
+  [ -n "$chosen" ] && BIN="$chosen"
+fi
+[ -d "$BIN" ] || { echo "claude-template: cannot locate the plugin scripts/ dir (is claude-template-core installed?)" >&2; exit 3; }
+# An empty/helperless cache resolves BIN to a real-but-empty dir (e.g. the ~/.local/bin shim dir).
+# A real plugin scripts/ dir always ships the gate/ subtree, so its absence uniquely identifies that
+# case — fail loud here rather than mis-reporting every helper as "unknown" (exit 2).
+[ -d "$BIN/gate" ] || { echo "claude-template: cannot locate the plugin scripts/ dir (is claude-template-core installed? cache may be empty)" >&2; exit 3; }
+
+# 3. Dispatch.
+cmd="${1:-}"; shift || true
+if [ -z "$cmd" ]; then
+  echo "claude-template — helpers:"
+  for f in "$BIN"/*; do
+    b="$(basename "$f")"
+    case "$b" in gate|claude-template) continue ;; esac
+    [ -e "$f" ] && echo "$b"
+  done
+  exit 0
+fi
+# resolve the helper file: bare name, .sh, or the gate/ subtree entrypoint
+target=""
+for cand in "$BIN/$cmd" "$BIN/$cmd.sh" "$BIN/gate/$cmd.mjs"; do
+  [ -f "$cand" ] && { target="$cand"; break; }
+done
+[ -n "$target" ] || { echo "claude-template: unknown helper '$cmd'" >&2; exit 2; }
+# C3: exec WITHOUT masking stderr and WITHOUT `|| true` — the helper keeps its own stderr, and a
+# real failure propagates (never falls through to "unknown"). .mjs runs via node; +x scripts run
+# directly; a non-exec script runs via bash.
+case "$target" in
+  *.mjs) exec node "$target" "$@" ;;
+  *)     if [ -x "$target" ]; then exec "$target" "$@"; else exec bash "$target" "$@"; fi ;;
+esac

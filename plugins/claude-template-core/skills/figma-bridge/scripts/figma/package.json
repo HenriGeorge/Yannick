@@ -1,0 +1,24 @@
+{
+  "name": "figma-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "One-CLI toolkit for the quota-free ClaudeTalkToFigma bridge (relay :3055). Core subcommands are zero-dep; the capture family (capture/export) needs the optionalDependencies below — install with: npm install --prefix plugins/claude-template-core/skills/figma-bridge/scripts/figma",
+  "bin": {
+    "figma": "./figma.mjs"
+  },
+  "scripts": {
+    "tokens:figma": "node figma.mjs tokens",
+    "figma:export": "node figma.mjs export",
+    "figma:probe": "node figma.mjs probe",
+    "figma:page": "node figma.mjs page",
+    "svg:place": "node figma.mjs place",
+    "figma:png": "node figma.mjs png",
+    "rebind:vars": "node figma.mjs rebind"
+  },
+  "optionalDependencies": {
+    "playwright": "^1.47.0",
+    "esbuild": "^0.24.0",
+    "dom-to-svg": "^0.12.2"
+  }
+}

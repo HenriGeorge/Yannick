@@ -17,3 +17,9 @@ worktrees/
 .env.local
 .env.test
 .work/
+.env
+.env.prod
+.claude/skills/
+.claude/agents/
+.claude/commands/
+.claude/hooks/
