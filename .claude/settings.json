@@ -10,8 +10,8 @@
   "extraKnownMarketplaces": {
     "claude-template": {
       "source": {
-        "source": "directory",
-        "path": "../claude_template"
+        "source": "github",
+        "repo": "HenriGeorge/claude_template"
       },
       "autoUpdate": true
     }
