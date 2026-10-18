@@ -1,0 +1,229 @@
+#!/usr/bin/env bash
+# plugin-doctor — report / fix drift in ~/.claude/plugins/installed_plugins.json (F1, plugin
+# install hygiene spec: docs/superpowers/specs/2026-10-03-plugin-install-hygiene-design.md).
+#
+#   claude-template plugin-doctor [--check|--apply]
+#
+# --check (default): one finding line per issue, exit 1 if any (DEAD/STALE/LEGACY/MAIN-BEHIND,
+#   NO-CURRENT); exit 0 if clean.
+# --apply: backs up installed_plugins.json, drops DEAD/LEGACY entries, repoints STALE ones to the
+#   installed user-scope copy, then re-checks. Never touches MAIN-BEHIND (the user's primary
+#   checkout) or calls `claude plugin update` itself.
+#
+# Env overrides (tests): CT_PLUGINS_DIR (default ~/.claude/plugins), CT_GIT (default `git`).
+# Dependency-free: bash + stdlib python3 (R5). Cloud/vendored sessions have no installed_plugins.json
+# at all -> "nothing to check", exit 0 (never treated as a failure).
+set -u
+
+MODE="check"
+case "${1:-}" in
+  --check) MODE="check" ;;
+  --apply) MODE="apply" ;;
+  "") ;;
+  *) echo "plugin-doctor: unknown arg $1 (want --check or --apply)" >&2; exit 2 ;;
+esac
+
+PLUGINS_DIR="${CT_PLUGINS_DIR:-$HOME/.claude/plugins}"
+GIT_BIN="${CT_GIT:-git}"
+
+command -v python3 >/dev/null 2>&1 || { echo "plugin-doctor: python3 required" >&2; exit 2; }
+
+PLUGIN_DOCTOR_MODE="$MODE" PLUGIN_DOCTOR_DIR="$PLUGINS_DIR" PLUGIN_DOCTOR_GIT="$GIT_BIN" \
+  python3 - <<'PY'
+import json, os, subprocess, sys, time
+
+MODE = os.environ["PLUGIN_DOCTOR_MODE"]
+PLUGINS_DIR = os.environ["PLUGIN_DOCTOR_DIR"]
+GIT = os.environ["PLUGIN_DOCTOR_GIT"]
+INSTALLED = os.path.join(PLUGINS_DIR, "installed_plugins.json")
+MARKETPLACES = os.path.join(PLUGINS_DIR, "known_marketplaces.json")
+LEGACY_KEY = "claude-template@claude-template"
+FIELDS = ("installPath", "version", "gitCommitSha", "lastUpdated")
+
+
+def _run(args, cwd=None, timeout=10):
+    try:
+        return subprocess.run(args, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+    except Exception:
+        return None
+
+
+def _version_lt(a, b):
+    """Dotted-int version compare, zero-padded so '1.0' == '1.0.0' (never raises; falls back to a
+    lexical compare on non-numeric parts)."""
+    def parts(v):
+        try:
+            return [int(x) for x in (v or "0").split(".")]
+        except ValueError:
+            return None
+    pa, pb = parts(a), parts(b)
+    if pa is not None and pb is not None:
+        n = max(len(pa), len(pb))
+        pa += [0] * (n - len(pa))
+        pb += [0] * (n - len(pb))
+        return pa < pb
+    return a < b
+
+
+def _enabled(project_path, key):
+    """Best-effort: does <project_path>/.claude/settings.json explicitly enable `key`?"""
+    try:
+        with open(os.path.join(project_path, ".claude", "settings.json"), encoding="utf-8") as f:
+            settings = json.load(f)
+        return bool(settings.get("enabledPlugins", {}).get(key))
+    except Exception:
+        return False
+
+
+def _load(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _findings(data):
+    """[(kind, line)] — kind in DEAD/LEGACY/STALE/NO-CURRENT. Order: input order, deterministic."""
+    out = []
+    for key in sorted(data.get("plugins", {})):
+        entries = data["plugins"][key]
+        if not isinstance(entries, list):
+            continue
+        user = next((e for e in entries if e.get("scope") == "user"), None)
+        for e in entries:
+            if e.get("scope") != "project":
+                continue
+            p = e.get("projectPath") or ""
+            if p and not os.path.isdir(p):
+                out.append(("DEAD", key, e, f"DEAD {key} {p}"))
+                continue
+            if key == LEGACY_KEY:
+                if not _enabled(p, key):
+                    out.append(("LEGACY", key, e, f"LEGACY {key} {e.get('version')}"))
+                continue
+            if key.endswith("@claude-template") and user and _version_lt(e.get("version"), user.get("version")):
+                if os.path.isdir(user.get("installPath") or ""):
+                    out.append(("STALE", key, e,
+                                 f"STALE {key} {e.get('version')} < {user.get('version')} {p}"))
+                else:
+                    out.append(("NO-CURRENT", key, e,
+                                 f"NO-CURRENT {key} -- run: claude plugin update {key} --scope user, then re-run"))
+    return out
+
+
+def _main_behind_lines():
+    """[lines], had_error — had_error is True when a marketplace's behind-count itself could not
+    be computed (as opposed to a missing marketplace dir, which is a skip note, not an error)."""
+    lines = []
+    had_error = False
+    mk = _load(MARKETPLACES)
+    if mk is None:
+        return lines, had_error
+    for name, v in sorted(mk.items()):
+        source = v.get("source") or {}
+        if source.get("source") != "directory":
+            continue
+        d = v.get("installLocation")
+        if not d or not os.path.isdir(os.path.join(d, ".git")):
+            print(f"plugin-doctor: marketplace dir {d} not found -- main check skipped")
+            continue
+        fetch = _run([GIT, "-C", d, "fetch", "--quiet", "origin"], timeout=10)
+        fetch_failed = fetch is None or fetch.returncode != 0
+        count = _run([GIT, "-C", d, "rev-list", "--count", "main..origin/main"], timeout=10)
+        if count is None or count.returncode != 0:
+            print(f"plugin-doctor: main-behind check failed for {d} -- skipped")
+            had_error = True
+            continue
+        try:
+            n = int(count.stdout.strip())
+        except ValueError:
+            print(f"plugin-doctor: main-behind check failed for {d} -- skipped")
+            had_error = True
+            continue
+        if n > 0:
+            note = " (fetch failed -- counted against the last fetched origin/main)" if fetch_failed else ""
+            lines.append(f"MAIN-BEHIND {d} local main {n} behind origin/main -- "
+                          f"run: git -C {d} merge --ff-only origin/main{note}")
+    return lines, had_error
+
+
+def _check(data):
+    """[lines], had_error — see _main_behind_lines."""
+    lines = [f[3] for f in _findings(data)]
+    behind_lines, had_error = _main_behind_lines()
+    lines.extend(behind_lines)
+    return lines, had_error
+
+
+def _apply(data):
+    backup = INSTALLED + "." + "bak-" + time.strftime("%Y%m%d-%H%M%S")
+    try:
+        with open(INSTALLED, encoding="utf-8") as src, open(backup, "w", encoding="utf-8") as dst:
+            dst.write(src.read())
+    except OSError as e:
+        print(f"plugin-doctor: could not write backup {backup}: {e}")
+        return 1
+
+    findings = _findings(data)
+    for kind, key, e, _line in findings:
+        if kind not in ("DEAD", "LEGACY", "STALE"):
+            continue
+        entries = data["plugins"].get(key)
+        if entries is None or e not in entries:
+            continue
+        if kind in ("DEAD", "LEGACY"):
+            entries.remove(e)
+            if not entries:
+                del data["plugins"][key]
+        elif kind == "STALE":
+            user = next(x for x in entries if x.get("scope") == "user")
+            for field in FIELDS:
+                if field in user:
+                    e[field] = user[field]
+
+    tmp = INSTALLED + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+            f.write("\n")
+        os.replace(tmp, INSTALLED)
+    except OSError as e:
+        print(f"plugin-doctor: could not write {INSTALLED}: {e}")
+        return 1
+
+    print("plugin-doctor: run with no other Claude Code session installing or updating plugins "
+          "(a live session can rewrite this file from memory)")
+
+    reread = _load(INSTALLED)
+    if reread is not None:
+        recheck, had_error = _check(reread)
+    else:
+        recheck, had_error = (["plugin-doctor: re-read failed after --apply"], True)
+    for line in recheck:
+        print(line)
+    only_main_behind = all(l.startswith("MAIN-BEHIND") for l in recheck)
+    return 0 if (only_main_behind and not had_error) else 1
+
+
+def main():
+    if not os.path.isfile(INSTALLED):
+        print("plugin-doctor: no plugin installs here (cloud or vendored session) -- nothing to check")
+        return 0
+
+    data = _load(INSTALLED)
+    if data is None or data.get("version") != 2 or not isinstance(data.get("plugins"), dict):
+        print("plugin-doctor: unexpected installed_plugins.json shape (want version 2) -- refusing")
+        return 1
+
+    if MODE == "apply":
+        return _apply(data)
+
+    lines, had_error = _check(data)
+    for line in lines:
+        print(line)
+    return 1 if (lines or had_error) else 0
+
+
+sys.exit(main())
+PY

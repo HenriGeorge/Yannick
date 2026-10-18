@@ -1,0 +1,6 @@
+# Generated outputs (bin/sync-generated.sh writes them) — excluded from pr-tier's SPLIT size count.
+plugins/.hooks-fingerprint
+plugins/*/hooks/hooks.json
+hook-wiring/canonical-settings-hooks.json
+plugins/claude-template-hooks-*/rules/*
+rules/.reconciled.sha256

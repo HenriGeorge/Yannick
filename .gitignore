@@ -16,3 +16,10 @@ worktrees/
 .claude/state/session_resume/crumb.md
 .env.local
 .env.test
+.work/
+.env
+.env.prod
+.claude/skills/
+.claude/agents/
+.claude/commands/
+.claude/hooks/

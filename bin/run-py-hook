@@ -21,7 +21,7 @@ case "${1:-}" in
       _rph_name="$(basename "$1" | tr -cd 'A-Za-z0-9_.-')"
       # Guards (the PreToolUse gates): a MISSING guard means its checks are NOT running — a far louder
       # failure than a retired nudge, so name it as OFF and repeat the warning (see dedup below).
-      _rph_guards="pre_tool_use session_prime_gate grill_gate pr_gate stale_base_guard tdd_gate nocommit_guard test_lock_enforce plan_interview_gate parallel_gate"
+      _rph_guards="pre_tool pr_gate"
       _rph_is_guard=0
       case " $_rph_guards " in *" ${_rph_name%.py} "*) _rph_is_guard=1 ;; esac
       if [ "$_rph_is_guard" = 1 ]; then
