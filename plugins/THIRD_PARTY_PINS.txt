@@ -1,3 +1,0 @@
-superpowers=6.2.0
-ponytail=4.9.0
-impeccable=4.1.2
