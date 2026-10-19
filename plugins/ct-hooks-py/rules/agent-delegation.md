@@ -1,6 +1,6 @@
 # Agent Delegation
 
-Last updated: 2026-10-19 14:37
+Last updated: 2026-10-19 21:27
 
 Delegate to a subagent for **substantial** work; do trivial things inline. Reviewers/auditors hold no
 locks: dispatch the whole panel CONCURRENTLY in one message and keep working while it runs.
@@ -120,8 +120,9 @@ this table must match it (`tests/test_model_routing.sh` MR-07 fails on drift). S
 
 | Model | Agents | Why |
 |---|---|---|
-| `claude-sonnet-5-5` | `crew-coordinator`, `crew-implementer`, `critical-thinking`, `code-reviewer`, `security-reviewer`, `test-quality-reviewer`, `test-designer`, `silent-failure-hunter`, `pr-test-analyzer`, `type-design-analyzer`, `playwright-tester` | The roles that decompose/implement work and the substantive review/diagnosis lenses: correctness review, baseline security review, meaningful-coverage validation, edge-case/regression test design, failure-path tracing, test-vs-change assessment, API-boundary/type-invariant analysis, and browser-failure diagnosis. Quality matters enough here to need judgment past Haiku, but not so much that every run should default to Opus — escalate a single difficult finding rather than routing the whole role there. |
+| `claude-sonnet-5-5` | `crew-coordinator`, `crew-implementer`, `critical-thinking`, `code-reviewer`, `security-reviewer`, `test-quality-reviewer`, `test-designer`, `silent-failure-hunter`, `pr-test-analyzer`, `type-design-analyzer`, `playwright-tester`, `api-architect`, `frontend-perf`, `postgresql-dba`, `react19-commander`, `search-ai-optimization`, `tech-debt-planner`, `tech-writer`, `ux-designer` | The roles that decompose/implement work and the substantive review/diagnosis lenses: correctness review, baseline security review, meaningful-coverage validation, edge-case/regression test design, failure-path tracing, test-vs-change assessment, API-boundary/type-invariant analysis, and browser-failure diagnosis. Quality matters enough here to need judgment past Haiku, but not so much that every run should default to Opus — escalate a single difficult finding rather than routing the whole role there. |
 | `claude-haiku-5-5` | `codebase-explorer`, `web-researcher`, `code-simplifier`, `comment-analyzer`, `docs-impact-agent` | Bounded, mechanical work: file discovery and bounded code tracing, focused fact-gathering (escalate synthesis when needed), bounded simplification/duplication detection, stale-or-misleading-comment detection, and likely-doc-impact identification. |
+| `claude-opus-4-8` | `gpui-researcher` | GPUI API/convention research against the live crate and Zed source; pinned at the session default and kept there. |
 
 Light work outside agents (pre-classified trivial edits) goes to `claude-haiku-5-5`. Issue
 triage in `github-solve-issues` Stage 1 defaults to a **preference chain** (`stage1-triage.py` against
@@ -154,8 +155,11 @@ type. (The `pre_tool_use` guard blocks a bare alias on that param; it OVERRIDES 
 - **Default to in-process subagents (Agent/Task tool)** — results return into your transcript. Never
   spawn a separate `claude` in a tmux window for a sub-task.
 - **Forming a crew — one mode: in-process teammates** via the Agent tool, coordinated with
-  `SendMessage`; the `teammate_idle` hook keeps a teammate working while it owns tasks. Count
-  writers, not agents: read-only auditors/researchers need no worktree; every extra implementer
+  `SendMessage`; the `teammate_idle` hook keeps a teammate working while it owns tasks. **Reap a
+  teammate that idles with NO remaining tasks** — `TaskStop` it to free the slot rather than leaving
+  it idle (the `teammate_idle` hook only keeps a task-owning teammate working; it cannot terminate,
+  so an idle non-owner is the leader's to stop). Keep only the teammates that still own live work.
+  Count writers, not agents: read-only auditors/researchers need no worktree; every extra implementer
   gets its OWN native worktree (Agent `isolation: worktree`), one writer per worktree. **A plan batch is concurrent by default** — when `## Parallelization` lists a batch with ≥2 tasks, dispatch one
   implementer per task AT THE SAME TIME, each in its own worktree on its own branch off the plan
   branch; merge each back with a merge commit and review the batch in ONE reviewer dispatch with a

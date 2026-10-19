@@ -65,7 +65,8 @@ _DENY_GUARDS = {
 }
 # H5/H6 + prune — INJECT-ONLY, Bash only, after every deny-capable guard; one additionalContext.
 _BASH_REMINDERS = (("reminders", "pr_review"), ("reminders", "docs_staleness"),
-                   ("reminders", "worktree_prune"), ("reminders", "suite_pipe"))
+                   ("reminders", "worktree_prune"), ("reminders", "suite_pipe"),
+                   ("reminders", "github_conventions"))
 
 
 def __getattr__(name):

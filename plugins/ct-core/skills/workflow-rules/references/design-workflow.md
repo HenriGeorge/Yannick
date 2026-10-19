@@ -24,6 +24,8 @@ flowchart LR
 
 - **SHAPE** — `design-an-interface` ("Design It Twice": 3+ radically different designs, compared on
   simplicity/depth/generality/misuse-resistance) → the chosen interface shape.
+  If `wiki/index.md` exists, skim it for the area being designed first (a skill, agent, hook or mod? read
+  its concept page) so the design builds on what the system already records.
 - **PRESSURE-TEST** *(required — the FIRST of two mandatory grills, `workflow.md` Adherence #5)* —
   `grill-me` → severity-tiered flaws. **Fold every finding back into the design doc** — a flaw
   noted only in the transcript didn't happen; the doc is what SHAPE hands to BUILD. **Grill your own

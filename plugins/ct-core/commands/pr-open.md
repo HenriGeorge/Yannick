@@ -1,12 +1,13 @@
 ---
-description: Open a PR AND auto-run the P5 review panel (docs-impact included at tier ≥ 1) on the diff, then post one comment + the code-review verdict marker the merge-gate reads. The orchestration a hook cannot do.
-argument-hint: [--full] [--deep] [PR title] (blank title = derive from the branch's commits)
-allowed-tools: Task, Bash(git status:*), Bash(git fetch:*), Bash(git rev-list:*), Bash(git log:*), Bash(git diff:*), Bash(git branch:*), Bash(git push:*), Bash(git merge-base:*), Bash(claude-template docs-drift:*), Bash(claude-template pr-tier:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr comment:*)
+description: Open a PR with a reviewer-friendly body (the mattpocock-skills:pr template); with --panel, also auto-run the P5 review panel (docs-impact included at tier ≥ 1) on the diff and post the verdict markers the merge-gate reads.
+argument-hint: [--panel] [--full] [--deep] [PR title] (blank title = derive from the branch's commits)
+allowed-tools: Task, Skill, Write, Bash(git status:*), Bash(git fetch:*), Bash(git rev-list:*), Bash(git log:*), Bash(git diff:*), Bash(git branch:*), Bash(git push:*), Bash(git merge-base:*), Bash(claude-template docs-drift:*), Bash(claude-template pr-tier:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr comment:*)
 ---
 
-# /pr-open — create the PR and dispatch the review panel (docs-impact included)
+# /pr-open — create the PR with a reviewer-friendly body; with `--panel`, dispatch the review panel
 
-**Arguments (optional):** $ARGUMENTS — `--full` forces the full (tier-2) panel; `--deep` adds the
+**Arguments (optional):** $ARGUMENTS — `--panel` runs the review panel (Phases 1a–4); without it this command only
+creates or reuses the PR with the new body and spawns NO agents. `--full` (implies `--panel`) forces the full (tier-2) panel; `--deep` (implies `--panel`) adds the
 opt-in advisory lenses (`code-simplifier` + `comment-analyzer`) on top of whatever tier is picked; the
 rest is the title.
 
@@ -18,7 +19,11 @@ agents, so it makes the panel + docs-impact fire on every PR — and writes the 
 `pr_gate`'s merge-block reads (`hooks/pr_gate.py` `_axis_status`), so a clean review clears the gate with no
 manual `WORKFLOW:` token.
 
-Run the phases in order. Never skip the tier's panel, and never pick a tier by eye — use `pr-tier`.
+**Default run (no `--panel`):** Phase 0, Phase 1, then the short report in Phase 5 — no agents are spawned, no
+verdict markers are posted, so `pr_gate` will block the merge until you re-run with `--panel` or pass the
+matching `WORKFLOW:` bypass tokens. **With `--panel` (or `--full` / `--deep`):** run every phase in order.
+
+With `--panel`, never skip the tier's panel, and never pick a tier by eye — use `pr-tier`.
 **This command is the only way to dispatch a review panel.** A hand-dispatched panel skips
 docs-impact and the round bookkeeping below, so it is not a panel.
 
@@ -37,14 +42,20 @@ docs-impact and the round bookkeeping below, so it is not a panel.
    diffs the author's diff-read rubber-stamps (lessons #374/#396).
 
 ## Phase 1 — Create (or reuse) the PR
-- Strip `--full` and `--deep` from `$ARGUMENTS`; the rest is the title. Pass each flag through to
-  `claude-template pr-tier` in Phase 1b so the `panel=` line already reflects them.
+- Strip `--panel`, `--full` and `--deep` from `$ARGUMENTS`; the rest is the title. With `--panel`, pass each flag
+  through to `claude-template pr-tier` in Phase 1b so the `panel=` line already reflects them.
 - If the branch already has an open PR (`gh pr view --json number` succeeds), **reuse it** and skip
   `gh pr create`. This is the re-review path after a fix-up push.
 - Otherwise `gh pr create` with the title (or derive a conventional title from the commits when
-  blank), body summarizing the change + test evidence. This respects `pr_gate`'s create-BLOCK (a
+  blank). **Body:** invoke the `mattpocock-skills:pr` skill (Skill tool) to author it — Summary (the smallest
+  diagram, tree or diff-sketch that makes the point), Evidence (before / after: the failing then passing test
+  run, screenshot, or output), Merge Danger (one-way or two-way door, one-word blast radius). Write it to a
+  file and pass `--body-file` (never an inline heredoc). If that skill is not installed, write a plain summary +
+  test evidence instead. Keep the `## Self-check` section for a `--panel` tier-2 PR. This respects `pr_gate`'s create-BLOCK (a
   `feat/*` branch needs a spec/plan committed).
 - Capture the PR number and the diff (`gh pr diff <n>`).
+
+> **Phases 1a–4 run only with `--panel` (or `--full` / `--deep`).** Without it, skip to Phase 5.
 
 ## Phase 1a — Tier-2 self-check (R1, builder-side — WARN only, never a block)
 - Before a tier-2 PR is opened, the builder should have run `silent-failure-hunter` and
@@ -238,7 +249,11 @@ re-dispatch with the worktree root, don't act on it.
 - **One consolidated fix round (R5).** A fix round is dispatched only once every lens dispatched in the current round has returned AND the targeted test files for that head are green (the touched case files plus the smoke floor — never a full suite on an intermediate head; R4 puts the PR's one full suite at the final synced head). A finding that arrives after the fix round was sent goes into the next round, never as a mid-round message to the builder.
 
 ## Phase 5 — Report
-Give the user: the PR URL, the tier and its reason, the panel verdict, the security verdict, the test-quality verdict, any
+**Without `--panel`:** give the user the PR URL, the one-line evidence summary, and this warning: no panel ran and no
+verdict markers were posted, so `gh pr merge` will block on the code-review, security-review and test-quality
+axes until `/pr-open --panel` runs on the final head (or the matching `WORKFLOW:` bypass tokens are passed). Stop here.
+
+**With `--panel`:** Give the user: the PR URL, the tier and its reason, the panel verdict, the security verdict, the test-quality verdict, any
 docs-impact staleness (with fixes), and whether `gh pr merge` will now pass ALL THREE of the
 review-BLOCK, the fail-closed security-BLOCK, and the fail-closed test-quality-BLOCK. Note any advisory
 findings deferred to follow-up issues. On a delta round, name the lenses that did not see this delta. All four markers are bound to the head commit, so any later
@@ -247,6 +262,6 @@ only at the final synced head, not per fix-round push.
 
 ---
 
-**Not a substitute for GATE-2.** This runs REVIEW (P5, docs-impact included); P6 DOCUMENT = the builder applies the docs-impact findings in the next push. The tests/typecheck/lint
+**Not a substitute for GATE-2.** With `--panel` this runs REVIEW (P5, docs-impact included); P6 DOCUMENT = the builder applies the docs-impact findings in the next push. The tests/typecheck/lint
 (VERIFY/P4) must already be green *before* you open the PR — this command reviews a verified change, it
 does not verify it.

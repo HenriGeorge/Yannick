@@ -2,11 +2,11 @@
 
 Last updated: 2026-10-19 18:46
 
-Snapshot at `origin/main` · 15 hooks · 57 skills · 16 agents · 14 commands · 40 bin scripts · 9 core rules · 209 test suites. (Plugin versions live in `plugin.json` — not snapshotted here, to avoid per-bump drift.)
+Snapshot at `origin/main` · 15 hooks · 58 skills · 25 agents · 14 commands · 40 bin scripts · 9 core rules · 209 test suites. (Plugin versions live in `plugin.json` — not snapshotted here, to avoid per-bump drift.)
 
 **The at-a-glance index to the whole harness — and now the single entry point** (the former `OVERVIEW.md` narrative and `workflow/DECIDING-DONE.md` "how done is decided" map have been folded in below). For depth: [`workflow/WORKFLOW.md`](workflow/WORKFLOW.md) · [`workflow/HOOKS.md`](workflow/HOOKS.md) · [`workflow/ENFORCEMENT.md`](workflow/ENFORCEMENT.md). This page is the fully-enumerated inventory — every hook, skill, script, agent, rule, and token in one place; the linked docs own the mechanics.
 
-A scaffolding template that turns Claude Code into a disciplined autonomous engineer. Every session runs one law — **Design → Code → Prove** — held in place by 15 deterministic hooks, 57 skills, a fleet of review agents, and a runtime of shell helpers. You write the spec; the harness enforces the rest.
+A scaffolding template that turns Claude Code into a disciplined autonomous engineer. Every session runs one law — **Design → Code → Prove** — held in place by 15 deterministic hooks, 58 skills, a fleet of review agents, and a runtime of shell helpers. You write the spec; the harness enforces the rest.
 
 ---
 
@@ -213,7 +213,7 @@ own. `/project-status` and `/cleanup` run the check automatically when the helpe
 
 ---
 
-## 57 skills
+## 58 skills
 
 Packaged procedures the model invokes as its task matches them — the Superpowers engine plus this template's own. Zero token cost until their trigger context appears.
 
@@ -237,7 +237,7 @@ Packaged procedures the model invokes as its task matches them — the Superpowe
 
 ## Three plugins
 
-- **ct-core** — canonical workflow assets: 57 skills, 16 agents, 14 commands, the `scripts/` runtime helpers (via dispatcher), and the `docs/workflow/*` reference docs.
+- **ct-core** — canonical workflow assets: 58 skills, 25 agents, 14 commands, the `scripts/` runtime helpers (via dispatcher), and the `docs/workflow/*` reference docs.
 - **ct-hooks-py** — Tier-1 workflow hooks on the Python runner, synced from canonical `hooks/`.
 - *(The Node twin `claude-template-hooks-node` was retired; the Python plugin is the only hook runner.)*
 
@@ -251,7 +251,7 @@ You edit the canonical `hooks/` sources and run the sync; both hook plugins stay
 
 ---
 
-## 16 subagents
+## 25 subagents
 
 Two own **gating verdicts** (the `PASS@head` markers the merge gate demands); the rest are advisory/exploratory. All review agents are read-only.
 

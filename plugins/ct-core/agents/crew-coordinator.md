@@ -10,7 +10,8 @@ Agent tool (each extra WRITER gets its own native git worktree via `isolation: "
 read-only teammates share yours), drive them with SendMessage, and run any automated suite
 under the per-repo lock (`bin/test-lock --wait [--timeout N] -- <cmd>`) — a full suite per PR for a tier-2 PR (tier-0/1 gates on the affected slice) at the final synced head,
 targeted test files in between; re-review fix rounds by re-running `/pr-open` (only the lenses on its `Open:` line + code-reviewer; security/test-quality re-run on the full diff once `Open: none`). The `teammate_idle` hook keeps teammates
-working between your messages — expect them standing, not exited. Non-negotiables:
+working between your messages — expect them standing, not exited. Reap any that idle with no tasks
+left (`TaskStop`, per `agent-delegation.md`) to free the slot. Non-negotiables:
 
 1. **Turn-1 preflight — assert your transport before claiming a crew.** Confirm you actually hold
    the Agent (spawn) and SendMessage tools — a DEFERRED tool counts as held (ToolSearch-load it to

@@ -1,6 +1,7 @@
 """H5 PR-review, H6 docs-staleness and the worktree-prune note — INJECT-ONLY reminders, never a
 deny (hook consolidation PR 5)."""
 
+import os
 import re
 
 from _lib.git import GIT_COMMIT_INVOCATION_RE, _add_segment_stages_everything, _resolve_git_cwd, _staged_names, _would_be_staged_by_add_all
@@ -103,6 +104,50 @@ def _check_suite_pipe_reminder(command: str) -> str | None:
     return None
 
 
+# GitHub skill reminder (#prime-github) — INJECT-ONLY, once per session. Auto-trigger of the
+# github skill is unreliable (the model runs `gh` directly without loading it), so when a `gh`
+# command appears, inject a hard directive to load the skill — fired deterministically at the exact
+# call, never a block. `gh` as a command token (line start or after a shell separator), not a
+# substring of another word, and not `gh/…` path forms.
+GH_INVOCATION_RE = re.compile(r"(?:^|[\s;&|(`])gh\s")
+
+
+def _github_marker_path(ctx) -> str | None:
+    """Per-session marker under the command's cwd (.claude/state) so the directive fires once. The
+    session id (when the payload carries one) keys the filename so concurrent sessions sharing a
+    checkout never suppress each other; absent → a fixed 'nosession' name. None if no base dir."""
+    base = getattr(ctx, "cwd", "") or getattr(ctx, "project_dir", "") or ""
+    if not base:
+        return None
+    sid = ""
+    try:
+        sid = ctx.data.get("session_id") or ""
+    except Exception:
+        sid = ""
+    safe = re.sub(r"[^A-Za-z0-9_-]", "-", sid) or "nosession"
+    return os.path.join(base, ".claude", "state", f"github-skill-reminded-{safe}")
+
+
+def _check_github_reminder(ctx) -> str | None:
+    """Never blocks: on the session's first `gh` command, inject a directive to load the
+    github skill. Best-effort once-per-session via a state marker; if the marker can't be
+    written, fail toward injecting (helpful) rather than silently dropping it."""
+    if not GH_INVOCATION_RE.search(ctx.command):
+        return None
+    marker = _github_marker_path(ctx)
+    if marker is not None:
+        try:
+            if os.path.exists(marker):
+                return None
+            os.makedirs(os.path.dirname(marker), exist_ok=True)
+            with open(marker, "w", encoding="utf-8") as fh:
+                fh.write("1")
+        except Exception:
+            pass  # can't dedup — still inject, once is better than never
+    return ("A `gh`/GitHub command is running. Load the `github` skill now (Skill tool) "
+            "before relying on gh/PR/issue conventions, unless it is already loaded this session.")
+
+
 def pr_review(ctx):
     return _check_pr_review_reminder(ctx.command)
 
@@ -117,3 +162,7 @@ def docs_staleness(ctx):
 
 def worktree_prune(ctx):
     return _check_worktree_prune_reminder(ctx.command)
+
+
+def github_conventions(ctx):
+    return _check_github_reminder(ctx)
