@@ -1,6 +1,6 @@
 # Engineering conventions (R4–R10)
 
-Last updated: 2026-10-05 13:03
+Last updated: 2026-10-17 10:35
 
 Three baseline engineering habits that don't fit `workflow.md`'s phase spine but apply at every
 phase where they're relevant. None of these are deterministically checkable at a tool call (see
@@ -45,16 +45,17 @@ scaffolded project inherits.
   A new hook dependency isn't a "just this once," it's a cost on every future scaffold.
   - RTK is the deliberate exception, and consistent with this rule: it defaults **ON** at scaffold
     yet adds **no hook/runtime dependency** — it's an external CLI the
-    user installs separately, instruction-based (a `CLAUDE.md` prefix block, no `PreToolUse` hook),
-    telemetry OFF, and the H1–H10 guards still fire on its `rtk `-prefixed forms
-    (`tests/test_rtk_guard_safety.sh`). A missing `rtk` binary degrades gracefully. So the
-    "every scaffold inherits the cost" concern doesn't bite: the template ships zero new code for it.
-    Auto-rewrite is available **opt-in** via rtk's own `-g` hook (`RTK_HOOK=1` at scaffold) — still
-    not a template-authored hook; the default stays instruction-only because rtk's rewrite collides
-    with the worktree-isolation git guard (see the `claude-template-core` plugin's `docs/RTK.md`
-    and the rtk-rewrite guard-collision lessons in `docs/lessons.md`). A `rtk_nudge`
-    PostToolUse hook makes the instruction-mode prefix habit stick (WARNs when a known-RTK command
-    runs raw; stands down under `.rtk/hook-mode`).
+    user installs separately, telemetry OFF, and the H1–H10 guards still fire on its `rtk `-prefixed
+    forms (`tests/test_rtk_guard_safety.sh`). A missing `rtk` binary degrades gracefully. So the
+    "every scaffold inherits the cost" concern doesn't bite: the template ships **zero template-authored
+    hook code** for it — even the default auto-rewrite is rtk's OWN `-g` `PreToolUse` hook, not one this
+    repo wrote. By default `setup.sh` runs `rtk init -g` (auto-rewrite on) and excludes `git` from the
+    rewrite (`[hooks] exclude_commands = ["git"]`) so a worktree-isolated `git` is never turned into
+    `rtk git` — which the worktree-isolation guard refuses, deadlocking the two guards (see the
+    `ct-core` plugin's `docs/RTK.md` and the rtk-rewrite guard-collision lessons in
+    `docs/lessons.md`). `RTK_HOOK=0` opts back to instruction mode (a `CLAUDE.md` prefix block, no
+    hook). In instruction mode, run known-RTK commands through their `rtk ` prefix yourself; in a
+    primary (non-worktree) session a raw `git` can also take the `rtk git` form (where it is legal).
 
 ## R6 — Security basics
 

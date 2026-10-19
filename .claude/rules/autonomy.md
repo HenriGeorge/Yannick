@@ -1,6 +1,6 @@
 # Autonomy — decide by default, proceed, correct by exception
 
-Last updated: 2026-10-03 22:08
+Last updated: 2026-10-15 03:05
 
 This rule exists because agents stop too often — handing control back with a question whose answer is
 already implied by the task ("Want me to push… or leave it?"), which forces a contentless "go" from the
@@ -63,10 +63,14 @@ own worktree**. The signal firing is not the same as you having honored it.
 
 On a **managed** repo the "work in your own worktree, then prime" half is now **machine-enforced**, not
 goodwill: the `session_prime_gate` PreToolUse hook BLOCKs the first mutation of a file inside the repo
-(`Edit`/`Write`/`NotebookEdit` or a `git commit`) until the session is in a `.claude/worktrees/`
-worktree AND primed (`/prime-core` writes the `.claude/state/primed` marker) — targets outside the
-repo and gitignored files are exempt. Read-only work is never gated. Genuinely-trivial escape:
-`WORKFLOW:no-worktree` / `WORKFLOW:no-prime` inline, or `PRIME_GATE=0` (see the enforcement/gate-roster reference).
+(`Edit`/`Write`/`NotebookEdit`, or a `git commit`/`git push`/`gh pr create`/`gh pr merge`) until the
+session is in a `.claude/worktrees/` worktree AND primed for ITS OWN session — `/prime-core` writes
+THIS session's id into the `.claude/state/primed` marker; an empty or stale (another session's)
+marker is denied, and a teammate/subagent spawned from a primed session inherits it — targets outside
+the repo and gitignored files are exempt. Read-only work is never gated. Genuinely-trivial escape:
+`WORKFLOW:no-worktree` / `WORKFLOW:no-prime` inline, or `PRIME_GATE=0` (see the enforcement/gate-roster
+reference). The old `.claude/state/prime-bypass` touch-file bypass is dropped — it was forgeable by a
+bare `touch` and granted blanket exemption regardless of session.
 
 ## Boundaries
 

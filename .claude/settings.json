@@ -3,7 +3,6 @@
     "ponytail@ponytail": false,
     "superpowers@claude-plugins-official": false,
     "superpowers@superpowers-dev": false,
-    "claude-template@claude-template": false,
     "ct-core@claude-template": true,
     "ct-hooks-py@claude-template": true
   },
