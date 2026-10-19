@@ -86,7 +86,7 @@ summary so it's discoverable from the doc conventions, not only the design spec.
 
 ## D4 — Plugin docs vs template-repo docs (audience split)
 
-**IN the plugin (`plugins/claude-template-core/docs/`) = anything a scaffolded repo or its
+**IN the plugin (`plugins/ct-core/docs/`) = anything a scaffolded repo or its
 users/agents read-or-run at _runtime_** — the workflow references, the feature guides, the field
 guide. **OUT (top-level `docs/`) = template-maintenance docs only** — the operating manual, the
 architecture map, onboarding, the lessons log, ADRs and design specs. This rule states the
