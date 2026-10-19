@@ -50,6 +50,10 @@ TRIAGE_SOLVED = "triage:likely-solved"
 TRIAGE_DUP = "triage:likely-dup"
 MAX_STRAGGLER_ITERS = 2  # hard bound — the grill gotcha was an unbounded coverage loop
 BODY_CAP = 1500
+# One source of truth for the open-issue fetch cap — the fetch and the coverage-gate query MUST
+# agree (two literals drift into a latent bug where the gate silently ignores issues past the fetch).
+# 200 undercounted a repo that outgrew it; 1000 covers any realistic backlog.
+ISSUE_FETCH_LIMIT = "1000"
 
 # Default classifier: the pinned cheap-Claude path (Haiku 4.5), NEVER a bare `haiku` alias (it floats
 # to the newest generation) and NEVER `claude --bare` (refuses OAuth). Overridable via TRIAGE_CLASSIFY_CMD for tests.
@@ -128,7 +132,7 @@ def die(msg: str) -> "NoReturn":  # noqa: F821
 
 
 def fetch_issues() -> list[dict]:
-    r = gh(["issue", "list", "--state", "open", "--limit", "200",
+    r = gh(["issue", "list", "--state", "open", "--limit", ISSUE_FETCH_LIMIT,
             "--json", "number,title,body"])
     # Gate on gh's exit code FIRST — an empty [] fallback on a failed query would falsely read as
     # "no open issues" and let the run exit 0 (silent failure). A real failure must be loud.
@@ -272,7 +276,7 @@ def classify_and_apply(issues: list[dict], classify_cmd: list[str], batch_size: 
 
 def stragglers() -> list[int]:
     """Open issues still carrying NO category:* label (the coverage-gate query)."""
-    r = gh(["issue", "list", "--state", "open", "--limit", "200",
+    r = gh(["issue", "list", "--state", "open", "--limit", ISSUE_FETCH_LIMIT,
             "--json", "number,labels", "--jq",
             '[.[] | select((.labels|map(.name)|any(startswith("category:")))|not) | .number]'])
     # Same guard: a failed coverage query must not silently read as "no stragglers" (false all-clear).
