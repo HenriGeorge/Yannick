@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+# pr-tier — classify a PR diff into the /pr-open review tier (#926). Dependency-free (bash + git).
+#
+#   pr-tier [--full] [--delta-from <sha>] [<base-ref>]   # base default: origin/main
+#   pr-tier --numstat [--full] [--delta] < numstat        # pre-computed `git diff --numstat` (tests)
+#
+# Tier 0 docs-only : every path *.md and none instruction-bearing (TIER0_DENY_RE) -> code-reviewer only
+# Tier 1 low-risk  : tests/config only, or <= TIER1_MAX_LINES non-test lines, and no TIER2_RE path
+# Tier 2 logic     : any TIER2_RE path, a larger diff, --full, or anything unclassifiable
+# --delta / --delta-from: a re-review after an earlier panel. Never tier 0: the gate's docs-only
+# auto-waiver checks the WHOLE PR, which already carries code.
+#
+# Output: ONE line `tier=<N> panel=<agents> reason=<why>`, exit 0. Usage or git error -> exit 2, and
+# /pr-open treats any non-zero exit as tier 2 (fail UP, never to a smaller panel).
+#
+# TIER0_DOC_RE / TIER0_DENY_RE are copied byte-for-byte into
+# plugins/ct-hooks-py/hooks/pr_gate.py, because the merge gate re-checks tier 0
+# from `gh pr view --json files`. tests/test_pr_tier.sh PT-DRIFT fails if the two copies differ.
+#
+# Matching is CASE-INSENSITIVE (macOS checkouts are case-insensitive, so `Rules/x.md` or `.Claude/x.md`
+# load exactly like `rules/x.md`); the gate twins use re.IGNORECASE / the JS `i` flag to match.
+set -u
+shopt -s nocasematch
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+
+TIER0_DOC_RE='\.md$'
+TIER0_DENY_RE='(^|/)(rules|commands|agents|skills|hooks|\.claude|\.github)/|(^|/)(CLAUDE|CLAUDE\.local|project-context|SKILL)\.md$|(^|/)GATES[^/]*\.md$|\.template\.md$|(^|/)docs/lessons[^/]*\.md$|(^|/)plugins/[^/]+/docs/'
+TIER2_RE='(^|/)(hooks|bin|rules|hook-wiring|commands|agents)/|(^|/)\.github/(workflows|actions)/|(^|/)(setup|propagate|scaffold-web|go-online|sync-[^/]*)\.sh$|(^|/)skills/[^/]+/scripts/|_gate\.(py|cjs|sh)$|(^|/)(hooks|settings[^/]*)\.json$'
+# PROMPT_PROSE_RE (#1073): a .md under a plugin's prompt-code dirs (commands/agents/rules) or top-level
+# rules/ — prompt-code, so it keeps security review, but prose has no testable behavior, so test-quality
+# is waived. Copied byte-for-byte into pr_gate.{py,cjs} (pinned by PT-DRIFT), like TIER0_DENY_RE.
+PROMPT_PROSE_RE='(^|/)plugins/[^/]+/(commands|agents|rules)/.*\.md$|(^|/)rules/.*\.md$'
+# GATED_RE (#1251): the security-sensitive code/config paths that must NEVER drop out of the full
+# panel via the prose-dominant mixed route — the pr-open gated-path list plus version manifests. The
+# prose dirs (rules/commands/agents) are deliberately absent: the route's prose lives there.
+# A NON-.md path under a prompt dir (rules/commands/agents) is gated too: those dirs
+# hold prose by convention, so a non-prose file there is unexpected and must keep the full panel
+# (closes the code-reviewer/security note on PR #1261 — only .md should live there).
+GATED_RE='(^|/)(hooks|bin|hook-wiring)/|(^|/)\.github/|(^|/)(setup|propagate|scaffold-web|go-online|sync-[^/]*)\.sh$|(^|/)skills/[^/]+/scripts/|_gate\.(py|cjs|sh)$|(^|/)(hooks|settings[^/]*|plugin|marketplace)\.json$|(^|/)auth|(^|/)(rules|commands|agents)/'
+TEST_RE='(^|/)tests?/'
+CONFIG_RE='\.(json|ya?ml|toml)$'
+TIER1_MAX_LINES=40  # ponytail: one global line threshold; add per-path weights if it misroutes
+TIER1_MIXED_CODE_MAX=20  # #1251: a prose-dominant diff whose code delta is <= this routes to tier 1
+
+P0='code-reviewer'
+P1='code-reviewer,security-reviewer,test-quality-reviewer,docs-impact-agent'
+# Spawn diet (A): the two pure-advisory lenses (code-simplifier, comment-analyzer) are OPT-IN via
+# --deep, not in the default panel — they own no pr_gate marker, so this never weakens the gate.
+P2='code-reviewer,silent-failure-hunter,security-reviewer,test-quality-reviewer,docs-impact-agent'
+DEEP_ADVISORY='code-simplifier,comment-analyzer'  # appended to any panel when --deep is given
+P1_PROSE='code-reviewer,security-reviewer,docs-impact-agent'  # #1073: tier-1 prose, test-quality waived
+
+GEN_LIST="$SCRIPT_DIR/lib/generated-paths.txt"
+_is_generated() {  # $1 = path; bash glob match against each non-comment line of GEN_LIST (R2)
+  local g
+  while IFS= read -r g; do
+    case "$g" in ''|'#'*) continue ;; esac
+    # shellcheck disable=SC2053  # unquoted on purpose: $g is a glob
+    [[ $1 == $g ]] && return 0
+  done < "$GEN_LIST"
+  return 1
+}
+
+UNGATED_LIST="${UNGATED_LIST:-$SCRIPT_DIR/lib/ungated-paths.txt}"
+_is_ungated() {  # $1 = path; true iff it matches an exempt glob. Missing/unreadable file -> false
+  local g                                  # (fail CLOSED: an absent list gates every bin/ path)
+  [ -r "$UNGATED_LIST" ] || return 1
+  while IFS= read -r g; do
+    case "$g" in ''|'#'*) continue ;; esac
+    # shellcheck disable=SC2053  # unquoted on purpose: $g is a glob
+    [[ $1 == $g ]] && return 0
+  done < "$UNGATED_LIST"
+  return 1
+}
+
+emit() {  # emit <tier> <reason> [panel-override] [waive-axis]
+  local p
+  case "$1" in 0) p=$P0 ;; 1) p=$P1 ;; *) p=$P2 ;; esac
+  [ -n "${3:-}" ] && p=$3  # panel override (e.g. the prose panel without test-quality)
+  # Spawn diet (B): a diff with NO documented surface (tests/config-only) cannot make a doc stale,
+  # so strip docs-impact-agent from the panel. Set only on the all_lowrisk emit; tier 2 and any code
+  # or prose diff keep it. Token-safe comma-list removal (pure bash).
+  if [ "${strip_di:-0}" = 1 ]; then
+    p=",$p,"; p=${p//,docs-impact-agent,/,}; p=${p#,}; p=${p%,}
+  fi
+  # Spawn diet (A): --deep re-adds the opt-in advisory lenses to whatever panel this tier produced.
+  [ "${deep:-0}" = 1 ] && p="$p,$DEEP_ADVISORY"
+  printf 'tier=%s panel=%s reason=%s\n' "$1" "$p" "$2"
+  # #1073: a WAIVE line tells /pr-open to post `<axis>:WAIVED reason=no-testable-behavior` instead of
+  # dispatching that reviewer (pr_gate re-verifies the waiver against the whole PR file list).
+  [ -n "${4:-}" ] && printf 'WAIVE: %s reason=no-testable-behavior\n' "$4"
+  if [ "${split_files:-0}" -gt 30 ] || [ "${split_lines:-0}" -gt 1500 ]; then
+    printf 'SPLIT: %s files / %s lines > 30 / 1500\n' "$split_files" "$split_lines"
+  fi
+  exit 0
+}
+usage() {
+  echo "usage: pr-tier [--full] [--deep] [--delta-from <sha>] [<base-ref>] | pr-tier --numstat [--full] [--deep] [--delta] < numstat" >&2
+  exit 2
+}
+
+full=0 delta=0 stdin=0 deep=0 strip_di=0 from="" base="origin/main"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --full) full=1 ;;
+    --deep) deep=1 ;;
+    --delta) delta=1 ;;
+    --numstat) stdin=1 ;;
+    --delta-from) [ $# -ge 2 ] || usage; from=$2; delta=1; shift ;;
+    -*) usage ;;
+    *) base=$1 ;;
+  esac
+  shift
+done
+
+if [ "$stdin" = 1 ]; then
+  numstat=$(cat)
+elif [ -n "$from" ]; then
+  # --delta-from: the interdiff — files whose PR-diff content differs between "$base...$from" and
+  # "$base...HEAD" — so a `git merge origin/main` sync commit between the two heads never pulls
+  # main's own changes into the delta (R3 / PT-DELTA-1).
+  numstat=""
+  for f in $(git diff --name-only --no-renames "$base...HEAD"; git diff --name-only --no-renames "$base...$from"); do
+    a=$(git diff --no-renames "$base...$from" -- "$f") || { echo "pr-tier: git diff $base...$from failed" >&2; exit 2; }
+    b=$(git diff --no-renames "$base...HEAD" -- "$f") || { echo "pr-tier: git diff $base...HEAD failed" >&2; exit 2; }
+    [ "$a" = "$b" ] && continue
+    numstat+=$(git diff --numstat --no-renames "$base...HEAD" -- "$f" || printf '0\t0\t%s' "$f")$'\n'
+  done
+  numstat=$(printf '%s' "$numstat" | sort -u)
+else
+  range="$base...HEAD"
+  # --no-renames: a rename shows as delete + add, so BOTH the old and the new path get classified.
+  numstat=$(git diff --numstat --no-renames "$range") || { echo "pr-tier: git diff $range failed" >&2; exit 2; }
+fi
+
+split_files=0 split_lines=0
+while IFS=$'\t' read -r sadd sdel spath; do
+  [ -n "$spath" ] || continue
+  _is_generated "$spath" && continue
+  [[ $sadd =~ ^[0-9]+$ ]] || sadd=0; [[ $sdel =~ ^[0-9]+$ ]] || sdel=0
+  split_files=$((split_files + 1)); split_lines=$((split_lines + sadd + sdel))
+done <<EOF
+$numstat
+EOF
+
+# In delta mode the floor below must know whether the WHOLE PR carries a non-docs path -- it must not
+# assume one (#1385: the old reason text asserted it). Overridable for tests, which have no git repo.
+# FAIL-CLOSED: a VCS failure, or an empty file list, answers "not docs-only", which KEEPS the floor.
+_whole_pr_docs_only() {
+  [ -n "${PR_TIER_WHOLE_PR_DOCS_ONLY:-}" ] && { [ "$PR_TIER_WHOLE_PR_DOCS_ONLY" = 1 ]; return; }
+  local wlist wpath seen=0
+  wlist=$(git diff --name-only --no-renames "$base...HEAD" 2>/dev/null) || return 1
+  while IFS= read -r wpath; do
+    [ -n "$wpath" ] || continue
+    seen=1
+    [[ $wpath =~ $TIER0_DOC_RE ]] && ! [[ $wpath =~ $TIER0_DENY_RE ]] && continue
+    return 1
+  done <<WPR
+$wlist
+WPR
+  [ "$seen" = 1 ]   # nothing seen -> unverifiable -> not docs-only -> the floor stays
+}
+
+[ "$full" = 1 ] && emit 2 "--full override"
+
+n=0 all_doc=1 all_md=1 all_lowrisk=1 all_prose=1 has_prompt_prose=0 lines=0 prose_lines=0 code_lines=0 has_gated_code=0 t2=""
+while IFS=$'\t' read -r add del path; do
+  [ -n "$path" ] || continue
+  n=$((n + 1))
+  if [[ $path =~ $TIER0_DOC_RE ]] && ! [[ $path =~ $TIER0_DENY_RE ]]; then continue; fi
+  all_doc=0
+  # #1073: track prompt-prose. A non-docs-only path is prose-only iff it's prompt-code markdown;
+  # anything else (code, config json, a non-.md) disqualifies the whole diff from the prose waiver.
+  if [[ $path =~ $PROMPT_PROSE_RE ]]; then has_prompt_prose=1; else all_prose=0; fi
+  [[ $path =~ $TIER0_DOC_RE ]] || all_md=0  # #999: still markdown even if TIER0_DENY_RE excludes it
+  [[ $add =~ ^[0-9]+$ ]] || add=0  # binary files report "-"
+  [[ $del =~ ^[0-9]+$ ]] || del=0
+  # bin/ is gated by ROLE: an exempt reporting/authoring script does not escalate the diff.
+  if [ -z "$t2" ] && [[ $path =~ $TIER2_RE ]] && ! _is_ungated "$path"; then t2=$path; fi
+  if [[ $path =~ $TEST_RE ]]; then continue; fi
+  lines=$((lines + add + del))
+  # #1251: split the counted (non-doc, non-test) lines into prose (.md) vs code, for the
+  # prose-dominant mixed route below.
+  if [[ $path =~ $TIER0_DOC_RE ]]; then
+    prose_lines=$((prose_lines + add + del))
+  else
+    code_lines=$((code_lines + add + del))
+    if [[ $path =~ $GATED_RE ]] && ! _is_ungated "$path"; then has_gated_code=1; fi
+  fi
+  [[ $path =~ $CONFIG_RE ]] || all_lowrisk=0
+done <<EOF
+$numstat
+EOF
+
+[ "$n" -gt 0 ] || emit 2 "empty or unreadable diff"
+# #1073: prose-only under prompt-code dirs -> tier 1, test-quality waived (security stays). Checked
+# BEFORE the TIER2_RE emit, since these paths match TIER2_RE (rules/commands/agents) yet carry no
+# testable behavior. Non-delta only: on a re-review the gate re-checks the WHOLE PR (which may carry
+# code), so a prose delta must not waive -- it falls through to a normal tier with test-quality.
+if [ "$delta" = 0 ] && [ "$all_prose" = 1 ] && [ "$has_prompt_prose" = 1 ]; then
+  emit 1 "prose-only prompt-code markdown (commands/agents/rules): tier 1, test-quality waived (no testable behavior)" "$P1_PROSE" "test-quality"
+fi
+# #1251: prose-DOMINANT diff with a small code delta -> tier 1 (drop silent-failure-hunter; keep
+# security + test-quality, since real code changed). Checked AFTER the prose-only waiver and BEFORE
+# the TIER2_RE emit. Non-delta only, like the prose-only waiver: a re-review re-checks the whole PR.
+if [ "$delta" = 0 ] && [ "$has_prompt_prose" = 1 ] && [ "$has_gated_code" = 0 ] && [ "$code_lines" -gt 0 ] \
+   && [ "$code_lines" -le "$TIER1_MIXED_CODE_MAX" ] && [ "$prose_lines" -gt "$code_lines" ]; then
+  emit 1 "prose-dominant: $prose_lines prose vs $code_lines non-gated code lines <= $TIER1_MIXED_CODE_MAX" "$P1"
+fi
+[ -z "$t2" ] || emit 2 "tier-2 path: $t2"
+if [ "$all_doc" = 1 ]; then
+  # The floor exists because pr_gate re-checks the WHOLE PR for the docs-only waiver -- so it applies
+  # only when the whole PR really carries a non-docs path, never as a blanket delta-mode assumption.
+  if [ "$delta" = 1 ] && ! _whole_pr_docs_only; then
+    emit 1 "delta is docs-only, but the PR also carries non-docs paths (delta floor is tier 1)"
+  fi
+  emit 0 "every changed path is docs-only markdown"
+fi
+if [ "$all_lowrisk" = 1 ]; then strip_di=1; emit 1 "tests/config only"; fi
+[ "$lines" -le "$TIER1_MAX_LINES" ] && emit 1 "small diff: $lines non-test lines <= $TIER1_MAX_LINES, no hook/gate/bin path"
+# #999: every changed path is markdown (prose), even though TIER0_DENY_RE excludes some of them
+# (e.g. docs/lessons.md, CLAUDE.md) from the tier-0 auto-waiver -- risk is a function of WHAT
+# changed, not how many prose lines, so a large all-markdown diff caps at tier 1, never tier 2.
+[ "$all_md" = 1 ] && emit 1 "large markdown-only diff: $lines non-test lines > $TIER1_MAX_LINES, capped at tier 1 (no hook/gate/bin path)"
+emit 2 "large diff: $lines non-test lines > $TIER1_MAX_LINES"

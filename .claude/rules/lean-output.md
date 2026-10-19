@@ -1,6 +1,6 @@
 # Lean output (Caveman)
 
-Last updated: 2026-10-03 21:21
+Last updated: 2026-10-19 06:43
 
 Default to concise. Cut conversational scaffolding — preambles, restating the question,
 filler, redundant sign-offs, re-explaining a thing already shown.
@@ -15,4 +15,4 @@ Context hygiene: the status bar already shows context % (`[███  ] 60%`). A
 
 ## See also
 `engineering-conventions.md` (R7 — Ponytail, the effort-side sibling) · the `rtk`
-plugin skill · the `rtk` skill's reference doc (`docs/RTK.md` in the core plugin) (input compression) · the GATE-2 rule (SHOW-the-evidence, which overrides this rule).
+plugin skill · the `rtk` skill's reference doc (the `ct-core` plugin's `docs/RTK.md`) (input compression) · the GATE-2 rule (SHOW-the-evidence, which overrides this rule).

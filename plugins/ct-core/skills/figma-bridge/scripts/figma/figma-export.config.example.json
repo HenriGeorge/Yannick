@@ -1,0 +1,10 @@
+{
+  "outDir": "design/figma-src",
+  "socket": "ws://localhost:3055",
+  "channels": [],
+  "stripSelectors": [],
+  "targets": [
+    { "name": "Home", "url": "http://localhost:3000/" },
+    { "name": "Settings", "url": "http://localhost:3000/settings", "selector": "main", "page": "Screens" }
+  ]
+}

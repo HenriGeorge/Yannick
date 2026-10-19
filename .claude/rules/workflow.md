@@ -1,6 +1,6 @@
 # Canonical Dev Workflow (every project, every session)
 
-Last updated: 2026-10-19 02:08
+Last updated: 2026-10-19 08:33
 
 > **THE LAW — Design → Code → Prove.** Shape it before you build it (GATE 1 ⛔), prove it
 > with fresh evidence before you call it done (GATE 2 ⛔). Two hard gates, never skipped.
@@ -104,7 +104,8 @@ flowchart LR
 
 - **Trivial** → inline, but GATE 2 still applies. **Medium** → a lighter lane for a single
   self-contained change: write a PLAN (no separate spec), grill it ONCE into its `## Grill findings`
-  (the plan interview is waived — commit with `WORKFLOW:lane-medium`), keep TDD + VERIFY, and run the
+  (the plan-interview note is silenced — commit with `WORKFLOW:lane-medium`; the gate only WARNs
+  anyway), keep TDD + VERIFY, and run the
   review panel only when you want; merge with `WORKFLOW:lane-medium` (waives the four marker axes,
   not CI/mergeable/head-match). **Standard** → the 9 phases. **Large** → decompose
   with `writing-plans` (brainstorming per feature), then the phases per plan step.

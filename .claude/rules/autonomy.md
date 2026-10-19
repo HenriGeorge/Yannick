@@ -1,6 +1,6 @@
 # Autonomy — decide by default, proceed, correct by exception
 
-Last updated: 2026-10-15 03:05
+Last updated: 2026-10-19 08:45
 
 This rule exists because agents stop too often — handing control back with a question whose answer is
 already implied by the task ("Want me to push… or leave it?"), which forces a contentless "go" from the
@@ -67,7 +67,11 @@ goodwill: the `session_prime_gate` PreToolUse hook BLOCKs the first mutation of 
 session is in a `.claude/worktrees/` worktree AND primed for ITS OWN session — `/prime-core` writes
 THIS session's id into the `.claude/state/primed` marker; an empty or stale (another session's)
 marker is denied, and a teammate/subagent spawned from a primed session inherits it — targets outside
-the repo and gitignored files are exempt. Read-only work is never gated. Genuinely-trivial escape:
+the repo, gitignored files, and **docs-only mutations** (an `Edit`/`Write` of a non-instruction `.md`
+such as `docs/lessons.md`, or a plain single-segment `commit -m` whose staged set is only such files — `-a`, `--include`, a
+pathspec, `-C`, or a chained `&& git push` widen the command past the inspected index, so those still
+gate) are exempt; a push of
+that commit still gates. Read-only work is never gated. Genuinely-trivial escape:
 `WORKFLOW:no-worktree` / `WORKFLOW:no-prime` inline, or `PRIME_GATE=0` (see the enforcement/gate-roster
 reference). The old `.claude/state/prime-bypass` touch-file bypass is dropped — it was forgeable by a
 bare `touch` and granted blanket exemption regardless of session.

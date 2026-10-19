@@ -43,19 +43,22 @@ scaffolded project inherits.
   (stdlib-only Python, Node core modules only) — see the `# dependencies = []` header on the
   runtime hooks (`hooks/*.py`) — because every scaffolded project inherits whatever the template hooks need.
   A new hook dependency isn't a "just this once," it's a cost on every future scaffold.
-  - RTK is the deliberate exception, and consistent with this rule: it defaults **ON** at scaffold
-    yet adds **no hook/runtime dependency** — it's an external CLI the
-    user installs separately, telemetry OFF, and the H1–H10 guards still fire on its `rtk `-prefixed
-    forms (`tests/test_rtk_guard_safety.sh`). A missing `rtk` binary degrades gracefully. So the
-    "every scaffold inherits the cost" concern doesn't bite: the template ships **zero template-authored
-    hook code** for it — even the default auto-rewrite is rtk's OWN `-g` `PreToolUse` hook, not one this
-    repo wrote. By default `setup.sh` runs `rtk init -g` (auto-rewrite on) and excludes `git` from the
-    rewrite (`[hooks] exclude_commands = ["git"]`) so a worktree-isolated `git` is never turned into
-    `rtk git` — which the worktree-isolation guard refuses, deadlocking the two guards (see the
-    `ct-core` plugin's `docs/RTK.md` and the rtk-rewrite guard-collision lessons in
-    `docs/lessons.md`). `RTK_HOOK=0` opts back to instruction mode (a `CLAUDE.md` prefix block, no
-    hook). In instruction mode, run known-RTK commands through their `rtk ` prefix yourself; in a
-    primary (non-worktree) session a raw `git` can also take the `rtk git` form (where it is legal).
+  - RTK is the deliberate exception, and consistent with this rule in spirit even though it now
+    ships ONE small template-authored hook: it defaults **ON** at scaffold, still adds **no runtime
+    dependency** (`rtk` itself stays an external CLI the user/cloud sandbox installs separately,
+    telemetry OFF), and the H1–H10 guards still fire on its `rtk `-prefixed forms
+    (`tests/test_rtk_guard_safety.sh`). A missing `rtk` binary degrades gracefully. Why the one hook
+    exists at all: `plugins/ct-hooks-py/hooks/rtk_rewrite.py` replaced rtk's own machine-global `-g`
+    `PreToolUse` hook (`rtk init -g`, patching `~/.claude/settings.json` + rtk's global
+    `config.toml` outside the project) because that global form cannot work in a claude.ai cloud
+    session at all — a fresh sandbox has no persistent machine-global config to patch — and because
+    a per-repo opt-out of a machine-global hook was cosmetic (see the `ct-core` plugin's
+    `docs/RTK.md` for the full history). The plugin hook
+    excludes `git` itself (replacing the old `config.toml [hooks] exclude_commands = ["git"]`
+    patch) so a worktree-isolated `git` is never turned into `rtk git` — which the
+    worktree-isolation guard refuses, deadlocking the two guards (see the `ct-core` plugin's
+    `docs/RTK.md` and the rtk-rewrite guard-collision lessons in `docs/lessons.md`). A raw `git`
+    always runs unrewritten, everywhere.
 
 ## R6 — Security basics
 

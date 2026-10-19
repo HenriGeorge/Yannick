@@ -1,0 +1,7 @@
+{
+  "name": "ableton",
+  "description": "Ableton Live domain skills (MCP-driven): drum-kit/rack building, library search, tutorials, the ableton daemon/watch loop, and doc lookup. Project-specific — enable only in an Ableton repo, not part of the fleet template.",
+  "version": "0.1.1",
+  "author": { "name": "Henri George", "url": "https://github.com/HenriGeorge" },
+  "skills": "./skills/"
+}

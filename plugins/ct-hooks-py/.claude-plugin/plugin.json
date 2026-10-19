@@ -1,0 +1,16 @@
+{
+  "name": "ct-hooks-py",
+  "version": "0.6.251",
+  "description": "claude_template's canonical Tier-1 workflow hooks (Python stack): GATE-0 session context, PreToolUse guards, grill/pr/tdd gates, lint, stop/close gates. Canonical py hook sources live here; wiring is generated from hook-wiring/registry/ via bin/build-hook-wiring.sh.",
+  "author": {
+    "name": "Henri George",
+    "url": "https://github.com/HenriGeorge"
+  },
+  "homepage": "https://github.com/HenriGeorge/claude_template",
+  "keywords": [
+    "hooks",
+    "workflow",
+    "gates",
+    "python"
+  ]
+}

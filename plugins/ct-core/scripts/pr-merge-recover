@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+# bin/pr-merge-recover — finish a worktree `gh pr merge` that failed its LOCAL cleanup.
+#
+# When `gh pr merge --squash --delete-branch` runs with `main` or the PR branch checked out in ANY
+# worktree, the REMOTE merge succeeds but the local+remote branch cleanup fails as a unit (lessons
+# #196, `Seen: 8x`). This helper does the manual recovery, fail-closed and idempotent:
+#   1. resolve the PR (arg, or the current branch's PR)
+#   2. ABORT unless the PR state is MERGED — never delete a branch for an open/closed-unmerged PR
+#   3. confirm the merge landed on origin/main BY CONTENT (squash severs ancestry; `--is-ancestor`
+#      lies — lesson #2 / rule R9), i.e. its mergeCommit oid is reachable from origin/main
+#   4. delete the remote branch (if still present)
+#   5. delete the LOCAL branch with -D (squash-merge is not seen as merged, so -d refuses; -D is
+#      correct here, gated behind the MERGED+content check above) — skipped if still checked out
+#
+# Dependency-free: bash + git + gh (gh's built-in `-q` jq, no jq needed). Idempotent: re-running after
+# a clean state is a no-op. Exit: 0 on success/no-op; 1 on "not merged" abort; 2 on usage/precondition.
+#
+#   pr-merge-recover [<pr-number>]     # <pr-number> optional — inferred from the current branch's PR
+set -u
+
+_die()  { printf 'pr-merge-recover: %s\n' "$1" >&2; exit "${2:-2}"; }
+_note() { printf 'pr-merge-recover: %s\n' "$1"; }
+
+# #924 — keep the PRIMARY checkout's local trunk fresh after a confirmed merge. `gh pr merge`'s own
+# local cleanup can't fast-forward the primary from a worktree (the shared-checkout guard refuses
+# `git -C <primary>`), and `session_autoff` only runs at session START, so the primary's main drifts
+# after every mid-session merge. Reuse the shared `_ff_checkout` primitive (py preferred, node
+# fallback) — it self-guards: ff-only, primary on trunk, clean, STRICTLY behind, AND no live PEER
+# session sitting on the primary (the #924 concurrent-session gate; the primitive walks OUR ppid
+# chain to recognise our own session as self, so no env hint is needed).
+_ff_cache_best() {  # $1=plugin $2=basename -> echoes the best cache path to hooks/<file>, or nothing
+  # Mirrors the claude-template dispatcher's cache resolution: cache/<marketplace>/<plugin>/<VERSION>/
+  # hooks/<file>; prefer a <VERSION> carrying the harness `.in_use` marker, else highest by `sort -V`.
+  local base="$HOME/.claude/plugins/cache" plugin="$1" file="$2" c best="" inuse=""
+  [ -d "$base" ] || return 0
+  while IFS= read -r c; do
+    [ -n "$c" ] && [ -f "$c/$file" ] || continue
+    [ -e "$(dirname "$c")/.in_use" ] && inuse="$inuse$(basename "$(dirname "$c")")	$c/$file
+"
+    best="$best$(basename "$(dirname "$c")")	$c/$file
+"
+  done < <(find "$base" -maxdepth 4 -mindepth 4 -type d -path "*/$plugin/*/hooks" 2>/dev/null)
+  if   [ -n "$inuse" ]; then printf '%s' "$inuse" | sort -V | tail -1 | cut -f2-
+  elif [ -n "$best"  ]; then printf '%s' "$best"  | sort -V | tail -1 | cut -f2-
+  fi
+}
+_ff_resolve() {  # $1=script dir -> echoes "<runner>|<script>" (py preferred, node fallback) or nothing
+  local here="$1" r cand
+  # Sibling plugin dirs: the template repo's bin/ (-> root/plugins) AND the core-plugin bin/ copy
+  # (-> plugins/). Both resolve to <repo>/plugins inside the template repo.
+  local roots=( "$here/../plugins" "$here/../.." )
+  for r in "${roots[@]}"; do
+    cand="$r/ct-hooks-py/hooks/_ff_checkout.py"
+    [ -f "$cand" ] && command -v python3 >/dev/null 2>&1 && { echo "python3|$cand"; return 0; }
+  done
+  for r in "${roots[@]}"; do
+    cand="$r/claude-template-hooks-node/hooks/_ff_checkout.cjs"
+    [ -f "$cand" ] && command -v node >/dev/null 2>&1 && { echo "node|$cand"; return 0; }
+  done
+  # Installed-cache fallback (a scaffolded project reaches the hooks plugins only here).
+  cand="$(_ff_cache_best ct-hooks-py _ff_checkout.py)"
+  [ -n "$cand" ] && command -v python3 >/dev/null 2>&1 && { echo "python3|$cand"; return 0; }
+  cand="$(_ff_cache_best claude-template-hooks-node _ff_checkout.cjs)"
+  [ -n "$cand" ] && command -v node >/dev/null 2>&1 && { echo "node|$cand"; return 0; }
+  return 0
+}
+_ff_primary_main() {
+  local src here primary trunk before target rsel runner script verdict
+  # Resolve THIS script's real dir, following a ~/.local/bin or plugin-cache symlink (like the
+  # dispatcher) so the plugin-dir resolution works from the synced core-plugin copy too.
+  src="${BASH_SOURCE[0]:-$0}"
+  while [ -L "$src" ]; do
+    here="$(cd -P "$(dirname "$src")" && pwd)"; src="$(readlink "$src")"
+    case "$src" in /*) ;; *) src="$here/$src" ;; esac
+  done
+  here="$(cd -P "$(dirname "$src")" && pwd)"
+  primary="$(cd "$(git rev-parse --git-common-dir 2>/dev/null)" 2>/dev/null && pwd)" || primary=""
+  if [ -z "$primary" ]; then
+    _note "local trunk not fast-forwarded: could not resolve the primary checkout"
+    return 0
+  fi
+  primary="$(dirname "$primary")"
+  trunk="$(git -C "$primary" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)"
+  trunk="${trunk#origin/}"; [ -n "$trunk" ] || trunk=main
+  # origin/<trunk> is already fresh — the MERGED content check above fetched, and the primitive
+  # fetches again before it decides; no redundant fetch here. These are only the report numbers.
+  before="$(git -C "$primary" rev-list --count "${trunk}..origin/${trunk}" 2>/dev/null || echo "")"
+  target="$(git -C "$primary" rev-parse --short=7 "origin/${trunk}" 2>/dev/null || echo "")"
+  rsel="$(_ff_resolve "$here")"
+  if [ -z "$rsel" ]; then
+    _note "local ${trunk} not fast-forwarded: ff primitive not found (looked in the sibling plugin dirs and the plugin cache)"
+    return 0
+  fi
+  runner="${rsel%%|*}"; script="${rsel#*|}"
+  # NO 2>/dev/null — the primitive's `fleet-freshness:` reason must reach stderr (#924 HIGH).
+  verdict="$("$runner" "$script" "$primary")"
+  case "$verdict" in
+    ff)   _note "fast-forwarded local ${trunk} ${before:-?} commits (to ${target:-?})" ;;
+    warn) _note "local ${trunk} not fast-forwarded: not safe (dirty / not on ${trunk} / diverged / a peer session on the primary)" ;;
+    noop)
+      # A "noop" while we are STILL behind is a declined ff, not "up to date" — the primitive wrote
+      # the real reason to stderr (a crash, an opted-out repo, or a rev-parse/trunk failure). Don't
+      # mislabel it (#924 HIGH).
+      if [ -n "$before" ] && [ "$before" -gt 0 ] 2>/dev/null; then
+        _note "local ${trunk} not fast-forwarded: primitive declined while ${before} behind (opted out, or see stderr)"
+      else
+        _note "local ${trunk} not fast-forwarded: already up to date or opted out"
+      fi
+      ;;
+    *)    _note "local ${trunk} not fast-forwarded: ff primitive produced no verdict" ;;
+  esac
+}
+
+command -v git >/dev/null 2>&1 || _die "git not found" 2
+command -v gh  >/dev/null 2>&1 || _die "gh not found" 2
+git rev-parse --git-dir >/dev/null 2>&1 || _die "not inside a git repository" 2
+
+PR="${1:-}"
+if [ -z "$PR" ]; then
+  PR="$(gh pr view --json number -q .number 2>/dev/null || true)"
+  [ -n "$PR" ] || _die "no PR number given and none inferable from the current branch" 2
+fi
+
+# One metadata read: state + head branch + squash-merge commit.
+STATE="$(gh pr view "$PR" --json state       -q .state       2>/dev/null || true)"
+HEAD="$( gh pr view "$PR" --json headRefName  -q .headRefName 2>/dev/null || true)"
+# NB: no `|| true` — we need this call's exit status to tell a gh ERROR (transient: retry/abort) apart
+# from a genuinely-absent oid. Conflating them would skip the content check and delete on STATE alone.
+OID="$(gh pr view "$PR" --json mergeCommit -q '.mergeCommit.oid // ""' 2>/dev/null)"; OID_RC=$?
+
+[ -n "$STATE" ] || _die "could not read PR #$PR (does it exist? are you authed?)" 2
+if [ "$STATE" != "MERGED" ]; then
+  _die "PR #$PR is $STATE, not MERGED — refusing to delete any branch (nothing to recover)" 1
+fi
+[ -n "$HEAD" ] || _die "PR #$PR is MERGED but has no headRefName — aborting" 2
+
+# Content check is MANDATORY on every delete path: the squash commit must be reachable from
+# origin/main (NOT an --is-ancestor of the branch, which squash severs). A missing/unreadable oid
+# (gh error OR genuinely absent) means we CANNOT verify the merge landed — so we refuse, never delete
+# on MERGED state alone. Fetch first so origin/main is current.
+git fetch origin --quiet 2>/dev/null || true
+if [ "$OID_RC" -ne 0 ] || [ -z "$OID" ]; then
+  _die "PR #$PR is MERGED but its merge-commit oid could not be read (gh error or absent) — refusing to delete without an origin/main content check; verify by hand" 1
+fi
+if ! git merge-base --is-ancestor "$OID" origin/main 2>/dev/null; then
+  _die "PR #$PR reports MERGED but its merge commit $OID is not on origin/main yet — aborting" 1
+fi
+_note "verified: PR #$PR merged as $OID (reachable from origin/main)"
+
+# #924 — now that the merge is confirmed landed, refresh the primary's local trunk (self-guarded).
+_ff_primary_main
+
+did=0
+# Remote branch.
+if git ls-remote --exit-code --heads origin "$HEAD" >/dev/null 2>&1; then
+  if git push origin --delete "$HEAD" >/dev/null 2>&1; then
+    _note "deleted remote branch origin/$HEAD"; did=1
+  else
+    _note "could not delete remote branch origin/$HEAD (already gone, or no permission)"
+  fi
+else
+  _note "remote branch origin/$HEAD already absent"
+fi
+
+# Local branch — skip if it is checked out in any worktree (git -D would refuse anyway).
+if git show-ref --verify --quiet "refs/heads/$HEAD"; then
+  if git worktree list --porcelain 2>/dev/null | grep -q "branch refs/heads/$HEAD$"; then
+    _note "local branch $HEAD is still checked out in a worktree — remove that worktree first, then re-run"
+  elif git branch -D "$HEAD" >/dev/null 2>&1; then
+    _note "deleted local branch $HEAD"; did=1
+  else
+    _note "could not delete local branch $HEAD"
+  fi
+else
+  _note "local branch $HEAD already absent"
+fi
+
+[ "$did" -eq 1 ] && _note "recovery complete for PR #$PR" || _note "nothing to clean up for PR #$PR (already recovered)"
+exit 0

@@ -1,6 +1,6 @@
 # Verify Workflow (the *how* of GATE 2)
 
-Last updated: 2026-10-14 22:17
+Last updated: 2026-10-19 08:33
 
 The Prove leg of **Design → Code → Prove** (`workflow.md`). This is *how* you satisfy
 GATE 2 — earn the word "done" with FRESH evidence THIS turn. The discipline: **RUN it →
@@ -41,7 +41,7 @@ flowchart LR
 | the evidence **shown in the report** — a screenshot of the RUNNING app (web) · the real HTTP response (API) · stdout + exit code (CLI/lib) · output schema + row counts (data) | a test *description* with no run; mocked / asserted output; **evidence captured but never surfaced** |
 | the failing test, now green after the fix | "all tests are green" with no command, count, or durations |
 
-**Checklist before "done":** ran this turn · exit 0 · pass-count shown · nothing wrongly skipped/xfailed · no flaky/retry · real artifact driven (web→screenshot · API→response · CLI→stdout/exit · data→output) · **evidence SHOWN in the report** · **no dead `try/catch` swallowing a returned error** · a full suite per PR for a tier-2 PR at the final synced head (a local run under `bin/test-lock`) — tier-0/1 gates on the affected slice — and the affected test slice in between.
+**Checklist before "done":** ran this turn · exit 0 · pass-count shown · **the run was redirected to a log and the log grepped, never piped through `tail`/`head`/`grep`** (the pipe reports its own exit 0 and eats the `RESULT:` line — the `suite_pipe` reminder nudges this) · nothing wrongly skipped/xfailed · no flaky/retry · real artifact driven (web→screenshot · API→response · CLI→stdout/exit · data→output) · **evidence SHOWN in the report** · **no dead `try/catch` swallowing a returned error** · a full suite per PR for a tier-2 PR at the final synced head (a local run under `bin/test-lock`) — tier-0/1 gates on the affected slice — and the affected test slice in between.
 
 > **Exit 0 means "nothing that ran failed," NOT "everything passed."** Reconcile the count:
 > `ran + skipped + didn't-run == total`. A green exit on a partial run hides the untested bucket —

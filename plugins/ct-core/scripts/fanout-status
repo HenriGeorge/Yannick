@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# fanout-status — integrate-readiness for a set of leaf gate ledgers.
+# READY only when every leaf is gate-MET (bin/gate-run status -> ALL MET) AND no leaf's
+# worktree carries .claude/NEEDS-HUMAN.md (the build_loop abandonment sentinel).
+set -uo pipefail
+[ "$#" -ge 1 ] || { echo "usage: fanout-status <leaf-ledger>..." >&2; exit 2; }
+SELF="$(cd "$(dirname "$0")" && pwd)"
+held=0
+for ledger in "$@"; do
+  dir="$(cd "$(dirname "$ledger")" 2>/dev/null && pwd)" || { echo "HELD: $ledger (cannot resolve dir)"; held=1; continue; }
+  # Resolve the leaf's worktree root — the ledger may sit in a subdir, and the abandonment
+  # sentinel lives at the root. If git can't decide the root, do NOT narrow to $dir: an
+  # unresolved root can't reliably see .claude/NEEDS-HUMAN.md, so "cannot decide" => HELD.
+  if ! root="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)"; then
+    echo "HELD: $ledger (cannot resolve worktree root — abandonment check unreliable)"; held=1; continue
+  fi
+  if [ -f "$root/.claude/NEEDS-HUMAN.md" ]; then
+    echo "HELD: $ledger (leaf abandoned — .claude/NEEDS-HUMAN.md present)"; held=1; continue
+  fi
+  gr_out="$("$SELF/gate-run" status "$ledger" 2>&1)"; gr_rc=$?
+  if [ "$gr_rc" -ne 0 ]; then
+    echo "HELD: $ledger (gate-run status failed rc=$gr_rc: $(printf '%s' "$gr_out" | tail -1))"; held=1
+  elif ! printf '%s' "$gr_out" | grep -q "ALL MET"; then
+    echo "HELD: $ledger (gates not all met)"; held=1
+  fi
+done
+[ "$held" -eq 0 ] || exit 1
+echo "READY TO INTEGRATE ($# leaves verified)"

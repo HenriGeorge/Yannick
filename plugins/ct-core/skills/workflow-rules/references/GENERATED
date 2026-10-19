@@ -1,0 +1,6 @@
+GENERATED — DO NOT EDIT THESE FILES BY HAND.
+
+Synced copies of the canonical rules/ by sync.sh plugin-rules.
+Edit the canonical source, then run:  bash sync.sh plugin-rules
+
+Drift (a copy edited directly) is caught by tests/test_plugin_hooks_parity.sh.
