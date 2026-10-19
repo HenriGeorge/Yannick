@@ -2,7 +2,7 @@
 name: test-quality-reviewer
 description: "Test-quality review for any stack — verifies a PR's plan-named acceptance tests are green at the current head AND that at least one is mutation-proven able to fail. Enforces per-plan test-count bounds (min 3 / max 8). Emits an actionable report + one verdict (PASS / FINDINGS / WAIVED)."
 tools: Read, Grep, Glob
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 omitClaudeMd: true
 effort: medium
 maxTurns: 25

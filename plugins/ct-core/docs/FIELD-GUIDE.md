@@ -1,8 +1,8 @@
 # claude_template — Field Guide
 
-Last updated: 2026-10-19 10:06
+Last updated: 2026-10-19 18:46
 
-Snapshot at `origin/main` · 15 hooks · 57 skills · 16 agents · 14 commands · 40 bin scripts · 9 core rules · 206 test suites. (Plugin versions live in `plugin.json` — not snapshotted here, to avoid per-bump drift.)
+Snapshot at `origin/main` · 15 hooks · 57 skills · 16 agents · 14 commands · 40 bin scripts · 9 core rules · 209 test suites. (Plugin versions live in `plugin.json` — not snapshotted here, to avoid per-bump drift.)
 
 **The at-a-glance index to the whole harness — and now the single entry point** (the former `OVERVIEW.md` narrative and `workflow/DECIDING-DONE.md` "how done is decided" map have been folded in below). For depth: [`workflow/WORKFLOW.md`](workflow/WORKFLOW.md) · [`workflow/HOOKS.md`](workflow/HOOKS.md) · [`workflow/ENFORCEMENT.md`](workflow/ENFORCEMENT.md). This page is the fully-enumerated inventory — every hook, skill, script, agent, rule, and token in one place; the linked docs own the mechanics.
 

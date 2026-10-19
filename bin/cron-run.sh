@@ -8,7 +8,7 @@
 #
 #   usage: cron-run.sh <cmd> [args...]
 #     cron-run.sh claude -p "/docs-sweep"          --model claude-opus-4-8
-#     cron-run.sh claude -p "triage the issues"    --model claude-haiku-4-5-20251001
+#     cron-run.sh claude -p "triage the issues"    --model claude-haiku-5-5
 #     cron-run.sh npm run some-daemon
 #
 # Opt-in (CRON_ENABLE=1 in .claude/worktrees.conf — a billed/standing run is never a default),

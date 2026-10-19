@@ -1,6 +1,6 @@
 {
   "name": "ct-core",
-  "version": "0.9.126",
+  "version": "0.9.139",
   "description": "Canonical workflow skills/commands/agents: curated Design→Code→Prove review/research subagents, workflow commands (/validate, /dev-reflect, /handoff, /merge-prs, /project-status, /workflow-diagrams, /write, /verify-adversarial), and specialist agents from claude_template — so cloud repos get them via propagate.sh copy-delivery.",
   "author": { "name": "Henri George", "url": "https://github.com/HenriGeorge" },
   "homepage": "https://github.com/HenriGeorge/claude_template",

@@ -1,6 +1,6 @@
 # RTK — token-optimized command output (on by default)
 
-Last updated: 2026-10-19 08:15
+Last updated: 2026-10-19 13:49
 
 RTK ("Rust Token Killer") is an optional CLI proxy that compresses the output of common dev commands
 (git, cargo/npm/pnpm, test runners, linters, psql, aws, …) **before it reaches the LLM context** —
@@ -58,7 +58,11 @@ redirect removes. Running both hooks is safe: `rtk hook claude` is idempotent on
 `-prefixed command (verified: feeding it a command already starting with `rtk ` produces no
 output), so even if the global hook fires first (or both fire — `PreToolUse` hooks run in parallel
 against the SAME original input, never chained) the second attempt is a no-op. Remove the leftover
-entry by hand if you'd rather not carry it.
+entry by hand if you'd rather not carry it — one line (keeps every other hook, writes a copy first):
+
+```bash
+cp ~/.claude/settings.json ~/.claude/settings.json.bak && jq '.hooks.PreToolUse |= map(.hooks |= map(select(.command != "rtk hook claude")) | select(.hooks | length > 0))' ~/.claude/settings.json.bak > ~/.claude/settings.json
+```
 
 Consequence for safety either way: the template's `PreToolUse` guard chain (H1–H11, delivered via
 the hooks plugin) always inspects the real command Claude runs, not RTK's rewrite — every guard
@@ -72,10 +76,13 @@ multi-hook semantics this relies on.
 ### In a claude.ai cloud session
 
 `plugins/ct-hooks-py/hooks/cloud_session.py` (SessionStart, cloud-only) installs `rtk` itself when
-it's missing — a fresh cloud sandbox has nothing pre-installed — via the official non-interactive
-one-liner the rtk homepage documents (`curl -fsSL
-https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh`), noting
-`rtk: installed` or `rtk: install failed (<status>)` in its systemMessage; silent when `rtk` is
+it's missing — a fresh cloud sandbox has nothing pre-installed — using rtk's own `install.sh`. The
+script is fetched from the pinned release **tag** (`refs/tags/<RTK_VERSION>/install.sh`, not a moving
+branch) and its sha256 is checked against `RTK_INSTALL_SHA256` before it runs; a mismatch is refused
+(`rtk: install failed (checksum mismatch)`). The installer also receives the pinned `RTK_VERSION`, which
+skips its "latest release" lookup (the GitHub API 403s behind the cloud proxy). Bumping the version
+means re-pinning both constants in `cloud_session.py` (`curl -fsSL <url> | shasum -a 256`). The hook
+notes `rtk: installed` or `rtk: install failed (<status>)` in its systemMessage; silent when `rtk` is
 already present. `rtk_rewrite.py` itself needs no cloud-specific code — once `rtk` is on PATH, the
 plugin hook behaves identically to the local case.
 
@@ -104,7 +111,9 @@ can invoke RTK without a prompt.
 
 RTK telemetry is opt-in upstream (anonymous daily ping, GDPR-compliant, no source/paths/args/secrets).
 This template **forces it off** whenever it runs `rtk init` (`RTK_TELEMETRY_DISABLED=1` + an explicit
-`rtk telemetry disable`), so a scaffolded project never opts a downstream user in. Hard override any
+`rtk telemetry disable`; if that persistent write fails, `_rtk_enable` prints `RTK-WARN: rtk telemetry
+disable failed` and carries on — the init call itself already ran with `RTK_TELEMETRY_DISABLED=1`), so a
+scaffolded project never opts a downstream user in. Hard override any
 time: `export RTK_TELEMETRY_DISABLED=1`. Erase local data: `rtk telemetry forget`.
 
 ## Caveats

@@ -1,0 +1,4 @@
+{
+  "description": "The guard-coach hooks module",
+  "modules": ["./register.ts"]
+}

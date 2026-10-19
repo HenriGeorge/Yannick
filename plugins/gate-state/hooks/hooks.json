@@ -1,0 +1,4 @@
+{
+  "description": "The gate-state hooks module",
+  "modules": ["./register.js"]
+}

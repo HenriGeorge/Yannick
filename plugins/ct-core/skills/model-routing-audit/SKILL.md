@@ -9,7 +9,7 @@ description: Use when auditing a repo (or a fleet of repos) for bare model alias
 
 Bare model aliases (`sonnet`/`opus`/`haiku`/`fable`) float to the newest generation. Policy is to
 **pin an exact ID** (see the routing table in `rules/agent-delegation.md`) — any explicit, dated or
-versioned id (`claude-opus-4-8`, `claude-haiku-4-5-20251001`, `claude-opus-5-5`) is clean; only the
+versioned id (`claude-opus-4-8`, `claude-haiku-5-5`, `claude-opus-5-5`) is clean; only the
 bare alias leaks. This skill runs a deterministic scan for the two **statically detectable** leak
 surfaces and leaves the judgment (is a finding intentional? which id is right?) to you.
 
@@ -32,7 +32,7 @@ Exit **1** if any leak is found (so it doubles as a CI/pre-merge gate), **0** if
 
 | Surface | Example (flagged) | Not flagged |
 |---|---|---|
-| `model:` assignment | `model: sonnet` | `model: claude-opus-4-8`, `model: claude-haiku-4-5-20251001`, `model: claude-opus-5-5` |
+| `model:` assignment | `model: sonnet` | `model: claude-opus-4-8`, `model: claude-haiku-5-5`, `model: claude-opus-5-5` |
 | `--model` flag | `--model opus` | `--model claude-opus-4-8` |
 
 It inspects only real `model:` / `--model` **assignments** — a prose mention of the alias words is

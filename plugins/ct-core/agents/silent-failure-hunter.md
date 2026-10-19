@@ -2,7 +2,7 @@
 name: silent-failure-hunter
 description: Hunts for silent failures, inadequate error handling, and inappropriate fallbacks in code changes. Zero tolerance for swallowed errors. Use after implementing error handling, catch blocks, or fallback logic. Ensures errors are logged, surfaced to users, and actionable.
 tools: Read, Grep, Glob
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 omitClaudeMd: true
 effort: medium
 maxTurns: 25

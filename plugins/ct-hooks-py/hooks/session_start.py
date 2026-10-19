@@ -25,6 +25,7 @@ import re
 import shlex
 import subprocess
 import sys
+import time
 from datetime import datetime
 
 from _lib.session import is_child_session
@@ -404,6 +405,26 @@ def _wt_merged(project_dir, tip, mainref):
     return d is not None and d.returncode == 0
 
 
+# A worktree with no commit of its own equals main, so it reads as "merged" — including one a
+# concurrent session created seconds ago and has not written to yet (reaped under it 3x, #1420).
+# Two cheap liveness signals protect such a tree: it was only just created, or its session primed it
+# within the last hour (`.claude/state/primed` is written at session start and is gitignored).
+WT_FRESH_SECS = 600
+WT_PRIMED_SECS = 3600
+
+
+def _wt_recently_active(path, now=None):
+    now = time.time() if now is None else now
+    for rel, grace in ((".git", WT_FRESH_SECS),
+                       (os.path.join(".claude", "state", "primed"), WT_PRIMED_SECS)):
+        try:
+            if now - os.stat(os.path.join(path, rel)).st_mtime < grace:
+                return True
+        except OSError:
+            pass  # marker absent/unreadable: no evidence of liveness, fall through to the merged check
+    return False
+
+
 def _cleanup_dangling_worktrees(project_dir):
     """Worktree hygiene at the one safe point (no agent occupies a stale tree): (1) `git worktree
     prune` drops entries whose dir is already gone; (2) reap MERGED clean `.claude/worktrees/*`
@@ -442,7 +463,7 @@ def _cleanup_dangling_worktrees(project_dir):
         rp = os.path.realpath(path)
         if rp == own or rp == primary or marker not in (rp + os.sep):
             continue
-        if rp in peer_cwds:
+        if rp in peer_cwds or _wt_recently_active(rp):
             continue
         tip = branch or head
         if not tip or not _wt_merged(project_dir, tip, mainref):

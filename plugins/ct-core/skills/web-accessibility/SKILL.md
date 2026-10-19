@@ -1,6 +1,6 @@
 ---
 name: web-accessibility
-description: Use when WRITING or modifying web-profile UI — a page, form, component, or any rendered surface — so the accessibility baseline holds from the first line (semantic HTML, keyboard navigation, contrast floors), and when verifying with a11y tooling at GATE-2. Triggers - building web UI, accessibility baseline, keyboard-accessible, contrast, semantic HTML. NOT a broad UI-guidelines AUDIT of existing code (that is web-design-guidelines). Web profile ONLY — service/API, CLI, data projects skip.
+description: Use when WRITING or modifying web-profile UI — a page, form, component, or any rendered surface — so the accessibility baseline holds from the first line (semantic HTML, keyboard navigation, contrast floors), and when verifying with a11y tooling at GATE-2. Triggers - building web UI, accessibility baseline, keyboard-accessible, contrast, semantic HTML. NOT a broad UI-guidelines AUDIT of existing code (that is an `impeccable` audit). Web profile ONLY — service/API, CLI, data projects skip.
 ---
 
 # Accessibility baseline (R7) — WEB-PROFILE SCOPED
@@ -13,7 +13,7 @@ this checklist entirely for those profiles, the same way `design-workflow.md`'s 
 art-direction section is gated.
 
 A baseline accessibility bar for any UI work — not exhaustive WCAG conformance (that's a dedicated
-audit, `web-design-guidelines`/`ui-aliveness-audit`), but the floor every shipped surface should
+audit, an `impeccable` audit or `ui-aliveness-audit`), but the floor every shipped surface should
 clear by default, checked at BUILD time rather than discovered later in a dedicated a11y pass.
 
 ## Semantic HTML

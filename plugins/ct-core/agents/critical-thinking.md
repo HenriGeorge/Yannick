@@ -1,7 +1,7 @@
 ---
 name: critical-thinking
 description: "Challenges assumptions and encourages critical thinking. Asks 'Why?' until reaching root cause. No code edits — thinking only."
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 ---
 
 # Critical Thinking Mode

@@ -12,11 +12,18 @@ Claude Code agents (one isolated worktree per issue → PR; a human always merge
 - **Solve is the default, and the default set is EVERY open issue.** No arguments → label all, then
   solve all. A parameter (below) narrows the set or stops at labeling.
 - **The solver is Claude Code** (this session's model, via `dispatch-agents-branches` / the Agent
-  tool), not a local model. **Labeling also runs on Claude** — a cheap model (Haiku) via the `kimi`
-  helper below. `--local` is the only path that uses free Ollama (opt-in).
+  tool), not a local model. **Labeling defaults to a model PREFERENCE CHAIN**, resolved by
+  `stage1-triage.py` against what `ollama list` reports: **`deepseek-v4-pro:cloud`** (reasoning,
+  stronger judgment — metered via the Ollama cloud sub) → **`phi4`** (free, local) → the cheap Claude
+  **Haiku** fallback (only when no preferred Ollama model is pulled), so triage keeps working on a
+  repo / cloud sandbox with no Ollama. Force a single model with `TRIAGE_OLLAMA_MODEL`, or any
+  classifier command with `TRIAGE_CLASSIFY_CMD`. ⚠ deepseek is **metered** — the run prints which
+  classifier it resolved (`Ollama cloud/metered …` vs `free local Ollama …` vs `PAID … fallback`).
+  `--local` additionally routes *solving* through Ollama.
 - ⚠ **Cost — this runs on Claude (paid).** Default = **1 issue per run**; solve the rest only in
   explicit waves of ≤3, and **confirm with the human before each wave**, stating the rough token
-  spend first. Never fire the whole backlog unattended. (`--local` is the free fallback.)
+  spend first. Never fire the whole backlog unattended. (`--local` defaults to the free Ollama
+  fallback; `SOLVE_OLLAMA_MODEL` can opt into a metered one.)
 - **Never auto-merge.** Every fix lands as a PR for human review — that human merge IS the GATE-1
   safety net now that design-heavy issues are solved by default too.
 
@@ -29,14 +36,14 @@ Claude Code agents (one isolated worktree per issue → PR; a human always merge
 | `--triage-only` (alias `--label-only`) | Stage 1 only — label every issue, **no solving**. |
 | `--category <c>[,c…]` | After labeling, solve only issues in those categories. |
 | `--exclude <N>[,N…]` | Solve all open issues EXCEPT these. |
-| `--local` | Use the free local model (kimi helper below) as the solver instead of Claude Code. |
+| `--local` | Route the solver through Ollama instead of Claude Code (kimi helper below). Default model is free+local; `SOLVE_OLLAMA_MODEL` opts into a stronger one (e.g. metered `deepseek-v4-pro:cloud`). |
 
 Always `gh issue view <n>` a design-heavy issue before solving and **note it in the report** — the
 agent still drafts a PR (the human merge gate catches an unviable draft), but the human is warned.
 
 ## Preflight
 - `gh auth status` OK; you're in the target repo (`gh repo view`).
-- Default engine is Claude — confirm the `claude` CLI runs (`claude --version`). **Only `--local`** needs Ollama up: `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:11434/ | grep -q 200`, else fall back to Claude and say so (don't silently stop).
+- **Labeling** resolves the preference chain (deepseek-v4-pro:cloud → phi4 → Haiku) and auto-falls back to the `claude` CLI — so confirm at least one is available: Ollama up (`curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:11434/ | grep -q 200` and `ollama list` shows a preferred model) OR `claude --version` runs. The **solver** (Stage 2) is still Claude unless `--local`.
 
 ---
 
@@ -50,7 +57,7 @@ re-deriving the mechanics:
 ```bash
 # dry-run first (classifies + prints the table; creates no labels, edits no issues):
 python3 ~/.claude/skills/github-solve-issues/scripts/stage1-triage.py --dry-run
-# then apply for real (default classifier = the pinned-Haiku kimi path above):
+# then apply for real (default classifier = preference chain deepseek-v4-pro:cloud -> phi4 -> cheap-Claude):
 python3 ~/.claude/skills/github-solve-issues/scripts/stage1-triage.py --json
 # first run on a repo that lacks the labels — creating repo-wide labels is an explicit step:
 python3 ~/.claude/skills/github-solve-issues/scripts/stage1-triage.py --json --create-labels
@@ -144,37 +151,80 @@ report line; **the script never calls `gh issue close` / `gh pr merge`** — a h
 6. **Report a completion table:** `#n | category | branch | PR | status (opened / drafted / failed)`.
    Log every issue an agent could NOT finish so nothing is silently dropped.
 
-### The `kimi` helper (default = cheap Claude)
-Labeling shells out to a **cheap Claude model** — process isolation from the session, controllable
-cost.
+### The `kimi` helper (default = Ollama preference chain, Claude fallback)
+Labeling walks the same preference chain as `stage1-triage.py`'s `default_classify_cmd()` —
+`deepseek-v4-pro:cloud` (metered) → `phi4` (free local) → cheap Claude **Haiku** — so the shell and
+Python paths agree. `TRIAGE_OLLAMA_MODEL` forces a single model.
 ```bash
-kimi() {  # default: cheap Claude (Haiku 4.5) — paid, but small for labeling
-  # Pin an EXACT ID (never a bare `haiku` alias — that floats to the newest generation).
-  # Use `claude -p` (print mode); `claude --bare` REFUSES OAuth and stalls a normal login session.
-  claude -p --strict-mcp-config --model "${SOLVE_MODEL:-claude-haiku-4-5-20251001}" "$@"
+kimi() {  # default: first pulled of (deepseek-v4-pro:cloud, phi4); else cheap Claude (Haiku 5.5)
+  local models; [ -n "${TRIAGE_OLLAMA_MODEL:-}" ] && models="$TRIAGE_OLLAMA_MODEL" \
+    || models="deepseek-v4-pro:cloud phi4"
+  if command -v ollama >/dev/null 2>&1; then
+    local pulled; pulled="$(ollama list 2>/dev/null | awk 'NR>1{print $1}')"
+    for m in $models; do
+      # exact base, not a prefix (phi4 != phi4-mini)
+      if printf '%s\n' "$pulled" | grep -qE "^${m%%:*}(:|$)"; then ollama run "$m" "$@"; return; fi
+    done
+  fi
+  # Pin an EXACT ID (never a bare `haiku` alias — floats to newest). `claude --bare` REFUSES OAuth.
+  claude -p --strict-mcp-config --model "${SOLVE_MODEL:-claude-haiku-5-5}" "$@"
 }
 ```
-`stage1-triage.py` (below) uses this same pinned-Haiku path as its default classifier; override it
-per-run with `TRIAGE_CLASSIFY_CMD` if you need a different tier.
+`stage1-triage.py` resolves the same preference chain for its default classifier; force a single
+model with `TRIAGE_OLLAMA_MODEL`, or any classifier command with `TRIAGE_CLASSIFY_CMD`. For the
+Ollama path it calls the **HTTP API** (`POST $TRIAGE_OLLAMA_URL/api/generate`, default
+`http://127.0.0.1:11434`, `stream:false think:false`) rather than `ollama run`, so a reasoning model
+(`TRIAGE_OLLAMA_MODEL=deepseek-v4-pro:cloud`, `glm-…`, `qwen3…`) returns one clean JSON response with
+no thinking-block or terminal-control noise. The parser also strips ANSI and ignores a ```json fence
+/ surrounding prose, and returns *nothing* (never a silent empty list) when no real array is found.
 
-### `--local` — free Ollama path (opt-in, the old free route)
-Reverts labeling/solving to the free local model; treat output as **draft-quality** (a 30B local
-model is weaker), and fall back to Claude for any issue it stalls on or that fails GATE-2. For a
-`--local` run, override the helper with the Ollama form:
+### `--local` — Ollama solver path (opt-in)
+Routes labeling/solving through Ollama's **Anthropic endpoint** (`/v1/messages`, served by Ollama
+≥ 0.40) so Claude Code drives an Ollama model directly. Treat output as **draft-quality** and fall
+back to Claude for any issue it stalls on or that fails GATE-2. The model is env-overridable; the
+default is **free, local** (`qwen3-coder:30b-128k`). For a `--local` run, override the helper:
 ```bash
-kimi() {  # --local ONLY: free Ollama
+kimi() {  # --local ONLY: Ollama via the Anthropic endpoint
   env -u ANTHROPIC_API_KEY \
     ANTHROPIC_BASE_URL=http://127.0.0.1:11434 ANTHROPIC_AUTH_TOKEN=ollama \
-    ANTHROPIC_MODEL=qwen3-coder:30b-128k ANTHROPIC_SMALL_FAST_MODEL=qwen3:8b \
+    ANTHROPIC_MODEL="${SOLVE_OLLAMA_MODEL:-qwen3-coder:30b-128k}" \
+    ANTHROPIC_SMALL_FAST_MODEL="${SOLVE_OLLAMA_SMALL:-qwen3:8b}" \
     NO_PROXY=127.0.0.1 DISABLE_TELEMETRY=1 \
     claude -p --strict-mcp-config "$@"
 }
 ```
+**Stronger (metered) solver — deepseek via the Ollama cloud sub:**
+`SOLVE_OLLAMA_MODEL=deepseek-v4-pro:cloud` is a reasoning model, far stronger than the 30B local
+default and verified against `/v1/messages` (clean Anthropic-shaped output incl. thinking blocks).
+It is **metered** (the cloud sub), not free — opt in per-run, same free→metered tradeoff as triage.
+A `:cloud` tag can return a transient `410` on cold spin-up; retry once before assuming it is down.
+
+### OpenRouter free-cloud via claude-code-router (opt-in, DRAFT-FIRST)
+Route a **headless** solver through [claude-code-router](https://github.com/musistudio/claude-code-router)
+to a **free OpenRouter model** — $0, no Ollama, no cloud sub, no Claude quota, and fast (cloud GPUs,
+unlike a slow local model). Needs CCR installed (`npm i -g @musistudio/claude-code-router`) and an
+`OPENROUTER_API_KEY` in a gitignored env file. Point `~/.claude-code-router/config.json` at
+`https://openrouter.ai/api/v1/chat/completions` with a free model (**verify current `:free` tags at
+`openrouter.ai/models` — they churn**; e.g. `nvidia/nemotron-3-super-120b-a12b:free`,
+`minimax/minimax-m3.1-flash:free`), `api_key: "$OPENROUTER_API_KEY"` (no secret in the file). Launch
+per issue, from its worktree:
+```bash
+set -a; . .env.local; set +a            # loads OPENROUTER_API_KEY into CCR's env
+ccr code --dangerously-skip-permissions "<issue brief>"
+```
+⚠ **Draft-first, NOT a clean solver.** Observed: free models *can* tool-call and often get the core
+fix right, but they also produce real defects (e.g. clobbered doc headings) and **cannot reliably
+drive the gated git/commit flow** (they emit chained commands the worktree-isolation guard refuses).
+So a **strong-model parent MUST verify** (run the acceptance test), repair the defects, and finish
+(commit/push/draft-PR) — never merge the free model's output unreviewed. The OpenRouter free tier is
+rate-limited, so a long multi-turn solve can stall mid-run. Use it as a cheap first draft on **clean,
+self-contained** issues; for anything gated or subtle, the paid in-process solver is cheaper overall
+once repair time is counted.
 
 ---
 
 ## Guardrails
-- **Paid by default:** labeling + solving run on Claude — batch conservatively (**1/run**, confirm per wave, state token spend). `--local` is the only free (Ollama) path.
+- **Paid by default:** labeling + solving run on Claude — batch conservatively (**1/run**, confirm per wave, state token spend). `--local` is the Ollama path (free local by default; `SOLVE_OLLAMA_MODEL` can opt into a metered cloud model).
 - **Never merge. Never force-push. Never edit the primary worktree** — Stage 2 work is isolated per issue.
 - Respect deny rules in `CLAUDE.md`; don't route a blocked command through any solver.
 - Stage 1 is not done until the **coverage gate** shows zero unlabeled open issues.

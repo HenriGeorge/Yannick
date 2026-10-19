@@ -1,3 +1,5 @@
-superpowers=6.2.0
+superpowers=7.0.0
 ponytail=4.9.0
 impeccable=4.1.2
+# caveman: JuliusBrussee/caveman @ commit 27d5a3981a34 (package 2.0.0). Vendored: skills/{caveman,caveman-commit,caveman-help,caveman-review} + LICENSE only. Upstream is split-licensed (LICENSING.md): skills/ is MIT; engine/, proxy/, mcp/, shrink/, browse/, cacheengine/, rewriter/, mem/ Go core, shared/platform/ are BSL-1.1 and are NOT vendored. Local trim: caveman-help drops the caveman-compress row and the Configure Default Mode section, and caveman/SKILL.md drops the "(/caveman-compress exempt)" note, because the compress skill and the activation hook are not vendored.
+caveman=2.0.0

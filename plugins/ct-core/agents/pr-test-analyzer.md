@@ -2,7 +2,7 @@
 name: pr-test-analyzer
 description: Analyzes PR test coverage for quality and completeness. Focuses on behavioral coverage, not line metrics. Identifies critical gaps, evaluates test quality, and rates recommendations by criticality (1-10). Use after PR creation or before marking ready.
 tools: Read, Grep, Glob
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 color: cyan
 ---
 

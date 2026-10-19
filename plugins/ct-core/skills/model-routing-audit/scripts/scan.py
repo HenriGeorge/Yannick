@@ -12,7 +12,7 @@ Scans a target tree for the two STATICALLY-detectable bare-alias leak surfaces:
   2. a `--model <value>` flag (shell / scripts / commands), value optionally quoted, one of the same.
 
 Policy is to pin an EXACT model ID; a bare alias is the leak. An exact pinned ID of ANY generation
-(`claude-opus-4-8`, `claude-haiku-4-5-20251001`, `claude-opus-5-5`, `claude-sonnet-5`) is clean.
+(`claude-opus-4-8`, `claude-haiku-5-5`, `claude-opus-5-5`, `claude-sonnet-5-5`) is clean.
 
 It is precise on PURPOSE: it inspects only a leading-frontmatter `model:` and a real `--model` flag,
 never prose — so a doc that merely mentions the alias words is not a false positive. Known limitation:

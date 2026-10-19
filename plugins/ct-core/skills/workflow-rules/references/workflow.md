@@ -1,6 +1,6 @@
 # Canonical Dev Workflow (every project, every session)
 
-Last updated: 2026-10-19 09:17
+Last updated: 2026-10-19 14:37
 
 > **THE LAW — Design → Code → Prove.** Shape it before you build it (GATE 1 ⛔), prove it
 > with fresh evidence before you call it done (GATE 2 ⛔). Two hard gates, never skipped.
@@ -37,7 +37,7 @@ never skipped.
   turn, across three legs (`verification-before-completion`, per `verify-workflow.md`): the
   **STATIC leg** (typecheck, lint, unit via `/validate`); the **BEHAVIORAL leg** (the behaviour-test
   suite under `bin/test-lock`); the **EXERCISE leg** (drive the **real artifact** by profile via the
-  `run`/`webapp-testing` skills — `/validate` covers only STATIC). **SHOW the evidence in your
+  `run`/`local-browser-testing` skills — `/validate` covers only STATIC). **SHOW the evidence in your
   report** (screenshot for UI · response body for API · stdout/exit for CLI · output rows for data).
   Run VERIFY **once per batch of accumulated changes**, not per micro-edit. **Read
   `.claude/rules/verify-workflow.md` before claiming done** — it is the *how* of this gate and no
@@ -55,7 +55,7 @@ flowchart TD
     P1["1 · SPEC — GATE 1 ⛔<br/>brainstorming auto"] --> P2
     P2["2 · PLAN + COVER (test-first)<br/>writing-plans auto · test-designer → coverage<br/>write the FAILING test · run it alone → RED"] --> P3
     P3["3 · BUILD (red→green)<br/>native worktree (worktree_create hook provisions) · TDD auto · make the COVER test green"] --> P4
-    P4{"4 · VERIFY — GATE 2 ⛔<br/>bin/test-lock -- &lt;test cmd&gt; · drive the REAL artifact (by profile)<br/>typecheck · lint · /validate · run/webapp-testing skills"}
+    P4{"4 · VERIFY — GATE 2 ⛔<br/>bin/test-lock -- &lt;test cmd&gt; · drive the REAL artifact (by profile)<br/>typecheck · lint · /validate · run/local-browser-testing skills"}
     P4 -->|fails| DBG["systematic-debugging auto"]
     DBG --> P4
     P4 -->|"green + artifact-verified"| P5["5 · REVIEW — /pr-open dispatches the risk-tiered panel<br/>(roster in agent-delegation.md) · /security-review"]
@@ -74,7 +74,7 @@ flowchart TD
 | 1 | SPEC ⛔ | `brainstorming` | **grill-me (required)** · a **Mermaid diagram** of the design (required) · see `design-workflow.md` |
 | 2 | PLAN + COVER (test-first) | `writing-plans` | **grill the PLAN** (2nd required grill — `grill-me` on step-sequencing / interfaces / failure-modes, recorded in the plan's `## Grill findings`; `grill_gate` blocks a plan commit without it) · **test-designer** (behaviour coverage) · **write the failing behaviour test** (web: **playwright-tester** → `e2e/*.spec.ts`) · **run JUST that test** (`bin/test-lock -- <it>`) → confirm **RED** (⚠ NOT `/validate` — that's the P4 full-suite green gate) |
 | 3 | BUILD (red→green) | `test-driven-development` · `executing-plans` | **native worktree** (EnterWorktree / Agent `isolation: worktree` — the `worktree_create` hook provisions fetch·env·PORT·setup) · make the COVER red test green; add tests as code grows · domain skills |
-| 4 | VERIFY ⛔ | `verification-before-completion` · `systematic-debugging` | `bin/test-lock -- <test cmd>` (touched/affected test files while iterating; a tier-2 full suite per PR at the final synced head) · **drive the real artifact** (by profile — the `run`/`webapp-testing` skills) · typecheck/lint · `/validate` · see `verify-workflow.md` |
+| 4 | VERIFY ⛔ | `verification-before-completion` · `systematic-debugging` | `bin/test-lock -- <test cmd>` (touched/affected test files while iterating; a tier-2 full suite per PR at the final synced head) · **drive the real artifact** (by profile — the `run`/`local-browser-testing` skills) · typecheck/lint · `/validate` · see `verify-workflow.md` |
 | 5 | REVIEW | `requesting-code-review` → `receiving-code-review` | dispatch the **risk-tiered** panel **only through `/pr-open`** (`--full` forces tier 2, `--deep` adds the advisory lenses; a hand-dispatched panel is not a panel) **CONCURRENTLY in ONE message**: tier 2 = `code-reviewer` + `silent-failure-hunter` + `security-reviewer` + `test-quality-reviewer` (+ `docs-impact-agent` at tier ≥ 1 on a documented surface; advisory `code-simplifier` + `comment-analyzer` with `--deep`) · `/security-review` (distinct). Roster, tiers, fix rounds and the `pr_gate` merge axes: **`agent-delegation.md`** (auditor role). **Panel edits → re-run VERIFY.** |
 | 6 | DOCUMENT (apply) | — | the builder applies the P5 **docs-impact-agent** findings in the next fix push (re-reviewed via `/pr-open`) · `/write` for progress.md/CLAUDE.md state · create-readme |
 | 7 | FINISH | `finishing-a-development-branch` | `git worktree remove <path>` (the `worktree_remove` hook backs up untracked files + an uncommitted patch first) · `/merge-prs` |
@@ -90,8 +90,7 @@ two layers:
   at the final synced head; a test-runner / setup-script change or a release / train close always
   gets a full run regardless of tier.
 - **Drive the real artifact** *(green ≠ works — by profile)*: **Web UI** → Chrome DevTools MCP at
-  `http://127.0.0.1:$PORT` (`webapp-testing`, never the blocked Claude-in-Chrome extension — the
-  `local-browser-testing` plugin skill); **Service/API** → hit endpoints, assert status+body;
+  `http://127.0.0.1:$PORT` (`local-browser-testing` plugin skill — never the blocked Claude-in-Chrome extension); **Service/API** → hit endpoints, assert status+body;
   **CLI/Library** → run it, assert stdout+exit code; **Data** → run on fixtures, assert output
   schema/row counts; **Meta/tooling** *(hooks/scripts/a template like this repo)* → run the suite
   AND fire the changed unit against a real input, assert its effect. Codify anything you verify

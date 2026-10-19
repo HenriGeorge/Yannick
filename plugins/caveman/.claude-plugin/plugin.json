@@ -1,0 +1,9 @@
+{
+  "name": "caveman",
+  "version": "2.0.0",
+  "description": "Ultra-compressed communication mode. Vendored cloud copy-source: the four passive MIT skills only (caveman, caveman-commit, caveman-review, caveman-help); no hooks.",
+  "author": {
+    "name": "Julius Brussee",
+    "url": "https://github.com/JuliusBrussee"
+  }
+}

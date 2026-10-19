@@ -20,9 +20,12 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shlex
+import shutil
 import subprocess
 import sys
+import urllib.request
 from pathlib import Path
 
 CATEGORIES = ["mechanical", "bug", "design-decision", "docs", "chore", "question"]
@@ -55,11 +58,68 @@ BODY_CAP = 1500
 # 200 undercounted a repo that outgrew it; 1000 covers any realistic backlog.
 ISSUE_FETCH_LIMIT = "1000"
 
-# Default classifier: the pinned cheap-Claude path (Haiku 4.5), NEVER a bare `haiku` alias (it floats
-# to the newest generation) and NEVER `claude --bare` (refuses OAuth). Overridable via TRIAGE_CLASSIFY_CMD for tests.
-DEFAULT_CLASSIFY_CMD = [
-    "claude", "-p", "--strict-mcp-config", "--model", "claude-haiku-4-5-20251001",
+# Default Ollama classifier PREFERENCE CHAIN (when TRIAGE_OLLAMA_MODEL is unset): the first model
+# in this list that `ollama list` reports wins. deepseek-v4-pro (reasoning, stronger judgment, via
+# the HTTP path) is preferred when the Ollama cloud sub has it; phi4 (free, local, fast) is the
+# fallback so a repo without the cloud model still classifies locally for free. Only if NEITHER is
+# pulled does it drop to the paid cheap-Claude path. Override with TRIAGE_OLLAMA_MODEL to force one.
+OLLAMA_PREFERRED_MODELS = ["deepseek-v4-pro:cloud", "phi4"]
+
+# Cheap-Claude FALLBACK (Haiku 5.5) — used only when Ollama isn't available, so triage keeps working
+# on a repo / cloud sandbox with no Ollama. NEVER a bare `haiku` alias (it floats to the newest
+# generation) and NEVER `claude --bare` (refuses OAuth). TRIAGE_CLASSIFY_CMD overrides everything.
+CLAUDE_FALLBACK_CMD = [
+    "claude", "-p", "--strict-mcp-config", "--model", "claude-haiku-5-5",
 ]
+
+
+def _ollama_has_model(model: str) -> bool:
+    """True iff the `ollama` CLI is on PATH and `ollama list` reports `model` (tag-insensitive, so
+    `phi4` matches `phi4:latest`). FAIL-SAFE: any error — no binary, daemon down, non-zero exit,
+    timeout — returns False, so the caller falls back to Claude. A missing Ollama must never break
+    triage on the fleet or in a cloud session."""
+    if not shutil.which("ollama"):
+        return False
+    try:
+        r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    if r.returncode != 0:
+        return False
+    base = model.split(":")[0]
+    for line in r.stdout.splitlines()[1:]:  # skip the header row
+        name = (line.split() or [""])[0]
+        if name == model or name.split(":")[0] == base:
+            return True
+    return False
+
+
+def default_classify_cmd() -> list:
+    """The Stage-1 classifier when TRIAGE_CLASSIFY_CMD is unset. TRIAGE_OLLAMA_MODEL forces one
+    model; otherwise walk OLLAMA_PREFERRED_MODELS in order (deepseek-v4-pro → phi4) and use the first
+    that `ollama list` reports. Ollama goes through the clean HTTP path; the pinned cheap-Claude
+    command is the last resort so triage still works where no preferred model is pulled."""
+    env = os.environ.get("TRIAGE_OLLAMA_MODEL")
+    candidates = [env] if env else OLLAMA_PREFERRED_MODELS
+    for model in candidates:
+        if _ollama_has_model(model):
+            return ["ollama", "run", model]
+    return CLAUDE_FALLBACK_CMD
+
+
+def classifier_label(env_override: bool, classify_cmd: list) -> str:
+    """Human label for the resolved classifier, so the free->PAID fallback is never silent: an
+    operator expecting the free local path must SEE on stdout when Ollama was unavailable and the
+    run billed Claude instead (silent-failure-hunter #1453)."""
+    if env_override:
+        return "TRIAGE_CLASSIFY_CMD override"
+    if classify_cmd[:1] == ["ollama"]:
+        model = classify_cmd[2] if len(classify_cmd) >= 3 else "?"
+        # a `:cloud` Ollama model is METERED, not free-local — say so, don't mislabel it "free"
+        if model.endswith(":cloud"):
+            return f"Ollama cloud/metered ({model})"
+        return f"free local Ollama ({model})"
+    return "PAID cheap-Claude fallback (Ollama unavailable)"
 
 PROMPT_PATH = Path(__file__).resolve().parent.parent / "classify-prompt.md"
 
@@ -211,17 +271,58 @@ def batched(items: list, size: int):
         yield items[i:i + size]
 
 
-def extract_json_array(text: str):
-    """Parse the first `[`…last `]` slice as JSON. Returns the list, or None if it won't parse."""
-    start = text.find("[")
-    end = text.rfind("]")
-    if start == -1 or end == -1 or end < start:
-        return None
+OLLAMA_URL = os.environ.get("TRIAGE_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
+
+
+def _ollama_generate(model: str, prompt: str) -> str:
+    """Classify via Ollama's HTTP API with streaming OFF — returns ONE clean `response` string, no
+    ANSI / no cursor-rewrite artifacts that `ollama run` leaks for thinking models (deepseek/glm/
+    qwen3). `think:false` also drops the reasoning block when the model supports it. Any transport /
+    HTTP / decode error returns "" so the batch retries and the coverage gate stays loud."""
+    body = json.dumps({"model": model, "prompt": prompt,
+                       "stream": False, "think": False}).encode()
+    req = urllib.request.Request(f"{OLLAMA_URL}/api/generate", data=body,
+                                 headers={"Content-Type": "application/json"})
     try:
-        obj = json.loads(text[start:end + 1])
-        return obj if isinstance(obj, list) else None
-    except json.JSONDecodeError:
-        return None
+        with urllib.request.urlopen(req, timeout=180) as resp:
+            return json.loads(resp.read()).get("response", "")
+    except (OSError, ValueError) as e:
+        print(f"warn: ollama transport error at {OLLAMA_URL}: {e}", file=sys.stderr)
+        return ""
+
+
+def _run_classifier(classify_cmd: list, prompt: str) -> str:
+    """Run the resolved classifier, returning its raw text. The Ollama form (`ollama run <model>`)
+    goes through the clean HTTP API; every other form (Claude fallback, TRIAGE_CLASSIFY_CMD override,
+    a test shim) is exec'd with the prompt appended as the final argument."""
+    if classify_cmd[:2] == ["ollama", "run"] and len(classify_cmd) >= 3:
+        return _ollama_generate(classify_cmd[2], prompt)
+    proc = subprocess.run([*classify_cmd, prompt], capture_output=True, text=True, check=False)
+    return proc.stdout
+
+
+# Terminal control sequences a streaming model (via `ollama run`) can leak into stdout. Their `[`
+# bytes (ESC[) otherwise fool a naive first-`[` scan into slicing from an escape, not the JSON.
+_ANSI_RE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+
+def extract_json_array(text: str):
+    """Pull the classifier's JSON array out of `text`. Strips ANSI control sequences, then scans
+    every `[` and returns the FIRST that `raw_decode`s to a NON-EMPTY list — so leading prose, a
+    ```json fence, trailing prose, and an echoed-prompt array (invalid JSON) are all tolerated, and
+    an inner empty `[]` (e.g. a `dup_of: []`) is never mistaken for the result. Returns None when no
+    non-empty array parses — NEVER a silent `[]`, so the caller retries / the coverage gate fails
+    loud rather than labelling nothing (silent-failure-hunter)."""
+    clean = _ANSI_RE.sub("", text)
+    decoder = json.JSONDecoder()
+    for m in re.finditer(r"\[", clean):
+        try:
+            value, _ = decoder.raw_decode(clean, m.start())
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, list) and value:
+            return value
+    return None
 
 
 def classify_batch(batch: list[dict], classify_cmd: list[str]) -> list[dict]:
@@ -229,9 +330,8 @@ def classify_batch(batch: list[dict], classify_cmd: list[str]) -> list[dict]:
     slim = [{"number": i["number"], "title": i.get("title", ""),
              "body": (i.get("body", "") or "")[:BODY_CAP]} for i in batch]
     prompt = PROMPT_PATH.read_text() + "\n" + json.dumps(slim)
-    for attempt in range(2):  # original + one retry (bounded)
-        proc = subprocess.run([*classify_cmd, prompt], capture_output=True, text=True, check=False)
-        parsed = extract_json_array(proc.stdout)
+    for _ in range(2):  # original + one retry (bounded)
+        parsed = extract_json_array(_run_classifier(classify_cmd, prompt))
         if parsed is not None:
             return parsed
     return []
@@ -326,7 +426,10 @@ def main() -> int:
     args = ap.parse_args()
 
     env_cmd = os.environ.get("TRIAGE_CLASSIFY_CMD")
-    classify_cmd = shlex.split(env_cmd) if env_cmd else DEFAULT_CLASSIFY_CMD
+    classify_cmd = shlex.split(env_cmd) if env_cmd else default_classify_cmd()
+    # Breadcrumb so the free->PAID fallback is never silent (silent-failure-hunter #1453).
+    print(f"triage: classifier = {classifier_label(bool(env_cmd), classify_cmd)}: "
+          f"{' '.join(classify_cmd)}", flush=True)
 
     labels = ensure_labels(args.dry_run, args.create_labels)
     issues = fetch_issues()

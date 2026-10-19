@@ -1,0 +1,6 @@
+{
+  "name": "guard-coach",
+  "version": "0.1.0",
+  "description": "When a known guard denies a Bash call, augments the deny the model reads with the corrected command and nudges /improve on recurrence",
+  "author": { "name": "HG" }
+}

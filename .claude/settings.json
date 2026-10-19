@@ -1,8 +1,7 @@
 {
   "enabledPlugins": {
     "ponytail@ponytail": false,
-    "superpowers@claude-plugins-official": false,
-    "superpowers@superpowers-dev": false,
+    "superpowers@claude-plugins-official": true,
     "ct-core@claude-template": true,
     "ct-hooks-py@claude-template": true
   },

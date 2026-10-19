@@ -28,7 +28,7 @@ fresh checkout, so worktree isolation is free).
 ```
 usage: cron-run.sh <cmd> [args...]
   cron-run.sh claude -p "/docs-sweep"        --model claude-opus-4-8
-  cron-run.sh claude -p "triage the issues"  --model claude-haiku-4-5-20251001
+  cron-run.sh claude -p "triage the issues"  --model claude-haiku-5-5
   cron-run.sh npm run some-daemon            # non-claude caller
 ```
 
@@ -49,7 +49,7 @@ Each run, in order:
 - **Auth** — a headless `claude -p` rides your **claude.ai OAuth keychain session** (never `--bare`,
   which refuses OAuth). The launchd/cron environment must be able to reach the login keychain.
 - **Model pinning** — when the command is `claude -p`, pin an **exact** `--model` ID
-  (`claude-opus-4-8` for judgment work like a docs sweep, `claude-haiku-4-5-20251001` for light work
+  (`claude-opus-4-8` for judgment work like a docs sweep, `claude-haiku-5-5` for light work
   like triage). A bare alias (`opus`/`haiku`) floats to the newest generation. The wrapper is generic and does
   not inject a model for you.
 - **Awake** — launchd does not fire while the Mac is asleep. Prefer a slot the machine is reliably

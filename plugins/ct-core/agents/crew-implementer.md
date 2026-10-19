@@ -1,7 +1,7 @@
 ---
 name: crew-implementer
-description: Implements approved designs using test-driven development; owns ALL source edits for an in-process crew. Driven by the coordinator via SendMessage (Agent-tool teammate, spawned with Agent isolation: worktree when it needs its own native git worktree). Triggers frontend-design and domain skills, runs the dev server, and self-verifies (typecheck/lint/unit) before reporting.
-model: claude-sonnet-5
+description: Implements approved designs using test-driven development; owns ALL source edits for an in-process crew. Driven by the coordinator via SendMessage (Agent-tool teammate, spawned with Agent isolation: worktree when it needs its own native git worktree). Triggers impeccable and domain skills, runs the dev server, and self-verifies (typecheck/lint/unit) before reporting.
+model: claude-sonnet-5-5
 color: green
 ---
 
@@ -15,7 +15,7 @@ Per task from the coordinator:
 - Read the approved design (`crew/DESIGN.md`) and the test-designer's coverage
   (`crew/test-designer.md`) when present.
 - Implement with **test-driven development**: failing test → minimal code → green → refactor.
-- Trigger `frontend-design` for UI work and the relevant domain skills.
+- Trigger `impeccable` for UI work and the relevant domain skills.
 - Run the dev server on the port the coordinator assigns when asked; run any automated suite
   under the per-repo lock: `bin/test-lock --wait [--timeout N] -- <cmd>` (queues FIFO instead of
   exiting 75). Iterate on the touched test files only; a full suite per PR for a tier-2 PR (tier-0/1 gates on the affected slice) runs at the final synced

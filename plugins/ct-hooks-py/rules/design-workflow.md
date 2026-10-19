@@ -1,6 +1,6 @@
 # Design Workflow (the _how_ of GATE 1)
 
-Last updated: 2026-10-18 23:16
+Last updated: 2026-10-19 14:37
 
 The Design leg of **Design → Code → Prove** (`workflow.md`): turn intent into a concrete, approved
 design before any implementation. A `CLAUDE.md` instruction still wins, and the gate is never
@@ -46,11 +46,11 @@ flowchart LR
   at P4. **Binary, and BEFORE the plan:** each acceptance test is a 1/0 pass/fail against the
   contract, authored + confirmed RED at the *start* of P2, before `writing-plans` emits the plan; the
   plan names the test (path or id).
-- **BUILD** — domain skills (web: `frontend-design`) turn the COVER red test green; `workflow.md`
+- **BUILD** — domain skills (web: `impeccable`) turn the COVER red test green; `workflow.md`
   BUILD → VERIFY ⛔ owns it from here.
 - **REVIEW** — the risk-tiered panel, dispatched only via `/pr-open` — roster, tiers, verdicts and
   `pr_gate` rules in **`agent-delegation.md`** (auditor role). Design-specific additions:
-  `/security-review` and, for web, `web-design-guidelines`. **If the panel changes code, re-run
+  `/security-review` and, for web, an `impeccable` audit. **If the panel changes code, re-run
   VERIFY before merge.**
 
 ---
@@ -59,7 +59,7 @@ flowchart LR
 
 > _Web UI only._ Other profiles satisfy GATE 1 at "MAKE CONCRETE" and skip to BUILD.
 
-- **ART-DIRECT** _(premium/brand sites only)_ — `award-winning-web-design` → a `concept.md` with
+- **ART-DIRECT** _(premium/brand sites only)_ — `impeccable` (shape/critique) → a `concept.md` with
   real tokens + motion specs. Internal tools skip this.
 - **SOURCE A LOOK / TOKENS** _(optional)_ — `design-import` (lift an existing site → tokenized
   HTML + React + `IMPORT.md`), **or** port a claude.ai/design / Figma-Make export, **or** pull

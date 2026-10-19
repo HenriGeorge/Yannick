@@ -1,6 +1,6 @@
 # Agent Delegation
 
-Last updated: 2026-10-19 10:26
+Last updated: 2026-10-19 14:37
 
 Delegate to a subagent for **substantial** work; do trivial things inline. Reviewers/auditors hold no
 locks: dispatch the whole panel CONCURRENTLY in one message and keep working while it runs.
@@ -76,10 +76,9 @@ converging on the same spot is a far stronger merge-blocker than one lens alone.
   Agent-Skills spec. `/skill-audit` = cost/structure hygiene (plugin index in a plugin-load
   project); `/skill-reinvent <skill>` = strategy re-derivation. Both advisory, both apply through
   `writing-skills`.
-- **test-writer** — real tests in the repo's framework: `playwright-tester` / `frontend-testing` +
-  `vitest-best-practices` / pytest. Each test must be able to fail.
+- **test-writer** — real tests in the repo's framework: `playwright-tester` / `frontend-testing` (vitest) / pytest. Each test must be able to fail.
 - **browser-tester** — run tests against the *running* app on the worktree's port
-  (`playwright-tester` + `webapp-testing`). Test-auth contract: `BASE_URL=http://localhost:$PORT`,
+  (`playwright-tester` + `local-browser-testing`). Test-auth contract: `BASE_URL=http://localhost:$PORT`,
   creds in git-ignored `.env.test` (+ `TEST_AUTH_MODE`), a seeded user via `npm run seed:test`.
   Hold the per-repo lock (`bin/test-lock --wait -- <cmd>`). Missing `.env.test` → fail loud; never
   test unauthenticated. A builder/fix round runs the affected slice; the full suite stays the
@@ -121,11 +120,19 @@ this table must match it (`tests/test_model_routing.sh` MR-07 fails on drift). S
 
 | Model | Agents | Why |
 |---|---|---|
-| `claude-sonnet-5` | `crew-coordinator`, `crew-implementer`, `critical-thinking`, `code-reviewer`, `security-reviewer`, `test-quality-reviewer`, `test-designer`, `silent-failure-hunter`, `pr-test-analyzer`, `type-design-analyzer`, `playwright-tester` | The roles that decompose/implement work and the substantive review/diagnosis lenses: correctness review, baseline security review, meaningful-coverage validation, edge-case/regression test design, failure-path tracing, test-vs-change assessment, API-boundary/type-invariant analysis, and browser-failure diagnosis. Quality matters enough here to need judgment past Haiku, but not so much that every run should default to Opus — escalate a single difficult finding rather than routing the whole role there. |
-| `claude-haiku-4-5-20251001` | `codebase-explorer`, `web-researcher`, `code-simplifier`, `comment-analyzer`, `docs-impact-agent` | Bounded, mechanical work: file discovery and bounded code tracing, focused fact-gathering (escalate synthesis when needed), bounded simplification/duplication detection, stale-or-misleading-comment detection, and likely-doc-impact identification. |
+| `claude-sonnet-5-5` | `crew-coordinator`, `crew-implementer`, `critical-thinking`, `code-reviewer`, `security-reviewer`, `test-quality-reviewer`, `test-designer`, `silent-failure-hunter`, `pr-test-analyzer`, `type-design-analyzer`, `playwright-tester` | The roles that decompose/implement work and the substantive review/diagnosis lenses: correctness review, baseline security review, meaningful-coverage validation, edge-case/regression test design, failure-path tracing, test-vs-change assessment, API-boundary/type-invariant analysis, and browser-failure diagnosis. Quality matters enough here to need judgment past Haiku, but not so much that every run should default to Opus — escalate a single difficult finding rather than routing the whole role there. |
+| `claude-haiku-5-5` | `codebase-explorer`, `web-researcher`, `code-simplifier`, `comment-analyzer`, `docs-impact-agent` | Bounded, mechanical work: file discovery and bounded code tracing, focused fact-gathering (escalate synthesis when needed), bounded simplification/duplication detection, stale-or-misleading-comment detection, and likely-doc-impact identification. |
 
-Light work outside agents (issue triage in `github-solve-issues` Stage 1, pre-classified trivial
-edits) also goes to `claude-haiku-4-5-20251001`.
+Light work outside agents (pre-classified trivial edits) goes to `claude-haiku-5-5`. Issue
+triage in `github-solve-issues` Stage 1 defaults to a **preference chain** (`stage1-triage.py` against
+`ollama list`): `deepseek-v4-pro:cloud` (metered via the Ollama cloud sub) → `phi4` (free local) →
+`claude-haiku-5-5` (last resort, no Ollama). `TRIAGE_OLLAMA_MODEL` forces one model;
+`TRIAGE_CLASSIFY_CMD` any command. Details: `wiki/concepts/model-routing.md`.
+
+**Escalation is the caller's call, on observable signals.** A Haiku agent cannot switch models; when
+it reports a blocker, the dispatcher may re-dispatch ONE stronger agent type for that question only.
+Trigger on an unresolved question the agent reported back, a repeated failed attempt, or two lenses
+disagreeing — never on a model's self-reported confidence.
 
 ⚠ **Bare aliases are banned.** Never use `opus` / `sonnet` / `haiku` / `fable` in a `model:`
 frontmatter field or a `--model` flag — an alias floats to the newest generation. **This also covers

@@ -1,7 +1,7 @@
 ---
 name: crew-coordinator
 description: The crew coordinator — orchestrates the Design→Code→Prove workflow over in-process Agent-tool teammates coordinated via SendMessage; no tmux send-keys. Extra implementers get native git worktrees (Agent isolation: worktree); suites run under the per-repo lock via bin/test-lock. Keeps the durable crew/*.md + BOARD record protocol and enforces GATE-1/GATE-2. Never edits source code itself. NOTE — deliberately declares NO tools allow-list — it must inherit the full toolset so the Agent and SendMessage tools are available (the crew-coordinator's allow-list predates agent teams and blocks them; that is the exact NO-GO the first pilot hit).
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 color: cyan
 ---
 

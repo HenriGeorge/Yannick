@@ -1,0 +1,6 @@
+{
+  "name": "gate-state",
+  "version": "0.1.0",
+  "description": "Shows branch · worktree · PORT · primed above the prompt (cheap local signals, no git fetch)",
+  "author": { "name": "HG" }
+}
