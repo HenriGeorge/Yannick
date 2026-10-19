@@ -1,8 +1,8 @@
 # claude_template — Field Guide
 
-Last updated: 2026-10-19 08:45
+Last updated: 2026-10-19 10:06
 
-Snapshot at `origin/main` · 15 hooks · 57 skills · 16 agents · 14 commands · 39 bin scripts · 9 core rules · 204 test suites. (Plugin versions live in `plugin.json` — not snapshotted here, to avoid per-bump drift.)
+Snapshot at `origin/main` · 15 hooks · 57 skills · 16 agents · 14 commands · 40 bin scripts · 9 core rules · 206 test suites. (Plugin versions live in `plugin.json` — not snapshotted here, to avoid per-bump drift.)
 
 **The at-a-glance index to the whole harness — and now the single entry point** (the former `OVERVIEW.md` narrative and `workflow/DECIDING-DONE.md` "how done is decided" map have been folded in below). For depth: [`workflow/WORKFLOW.md`](workflow/WORKFLOW.md) · [`workflow/HOOKS.md`](workflow/HOOKS.md) · [`workflow/ENFORCEMENT.md`](workflow/ENFORCEMENT.md). This page is the fully-enumerated inventory — every hook, skill, script, agent, rule, and token in one place; the linked docs own the mechanics.
 
@@ -56,9 +56,9 @@ decompose with writing-plans, then run the phases per step.
 
 ---
 
-## 9 always-core rules
+## 9 canonical rules (4 always-core @-imported, 5 read on demand)
 
-The stable conventions `@`-imported into every session's `CLAUDE.md` — ambient prose the model should follow. Scoped or enforceable concerns live in trigger-fired skills or hooks instead, so this list stays small.
+The stable conventions. Only the **4 every-turn** rules (`workflow`, `engineering-conventions`, `autonomy`, `lean-output`) are `@`-imported into every session's `CLAUDE.md` — ambient prose the model always follows. The **5 moment-specific** rules (`agent-delegation`, `verify-workflow`, `design-workflow`, `doc-conventions`, `mermaid-conventions`) ship to `.claude/rules/` but are **read on demand** at the gate `workflow.md` names (cloud: via the `workflow-rules` skill) — the @-import loading diet keeps the per-turn floor small. Scoped or enforceable concerns live in trigger-fired skills or hooks instead.
 
 | Rule | Governs |
 |---|---|
@@ -198,6 +198,7 @@ The single most-loaded hook runs a numbered battery of command checks — **H1�
 | `harness-sweep` | Read-only fleet audit of template-managed repos | SOURCE |
 | `harness-fix` | Write-side: refresh drift-flagged fleet repos via setup.sh | SOURCE |
 | `fleet-sweep.sh` | One command to roll the current template to the fleet AS PRs: per apply-safe repo (from `propagate.sh --manifest-only`) delivers content via `propagate --apply --only`, then on any working-tree change branches · stages ONLY propagate's delta (tracked mods + newly-appeared untracked paths, snapshot-diffed so pre-existing untracked dirt the manifest permits is never swept in) · commits · pushes · `gh pr create`; idempotent on an **open PR** for the sweep branch (a stray branch without a PR is retried, not skipped), `--dry-run` shows each repo's propagate plan, `--only`/`--branch`/`--root`. Fail-soft, each FAIL carrying its reason. Stops at the PR (self-authored merges are classifier-gated to the user) | SOURCE |
+| `fleet-apply` | The direct-to-main sibling of `fleet-sweep`: one run fast-forwards the template, delivers every clean managed repo via `propagate.sh --apply --only`, retries a delivery commit a repo-local main guard refused with `--no-verify` (logged), hand-delivers a clean `main` that propagate skips only for extra worktrees, verifies the cloud wiring, pushes, and prints one table. Dirty repos and oversized untracked dirs are skipped and named, never committed. `--dry-run` / `--no-push` / `--only` | SOURCE |
 | `agent-roster` | Regenerate the sub-agent roster table from agent frontmatter | SOURCE |
 | `plugin-dev-link.sh` | Point the installed core plugin at this local checkout (dev link) | SOURCE |
 

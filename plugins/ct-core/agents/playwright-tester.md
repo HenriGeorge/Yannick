@@ -1,7 +1,7 @@
 ---
 name: playwright-tester
 description: "Playwright E2E testing — explores websites, identifies user flows, generates tests, iterates until all pass."
-model: claude-opus-4-8
+model: claude-sonnet-5
 color: yellow
 ---
 

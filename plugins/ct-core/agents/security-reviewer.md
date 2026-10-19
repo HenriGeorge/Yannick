@@ -2,7 +2,7 @@
 name: security-reviewer
 description: "Security-focused code review for any stack — injection, auth/access-control, secret exposure, SSRF/path-traversal, unsafe deserialization, crypto misuse, output encoding. Emits an actionable report + one verdict (PASS / FINDINGS / WAIVED)."
 tools: Read, Grep, Glob
-model: claude-opus-4-8
+model: claude-sonnet-5
 omitClaudeMd: true
 effort: medium
 maxTurns: 25

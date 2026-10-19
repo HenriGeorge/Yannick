@@ -52,7 +52,17 @@ re-deriving the mechanics:
 python3 ~/.claude/skills/github-solve-issues/scripts/stage1-triage.py --dry-run
 # then apply for real (default classifier = the pinned-Haiku kimi path above):
 python3 ~/.claude/skills/github-solve-issues/scripts/stage1-triage.py --json
+# first run on a repo that lacks the labels — creating repo-wide labels is an explicit step:
+python3 ~/.claude/skills/github-solve-issues/scripts/stage1-triage.py --json --create-labels
 ```
+
+**Labels are never created silently.** The script reads the repo's labels once and applies only
+those that already exist; the ones it would have created are printed as one line
+(`labels not in repo (not created; pass --create-labels): [...]`). `--create-labels` is the
+explicit opt-in that creates (and recolours) the `category:*`, `impact:*`, `effort:*` and
+`triage:*` labels. Without it, a repo missing any `category:*` label exits **2** before any
+classifier call (category is load-bearing); a repo missing only `impact:*`/`effort:*`/`triage:*`
+runs normally and simply skips those labels.
 
 What the script guarantees: **every open issue ends with exactly one `category:*` label**, or it
 exits **non-zero** listing the stragglers it could not clear (it re-classifies stragglers **at most

@@ -1,6 +1,6 @@
 # Agent Delegation
 
-Last updated: 2026-10-19 00:55
+Last updated: 2026-10-19 10:26
 
 Delegate to a subagent for **substantial** work; do trivial things inline. Reviewers/auditors hold no
 locks: dispatch the whole panel CONCURRENTLY in one message and keep working while it runs.
@@ -121,9 +121,8 @@ this table must match it (`tests/test_model_routing.sh` MR-07 fails on drift). S
 
 | Model | Agents | Why |
 |---|---|---|
-| `claude-sonnet-5` | `crew-coordinator`, `crew-implementer`, `critical-thinking` | The roles that steer and build. Sonnet is fast and 2–3× cheaper for everyday agentic coding, and every build it produces is still checked by the tests, the mutation proof and the Opus 4.8 review panel. |
-| `claude-opus-4-8` | `code-reviewer`, `silent-failure-hunter`, `security-reviewer`, `type-design-analyzer`, `playwright-tester`, `test-designer`, `test-quality-reviewer`, `pr-test-analyzer`, `code-simplifier`, `web-researcher` | Review, test and research work that runs many times per PR and is cross-checked by the other lenses, the suite and the mutation proof. |
-| `claude-haiku-4-5-20251001` | `codebase-explorer`, `comment-analyzer`, `docs-impact-agent` | Light read-only / mechanical. |
+| `claude-sonnet-5` | `crew-coordinator`, `crew-implementer`, `critical-thinking`, `code-reviewer`, `security-reviewer`, `test-quality-reviewer`, `test-designer`, `silent-failure-hunter`, `pr-test-analyzer`, `type-design-analyzer`, `playwright-tester` | The roles that decompose/implement work and the substantive review/diagnosis lenses: correctness review, baseline security review, meaningful-coverage validation, edge-case/regression test design, failure-path tracing, test-vs-change assessment, API-boundary/type-invariant analysis, and browser-failure diagnosis. Quality matters enough here to need judgment past Haiku, but not so much that every run should default to Opus — escalate a single difficult finding rather than routing the whole role there. |
+| `claude-haiku-4-5-20251001` | `codebase-explorer`, `web-researcher`, `code-simplifier`, `comment-analyzer`, `docs-impact-agent` | Bounded, mechanical work: file discovery and bounded code tracing, focused fact-gathering (escalate synthesis when needed), bounded simplification/duplication detection, stale-or-misleading-comment detection, and likely-doc-impact identification. |
 
 Light work outside agents (issue triage in `github-solve-issues` Stage 1, pre-classified trivial
 edits) also goes to `claude-haiku-4-5-20251001`.

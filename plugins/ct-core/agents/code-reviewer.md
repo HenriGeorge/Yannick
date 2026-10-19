@@ -2,7 +2,7 @@
 name: code-reviewer
 description: Reviews code for project guideline compliance, bugs, and quality issues. Use after writing code, before commits, or before PRs. Read-only (no git access) — the caller pastes the diff / changed-file list into the prompt. High-confidence issues only (80+) to minimize noise.
 tools: Read, Grep, Glob
-model: claude-opus-4-8
+model: claude-sonnet-5
 omitClaudeMd: true
 effort: medium
 maxTurns: 25

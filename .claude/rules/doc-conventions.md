@@ -1,6 +1,6 @@
 # Documentation conventions
 
-Last updated: 2026-10-05 13:57
+Last updated: 2026-10-19 09:17
 
 Conventions for the docs this repo ships and every project it scaffolds. These are judgment-call
 habits with one machine-assisted helper (`bin/stamp-docs.sh`), not a hard PreToolUse gate.
@@ -68,8 +68,11 @@ A doc `@`-imported into `CLAUDE.md` (the `## Conventions (always-core)` block) l
 session's context** and pays its token cost every turn, forever. So the bar for `@`-import is
 "relevant on essentially every task," not "useful."
 
-- **Always-relevant convention → `@`-import** (ambient repo-committed prose). This is the ~10 stable
-  always-core rules only.
+- **Always-relevant convention → `@`-import** (ambient repo-committed prose). This is the 4 stable
+  every-turn rules only (`workflow`, `engineering-conventions`, `autonomy`, `lean-output`); the
+  moment-specific rules (`agent-delegation`, `verify-workflow`, `design-workflow`, `doc-conventions`,
+  `mermaid-conventions`) are read on demand — `workflow.md` pins the read at each gate (the @-import
+  loading diet).
 - **Scoped / sometimes-relevant → a trigger-fired plugin skill** (web-accessibility, figma-ui,
   local-browser-testing, rtk). Costs **zero** tokens until its trigger context appears — never
   `@`-import a doc that would be noise on an unrelated task.

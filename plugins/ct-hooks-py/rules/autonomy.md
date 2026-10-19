@@ -1,6 +1,6 @@
 # Autonomy — decide by default, proceed, correct by exception
 
-Last updated: 2026-10-19 08:40
+Last updated: 2026-10-19 08:45
 
 This rule exists because agents stop too often — handing control back with a question whose answer is
 already implied by the task ("Want me to push… or leave it?"), which forces a contentless "go" from the

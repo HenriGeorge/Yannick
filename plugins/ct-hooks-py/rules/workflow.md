@@ -1,10 +1,14 @@
 # Canonical Dev Workflow (every project, every session)
 
-Last updated: 2026-10-19 08:33
+Last updated: 2026-10-19 09:17
 
 > **THE LAW — Design → Code → Prove.** Shape it before you build it (GATE 1 ⛔), prove it
 > with fresh evidence before you call it done (GATE 2 ⛔). Two hard gates, never skipped.
 > The *how* of the Design and Prove legs lives in `design-workflow.md` / `verify-workflow.md`.
+> These — plus `agent-delegation.md`, `doc-conventions.md`, `mermaid-conventions.md` — **no longer
+> auto-load** (the @-import loading diet): they ship to `.claude/rules/` and you **read the one the
+> gate names, when the gate names it** (in a cloud session, where `.claude/rules/` is absent, read it
+> from the `workflow-rules` skill's `references/` instead).
 
 One workflow, everywhere — **any stack** (web · service/API · CLI/library · data). Only _how you
 drive the real artifact_ in VERIFY and _make the design concrete_ in GATE 1 change by profile. The
@@ -26,14 +30,18 @@ never skipped.
   On a managed repo the "own worktree + primed" half is **machine-enforced** by the
   `session_prime_gate` check — see `autonomy.md` A5 for the mechanics and bypass tokens.
 - **GATE 1 — Design before code.** No implementation until an approved design exists
-  (`brainstorming`; for big work, decompose with `writing-plans`).
+  (`brainstorming`; for big work, decompose with `writing-plans`). **Read
+  `.claude/rules/design-workflow.md` before the spec** — it is the *how* of this gate and no longer
+  auto-loads.
 - **GATE 2 — Evidence before "done".** No "done/fixed/passing" claim without FRESH output THIS
   turn, across three legs (`verification-before-completion`, per `verify-workflow.md`): the
   **STATIC leg** (typecheck, lint, unit via `/validate`); the **BEHAVIORAL leg** (the behaviour-test
   suite under `bin/test-lock`); the **EXERCISE leg** (drive the **real artifact** by profile via the
   `run`/`webapp-testing` skills — `/validate` covers only STATIC). **SHOW the evidence in your
   report** (screenshot for UI · response body for API · stdout/exit for CLI · output rows for data).
-  Run VERIFY **once per batch of accumulated changes**, not per micro-edit.
+  Run VERIFY **once per batch of accumulated changes**, not per micro-edit. **Read
+  `.claude/rules/verify-workflow.md` before claiming done** — it is the *how* of this gate and no
+  longer auto-loads.
 
 ## The 9 phases
 
@@ -128,8 +136,10 @@ flowchart LR
   — re-merging later would silently drop the reverted changes), re-post the kept members'
   `train-member:` comments, close the old draft as superseded. Large structural changes keep their
   own PR.
-- **Delegate substantial work** to subagents (see `agent-delegation.md`). Trivial things stay
-  inline. Auditors/reviewers hold no locks — **dispatch them async and keep working**.
+- **Delegate substantial work** to subagents — **read `.claude/rules/agent-delegation.md` before
+  dispatching the review panel or a crew** (roster, tiers, fix rounds, model routing; it no longer
+  auto-loads). Trivial things stay inline. Auditors/reviewers hold no locks — **dispatch them async
+  and keep working**.
 
 ## Adherence — mandatory, not optional
 

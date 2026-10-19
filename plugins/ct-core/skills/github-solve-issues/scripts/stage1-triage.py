@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """stage1-triage.py — the deterministic core of github-solve-issues Stage 1.
 
-Mechanical loop only: ensure category labels exist → fetch open issues → batch them through a
+Mechanical loop only: read the repo's labels (create them only with --create-labels) → fetch open issues → batch them through a
 classifier command → parse → apply one `category:*` label per issue → a BOUNDED coverage-gate loop
 that re-classifies stragglers (issues still missing a category label) at most twice, then FAILS LOUD
 rather than looping forever. Judgment stays in SKILL.md: escalating stubborn stragglers to Claude
@@ -64,10 +64,40 @@ def gh(args: list[str], check: bool = False) -> subprocess.CompletedProcess:
     return subprocess.run(["gh", *args], capture_output=True, text=True, check=check)
 
 
-def ensure_labels(dry_run: bool) -> None:
-    """Create each category:* label. Idempotent — a non-zero exit ('already exists') is ignored."""
-    if dry_run:
-        return
+def wanted_labels() -> list[str]:
+    return ([f"category:{c}" for c in CATEGORIES] + [f"impact:{v}" for v in IMPACTS]
+            + [f"effort:{v}" for v in EFFORTS] + [TRIAGE_SOLVED, TRIAGE_DUP])
+
+
+def existing_labels() -> set[str]:
+    """Names of every label already in the repo. A failed query dies loud — read as "no labels"
+    it would either create everything (with --create-labels) or exit 2 for the wrong reason."""
+    r = gh(["label", "list", "--limit", "500", "--json", "name"])
+    if r.returncode != 0:
+        die(f"`gh label list` failed (exit {r.returncode}): {r.stderr.strip()}")
+    try:
+        return {d["name"] for d in json.loads(r.stdout or "[]")}
+    except (json.JSONDecodeError, TypeError, KeyError):
+        die(f"`gh label list` returned unparseable output: {r.stdout[:200]!r}")
+
+
+def ensure_labels(dry_run: bool, create: bool) -> set[str]:
+    """Return the labels the run may apply. Creating/recolouring repo labels is a repo-wide side
+    effect (#1431), so it happens ONLY with --create-labels; otherwise the missing ones are reported
+    and the run applies just what already exists. A missing category:* label (the load-bearing
+    one) without the flag exits 2 before any classifier spend — dry-run only reports."""
+    have = existing_labels()
+    missing = [n for n in wanted_labels() if n not in have]
+    if not missing:
+        return have
+    if not create or dry_run:
+        print(f"labels not in repo (not created; pass --create-labels): {missing}")
+        if dry_run:
+            return have
+        if any(n.startswith("category:") for n in missing):
+            die("category:* labels missing — load-bearing for the coverage gate; "
+                "re-run with --create-labels to create them.")
+        return have
     for c in CATEGORIES:
         color = CATEGORY_COLORS.get(c, "ededed")
         gh(["label", "create", f"category:{c}", "--color", color,
@@ -89,6 +119,7 @@ def ensure_labels(dry_run: bool) -> None:
                        (TRIAGE_DUP, "flag: likely duplicate of another open issue")):
         gh(["label", "create", name, "--color", "d4c5f9",
             "--description", desc], check=False)  # tolerate "already exists"
+    return have | set(wanted_labels())
 
 
 def die(msg: str) -> "NoReturn":  # noqa: F821
@@ -149,7 +180,7 @@ def _pr_merged_to(pr: int, default: str) -> bool:
     return d.get("state") == "MERGED" and d.get("baseRefName") == default and bool(d.get("mergedAt"))
 
 
-def detect_solved(issues: list[dict], dry_run: bool) -> dict[int, int]:
+def detect_solved(issues: list[dict], dry_run: bool, labels: set[str]) -> dict[int, int]:
     """Flag each open issue closed by a merged PR on the DEFAULT branch (grill C1). gh-only — makes
     ZERO classifier calls. default_branch() is resolved LAZILY (grill S3): a candidate-free run never
     touches `gh repo view`, so it never die()s on a dry-run preview. Returns {issue: closing_pr}."""
@@ -165,7 +196,7 @@ def detect_solved(issues: list[dict], dry_run: bool) -> dict[int, int]:
         for pr in prs:
             if _pr_merged_to(pr, default):
                 solved[num] = pr
-                if not dry_run:
+                if not dry_run and TRIAGE_SOLVED in labels:
                     gh(["issue", "edit", str(num), "--add-label", TRIAGE_SOLVED], check=False)
                 break
     return solved
@@ -203,7 +234,7 @@ def classify_batch(batch: list[dict], classify_cmd: list[str]) -> list[dict]:
 
 
 def classify_and_apply(issues: list[dict], classify_cmd: list[str], batch_size: int,
-                       dry_run: bool) -> "tuple[dict[int, dict], dict[int, list[int]]]":
+                       dry_run: bool, labels: set[str]) -> "tuple[dict[int, dict], dict[int, list[int]]]":
     """Classify + label. Returns (results, dups) where dups maps an issue → its likely-dup group
     (Detector 2 — piggybacks the classifier's additive `dup_of` field; grill S2: purely additive)."""
     results: dict[int, dict] = {}
@@ -220,7 +251,7 @@ def classify_and_apply(issues: list[dict], classify_cmd: list[str], batch_size: 
                 group = sorted({num, *(d for d in dup_of if isinstance(d, int))})
                 if len(group) > 1:
                     dups[num] = group
-                    if not dry_run:
+                    if not dry_run and TRIAGE_DUP in labels:
                         gh(["issue", "edit", str(num), "--add-label", TRIAGE_DUP], check=False)
             if not dry_run:
                 gh(["issue", "edit", str(num), "--add-label", f"category:{cat}"], check=False)
@@ -230,8 +261,8 @@ def classify_and_apply(issues: list[dict], classify_cmd: list[str], batch_size: 
                 # drop it silently (verify-workflow: surface the failure even when you continue).
                 for field, valid in (("impact", IMPACTS), ("effort", EFFORTS)):
                     val = row.get(field)
-                    if val not in valid:
-                        continue
+                    if val not in valid or f"{field}:{val}" not in labels:
+                        continue  # absent label = not created without --create-labels (#1431)
                     r = gh(["issue", "edit", str(num), "--add-label", f"{field}:{val}"], check=False)
                     if r.returncode != 0:
                         print(f"warn: {field}:{val} not applied to #{num}: {r.stderr.strip()}",
@@ -285,18 +316,21 @@ def main() -> int:
                     help="classify + report only; create no labels, edit no issues")
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--json", action="store_true", help="also emit the triage rows as JSON")
+    ap.add_argument("--create-labels", action="store_true",
+                    help="create/recolour the category:*, impact:*, effort:* and triage:* labels in "
+                         "the repo (#1431); without it only labels that already exist are applied")
     args = ap.parse_args()
 
     env_cmd = os.environ.get("TRIAGE_CLASSIFY_CMD")
     classify_cmd = shlex.split(env_cmd) if env_cmd else DEFAULT_CLASSIFY_CMD
 
-    ensure_labels(args.dry_run)
+    labels = ensure_labels(args.dry_run, args.create_labels)
     issues = fetch_issues()
     if not issues:
         print("No open issues to triage.")
         return 0
 
-    results, dups = classify_and_apply(issues, classify_cmd, args.batch_size, args.dry_run)
+    results, dups = classify_and_apply(issues, classify_cmd, args.batch_size, args.dry_run, labels)
 
     if not args.dry_run:
         # BOUNDED coverage gate: re-classify stragglers at most MAX_STRAGGLER_ITERS times.
@@ -306,7 +340,7 @@ def main() -> int:
             it += 1
             straggler_issues = [i for i in issues if i["number"] in set(left)]
             r2, d2 = classify_and_apply(straggler_issues, classify_cmd, args.batch_size,
-                                        dry_run=False)
+                                        dry_run=False, labels=labels)
             results.update(r2)
             dups.update(d2)
             left = stragglers()
@@ -319,7 +353,7 @@ def main() -> int:
             return 3
 
     # Detector 1 — solved-on-main (gh-only, mechanical). A flag never changes the exit code (GS-8).
-    solved = detect_solved(issues, args.dry_run)
+    solved = detect_solved(issues, args.dry_run, labels)
 
     print_table(issues, results, solved, dups)
     if args.json:

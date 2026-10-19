@@ -14,8 +14,9 @@
 # /pr-open treats any non-zero exit as tier 2 (fail UP, never to a smaller panel).
 #
 # TIER0_DOC_RE / TIER0_DENY_RE are copied byte-for-byte into
-# plugins/ct-hooks-py/hooks/pr_gate.py, because the merge gate re-checks tier 0
-# from `gh pr view --json files`. tests/test_pr_tier.sh PT-DRIFT fails if the two copies differ.
+# plugins/ct-hooks-py/hooks/_lib/tier.py (read by pr_gate, which re-checks tier 0 from
+# `gh pr view --json files`, and by the session_prime guard). tests/test_pr_tier.sh PT-DRIFT fails
+# if the two copies differ.
 #
 # Matching is CASE-INSENSITIVE (macOS checkouts are case-insensitive, so `Rules/x.md` or `.Claude/x.md`
 # load exactly like `rules/x.md`); the gate twins use re.IGNORECASE / the JS `i` flag to match.
@@ -29,7 +30,7 @@ TIER0_DENY_RE='(^|/)(rules|commands|agents|skills|hooks|\.claude|\.github)/|(^|/
 TIER2_RE='(^|/)(hooks|bin|rules|hook-wiring|commands|agents)/|(^|/)\.github/(workflows|actions)/|(^|/)(setup|propagate|scaffold-web|go-online|sync-[^/]*)\.sh$|(^|/)skills/[^/]+/scripts/|_gate\.(py|cjs|sh)$|(^|/)(hooks|settings[^/]*)\.json$'
 # PROMPT_PROSE_RE (#1073): a .md under a plugin's prompt-code dirs (commands/agents/rules) or top-level
 # rules/ — prompt-code, so it keeps security review, but prose has no testable behavior, so test-quality
-# is waived. Copied byte-for-byte into pr_gate.{py,cjs} (pinned by PT-DRIFT), like TIER0_DENY_RE.
+# is waived. Copied byte-for-byte into hooks/_lib/tier.py (pinned by PT-DRIFT), like TIER0_DENY_RE.
 PROMPT_PROSE_RE='(^|/)plugins/[^/]+/(commands|agents|rules)/.*\.md$|(^|/)rules/.*\.md$'
 # GATED_RE (#1251): the security-sensitive code/config paths that must NEVER drop out of the full
 # panel via the prose-dominant mixed route — the pr-open gated-path list plus version manifests. The

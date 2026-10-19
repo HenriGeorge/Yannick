@@ -2,7 +2,7 @@
 name: code-simplifier
 description: Identifies code simplification opportunities for clarity and maintainability while preserving exact functionality. Use after writing or modifying code. Focuses on recently changed code unless told otherwise. Reports findings with before/after suggestions. Advisory only - does not modify files or commit.
 tools: Read, Grep, Glob
-model: claude-opus-4-8
+model: claude-haiku-4-5-20251001
 color: green
 ---
 

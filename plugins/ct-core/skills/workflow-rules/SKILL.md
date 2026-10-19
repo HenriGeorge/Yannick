@@ -25,6 +25,9 @@ don't load all nine unless you must.
 | Verify workflow | `verify-workflow.md` | The *how* of GATE 2 — STATIC → BEHAVIORAL → EXERCISE → CLAIM |
 | Doc conventions | `doc-conventions.md` | D1–D4: `Last updated:` stamps, `@`-import discipline, plugin vs maintainer docs |
 
-> In a local repo/fleet session these rules are also loaded natively via `CLAUDE.md`'s
-> `@.claude/rules/*.md` imports. This skill is the cloud-session channel, where those imports and
+> In a local repo/fleet session only the 4 every-turn rules (`workflow`, `engineering-conventions`,
+> `autonomy`, `lean-output`) load natively via `CLAUDE.md`'s `@.claude/rules/*.md` imports; the other
+> 5 (`agent-delegation`, `verify-workflow`, `design-workflow`, `doc-conventions`,
+> `mermaid-conventions`) are read on demand from `.claude/rules/` at the gate `workflow.md` names (the
+> @-import loading diet). This skill is the cloud-session channel for all nine, where the imports and
 > the `.claude/rules/` directory aren't present.
